@@ -11,6 +11,14 @@ Run this command on your Ubuntu server as root:
 curl -sSL https://raw.githubusercontent.com/sky-night-net/sky-net-panel/main/install.sh | sudo bash
 ```
 
+## Uninstall
+
+To completely remove the panel from your server:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/sky-night-net/sky-net-panel/main/uninstall.sh | sudo bash
+```
+
 ## Features
 - **Premium Design**: Sleek dark interface, no emojis, purely professional.
 - **System Reliability**: Built-in Fail2Ban, SSL (acme.sh), Systemd service, and DB Backups.
