@@ -539,18 +539,29 @@ async function showQR(cid, username, proto){
   const r=await API(`/panel/api/inbounds/clientConfig/${cid}`);if(!r.success)return;
   document.getElementById('qrConfigText').value=r.config;
   const img=document.getElementById('qrImage');
-  img.src=''; // Clear previous
-  try{
-    QRCode.toDataURL(r.config,{
-      width:600,
-      margin:2,
-      errorCorrectionLevel:'L',
-      version: 40 // Allow max version for large configs
-    },(err,url)=>{
-      if(!err) img.src=url;
-      else console.error('QR Error:', err);
-    });
-  }catch(e){console.error('QR Catch:', e)}
+  img.src=''; img.style.display='none';
+  const modalBody = img.parentElement.parentElement;
+  const existingWarning = document.getElementById('qr-warning');
+  if(existingWarning) existingWarning.remove();
+
+  if(r.config.length > 2500) {
+    const warn = document.createElement('div');
+    warn.id = 'qr-warning';
+    warn.style = 'color:#e63946; font-size:12px; margin-bottom:10px; font-weight:bold';
+    warn.textContent = 'Конфигурация слишком большая для QR-кода. Пожалуйста, используйте файл (.ovpn)';
+    modalBody.insertBefore(warn, img.parentElement);
+  } else {
+    try{
+      QRCode.toDataURL(r.config,{
+        width:600,
+        margin:2,
+        errorCorrectionLevel:'L'
+      },(err,url)=>{
+        if(!err) { img.src=url; img.style.display='inline-block'; }
+        else console.error('QR Error:', err);
+      });
+    }catch(e){console.error('QR Catch:', e)}
+  }
   document.getElementById('downloadBtn').onclick=()=>{
     const blob=new Blob([r.config],{type:'text/plain'});const url=URL.createObjectURL(blob);
     const a=document.createElement('a');a.href=url;a.download=username+(proto.includes('openvpn')?'.ovpn':'.conf');

@@ -103,7 +103,7 @@ route 95.85.112.0 255.255.255.0 net_gateway
         port = inbound.get("port", 1194)
         scramble_password = obfs.get("scramble_password", "")
         proto = settings.get("proto", "udp")
-        cipher = settings.get("cipher", "AES-256-GCM")
+        cipher = settings.get("cipher", "AES-256-CBC")
 
         address_full = settings.get("address", "10.9.0.0/24")
         address = address_full.split("/")[0]
@@ -243,17 +243,17 @@ verb 3
         address_full = settings.get("address", "10.9.0.0/24")
         proto = settings.get("proto", "udp")
         
-        # Start Docker container with XOR patched binary
-        # We use jeff47/openvpn-xor or similar
+        # Start Docker container with XOR patched binary in HOST network mode 
+        # for better compatibility with special protocols and routing.
         cmd = [
             "docker", "run", "-d",
             "--name", container_name,
             "--restart", "unless-stopped",
+            "--network", "host",
             "--cap-add", "NET_ADMIN",
             "--device", "/dev/net/tun",
             "-v", f"{self.CONFIG_DIR}:/etc/openvpn",
             "-v", "/var/log/openvpn:/var/log/openvpn",
-            "-p", f"{inbound['port']}:{inbound['port']}/{proto}",
             "jeff47/openvpn-xor",
             "openvpn", "--config", f"/etc/openvpn/server_{inbound['id']}.conf"
         ]
