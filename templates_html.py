@@ -506,7 +506,7 @@ function openAddClient(id){
 }
 async function toggleInbound(id){await POST(`/panel/api/inbounds/toggle/${id}`,{});loadInbounds()}
 async function deleteInbound(id){if(!confirm('Удалить этот сервер и всех клиентов?'))return;await POST(`/panel/api/inbounds/del/${id}`,{});loadInbounds()}
-
+function updateObfsFields(){const p=document.getElementById('ib-protocol').value;const c=document.getElementById('obfs-fields');
   const addr = document.getElementById('ib-address');
   if(p==='openvpn_xor'){
     if(addr) addr.value = '10.9.0.1/24';
