@@ -369,8 +369,8 @@ tr:hover { background: rgba(255,255,255,0.02); }
   <div class="modal">
     <div class="modal-header">Конфигурация клиента</div>
     <div class="modal-body" style="text-align:center">
-      <div style="background:#fff;padding:15px;display:inline-block;border-radius:10px;margin-bottom:15px">
-        <img id="qrImage" style="width:200px;height:200px">
+      <div style="background:#fff;padding:20px;display:inline-block;border-radius:10px;margin-bottom:15px">
+        <img id="qrImage" style="width:400px;height:400px;object-fit:contain">
       </div>
       <textarea id="qrConfigText" readonly style="width:100%;height:150px;font-family:monospace;font-size:12px;background:#111419;color:#00a8e8;border:1px solid #30363d;padding:10px;border-radius:4px"></textarea>
     </div>
@@ -539,7 +539,18 @@ async function showQR(cid, username, proto){
   const r=await API(`/panel/api/inbounds/clientConfig/${cid}`);if(!r.success)return;
   document.getElementById('qrConfigText').value=r.config;
   const img=document.getElementById('qrImage');
-  try{QRCode.toDataURL(r.config,{width:400,margin:1},(err,url)=>{if(!err)img.src=url})}catch(e){}
+  img.src=''; // Clear previous
+  try{
+    QRCode.toDataURL(r.config,{
+      width:600,
+      margin:2,
+      errorCorrectionLevel:'L',
+      version: 40 // Allow max version for large configs
+    },(err,url)=>{
+      if(!err) img.src=url;
+      else console.error('QR Error:', err);
+    });
+  }catch(e){console.error('QR Catch:', e)}
   document.getElementById('downloadBtn').onclick=()=>{
     const blob=new Blob([r.config],{type:'text/plain'});const url=URL.createObjectURL(blob);
     const a=document.createElement('a');a.href=url;a.download=username+(proto.includes('openvpn')?'.ovpn':'.conf');
