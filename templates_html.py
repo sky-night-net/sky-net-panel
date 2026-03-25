@@ -12,24 +12,31 @@ LOGIN_HTML = r"""<!DOCTYPE html>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;
-background:#111827;color:#e5e7eb}
-.card{background:#1f2937;border:1px solid #374151;border-radius:16px;padding:48px 40px;width:380px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.5)}
-.card h1{font-size:26px;color:#f9fafb;margin-bottom:6px;letter-spacing:-.5px}
-.card .sub{color:#6b7280;font-size:13px;margin-bottom:32px}
-.card input{width:100%;padding:12px 16px;border:1px solid #374151;border-radius:10px;background:#111827;color:#f9fafb;font-size:14px;margin-bottom:14px;outline:none;transition:border .2s}
-.card input:focus{border-color:#3b82f6}
-.card button{width:100%;padding:13px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;background:#3b82f6;color:#fff;transition:background .2s}
-.card button:hover{background:#2563eb}
-.error{color:#ef4444;font-size:13px;margin-bottom:12px}
+body{font-family:'Inter',sans-serif;min-height:100vh;display:flex}
+.left{flex:1;background:#1c2128;display:flex;align-items:center;justify-content:center;padding:40px}
+.right{flex:1;background:#00a8e8;display:flex;align-items:center;justify-content:center;color:#fff}
+.right h1{font-size:48px;font-weight:700;letter-spacing:2px;text-transform:uppercase}
+.card{width:100%;max-width:360px;text-align:center}
+.card h2{font-size:24px;color:#fff;margin-bottom:30px;font-weight:600}
+.fg{margin-bottom:15px;text-align:left}
+.fg input{width:100%;padding:14px;border:1px solid #374151;border-radius:6px;background:#252a33;color:#fff;font-size:15px;outline:none}
+.fg input:focus{border-color:#00a8e8}
+.btn{width:100%;padding:14px;border:none;border-radius:6px;background:#00a8e8;color:#fff;font-size:16px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.9}
+.error{color:#ef4444;font-size:14px;margin-bottom:15px}
+.links{margin-top:20px;font-size:13px;color:#777d85}
+.links a{color:#00a8e8;text-decoration:none}
 </style></head><body>
-<form class="card" method="POST">
-<h1>Sky-Net</h1><p class="sub">Universal VPN Control Panel</p>
-{% if error %}<div class="error">{{ error }}</div>{% endif %}
-<input name="username" placeholder="Login" autocomplete="username" required>
-<input name="password" type="password" placeholder="Password" autocomplete="current-password" required>
-<button type="submit">Sign In</button>
-</form></body></html>"""
+<div class="left"><form class="card" method="POST">
+  <h2>Вход в веб-конфигуратор</h2>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  <div class="fg"><input name="username" placeholder="Имя пользователя" required></div>
+  <div class="fg"><input name="password" type="password" placeholder="Пароль" required></div>
+  <button class="btn" type="submit">Войти</button>
+  <div class="links"><a href="#">Не могу войти</a> &nbsp;|&nbsp; <a href="#">Центр поддержки</a></div>
+</form></div>
+<div class="right"><h1>Sky-Net Panel</h1></div>
+</body></html>"""
 
 
 MAIN_HTML = r"""<!DOCTYPE html>
@@ -38,324 +45,319 @@ MAIN_HTML = r"""<!DOCTYPE html>
 <title>Sky-Net Panel</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1/build/qrcode.min.js"></script>
 <style>
-:root{
-  --bg:#111827;--bg2:#1f2937;--bg3:#374151;--border:#374151;
-  --text:#f9fafb;--text2:#9ca3af;--text3:#6b7280;
-  --accent:#3b82f6;--accent-h:#2563eb;--green:#10b981;--red:#ef4444;--orange:#f59e0b;--cyan:#06b6d4;
+:root {
+  --kg-sidebar: #1d252f;
+  --kg-bg: #111419;
+  --kg-card: #1c2128;
+  --kg-text: #ffffff;
+  --kg-text-dim: #9aa0a6;
+  --kg-border: #30363d;
+  --kg-blue: #00a8e8;
+  --kg-green: #2fb45a;
+  --kg-red: #e63946;
 }
-[data-theme="light"]{
-  --bg:#f3f4f6;--bg2:#ffffff;--bg3:#e5e7eb;--border:#d1d5db;
-  --text:#111827;--text2:#4b5563;--text3:#6b7280;
-  --accent:#3b82f6;--accent-h:#2563eb;--green:#059669;--red:#dc2626;--orange:#d97706;--cyan:#0891b2;
+
+[data-theme="light"] {
+  --kg-bg: #f3f5f6;
+  --kg-card: #ffffff;
+  --kg-text: #333333;
+  --kg-text-dim: #777d85;
+  --kg-border: #e2e4e7;
+  --kg-sidebar: #015caa;
+  --kg-blue: #015caa;
 }
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;transition:background .3s,color .3s}
-.sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;height:100vh;z-index:10;transition:background .3s}
-.sidebar .logo{padding:20px 16px 16px;border-bottom:1px solid var(--border)}
-.sidebar .logo h2{font-size:18px;font-weight:700;color:var(--accent);letter-spacing:-.5px}
-.sidebar .logo span{font-size:11px;color:var(--text3);display:block;margin-top:2px}
-.sidebar nav{flex:1;padding:12px 8px;overflow-y:auto}
-.sidebar nav .section-label{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);padding:12px 12px 4px;font-weight:600}
-.sidebar nav a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--text2);text-decoration:none;font-size:13px;font-weight:500;transition:all .15s;margin-bottom:2px}
-.sidebar nav a:hover{background:var(--bg3);color:var(--text)}
-.sidebar nav a.active{background:var(--accent);color:#fff}
-.sidebar .bottom{padding:12px 16px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
-.sidebar .bottom a{color:var(--text3);text-decoration:none;font-size:12px}
-.sidebar .bottom a:hover{color:var(--red)}
-.theme-btn{cursor:pointer;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:6px 10px;border-radius:6px;font-size:11px;font-weight:600;transition:all .15s}
-.theme-btn:hover{color:var(--text);border-color:var(--accent)}
-.main{margin-left:220px;flex:1;padding:28px 32px;min-height:100vh}
-.page{display:none}.page.active{display:block}
-.page-title{font-size:20px;font-weight:700;margin-bottom:20px;color:var(--text)}
-/* Stats */
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px}
-.stat{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;transition:background .3s}
-.stat .label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
-.stat .val{font-size:24px;font-weight:700;color:var(--accent)}
-.stat .bar{height:4px;background:var(--bg3);border-radius:2px;margin-top:10px;overflow:hidden}
-.stat .bar .fill{height:100%;border-radius:2px;transition:width .5s}
-.fill-blue{background:var(--accent)}.fill-green{background:var(--green)}.fill-orange{background:var(--orange)}.fill-red{background:var(--red)}
-/* Card */
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;transition:background .3s}
-.card .hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
-.card h3{font-size:15px;font-weight:600}
-/* Table */
-table{width:100%;border-collapse:collapse}
-th{text-align:left;padding:8px 10px;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);font-weight:600}
-td{padding:10px;font-size:13px;border-bottom:1px solid var(--border);color:var(--text)}
-tr:hover{background:var(--bg3)}
-.badge{padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;display:inline-block}
-.badge-on{background:rgba(16,185,129,.12);color:var(--green)}.badge-off{background:rgba(239,68,68,.12);color:var(--red)}
-.badge-proto{background:rgba(59,130,246,.12);color:var(--accent)}
-/* Buttons */
-.btn{padding:7px 14px;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s;display:inline-flex;align-items:center;gap:4px}
-.btn-p{background:var(--accent);color:#fff}.btn-p:hover{background:var(--accent-h)}
-.btn-d{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)}.btn-d:hover{background:rgba(239,68,68,.2)}
-.btn-s{background:rgba(16,185,129,.1);color:var(--green);border:1px solid rgba(16,185,129,.2)}
-.btn-o{background:transparent;color:var(--accent);border:1px solid var(--border)}.btn-o:hover{border-color:var(--accent)}
-.btn-sm{padding:5px 10px;font-size:11px}
-/* Modal */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center}
-.overlay.show{display:flex}
-.modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;width:520px;max-height:85vh;overflow-y:auto}
-.modal h3{margin-bottom:18px;font-size:17px}
-.fg{margin-bottom:14px}
-.fg label{display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
-.fg input,.fg select,.fg textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:13px;outline:none;transition:border .2s}
-.fg input:focus,.fg select:focus{border-color:var(--accent)}
-.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.obfs-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:6px}
-.obfs-box h4{font-size:12px;color:var(--accent);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
-/* Config Modal */
-#qrModal .modal{text-align:center}
-#qrCanvas{margin:12px auto}
-#qrConfigText{width:100%;min-height:100px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--green);font-family:'Courier New',monospace;font-size:11px;padding:10px;resize:vertical}
-/* Logs */
-.log-output{background:#0d1117;color:#c9d1d9;font-family:'Courier New',monospace;font-size:12px;padding:12px;border-radius:8px;max-height:400px;overflow-y:auto;white-space:pre-wrap;line-height:1.5}
-/* Traffic bar */
-.tbar{width:100%;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:4px}
-.tbar .fill{height:100%;background:linear-gradient(90deg,var(--green),var(--orange),var(--red))}
-/* Firewall */
-.fw-rule{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);font-size:13px}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg); color: var(--kg-text); display: flex; min-height: 100vh; line-height: 1.5; }
+
+/* Sidebar */
+.sidebar { width: 220px; background: var(--kg-sidebar); border-right: 1px solid var(--kg-border); display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 100; transition: width 0.3s; }
+.sidebar .logo { padding: 24px 20px; text-align: center; border-bottom: 1px solid var(--kg-border); color: var(--kg-blue); font-weight: 700; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; }
+.sidebar nav { flex: 1; padding: 10px 0; overflow-y: auto; }
+.sidebar nav a { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: var(--kg-text-dim); text-decoration: none; font-size: 13px; font-weight: 500; transition: 0.2s; border-left: 3px solid transparent; }
+.sidebar nav a:hover { color: #fff; background: rgba(255,255,255,0.05); }
+.sidebar nav a.active { color: #fff; border-left-color: var(--kg-blue); background: rgba(0,168,232,0.15); font-weight: 600; }
+.sidebar nav .section { font-size: 10px; text-transform: uppercase; color: rgba(255,255,255,0.2); padding: 20px 20px 5px; font-weight: 800; letter-spacing: 1px; }
+
+/* Main Area */
+.main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.header { height: 60px; background: var(--kg-card); border-bottom: 1px solid var(--kg-border); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; position: sticky; top: 0; z-index: 90; }
+.header h1 { font-size: 18px; font-weight: 600; }
+
+.content { padding: 30px; }
+.page { display: none; max-width: 1200px; }
+.page.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Cards & Widgets */
+.card { background: var(--kg-card); border: 1px solid var(--kg-border); border-radius: 6px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--kg-border); padding-bottom: 12px; }
+.card-header h3 { font-size: 14px; text-transform: uppercase; color: var(--kg-text-dim); letter-spacing: 1px; font-weight: 700; }
+
+/* Dashboard Widgets */
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
+.stat-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.stat-item:last-child { border-bottom: none; }
+.stat-label { font-size: 14px; color: var(--kg-text-dim); }
+.stat-val { font-size: 15px; font-weight: 600; color: var(--kg-blue); }
+
+/* Tables */
+.table-container { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 600px; }
+th { text-align: left; padding: 12px 15px; font-size: 12px; text-transform: uppercase; color: var(--kg-text-dim); border-bottom: 2px solid var(--kg-border); font-weight: 700; }
+td { padding: 15px; font-size: 14px; border-bottom: 1px solid var(--kg-border); vertical-align: middle; }
+tr:hover { background: rgba(255,255,255,0.02); }
+
+/* Buttons & Badges */
+.btn { border: none; padding: 9px 18px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; outline: none; }
+.btn-p { background: var(--kg-blue); color: #fff; }
+.btn-p:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-o { background: transparent; border: 1px solid var(--kg-border); color: var(--kg-text); }
+.btn-o:hover { border-color: var(--kg-blue); color: var(--kg-blue); }
+.btn-d { color: var(--kg-red); background: transparent; border: 1px solid transparent; }
+.btn-d:hover { border-color: var(--kg-red); }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+
+.badge { padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.badge-on { background: rgba(47,180,90,0.15); color: #2fb45a; }
+.badge-off { background: rgba(230,57,70,0.15); color: #e63946; }
+.badge-proto { background: rgba(0,168,232,0.1); color: var(--kg-blue); }
+
+/* Chart */
+.chart-container { height: 180px; position: relative; margin-top: 15px; }
+
+/* Modals */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+.overlay.show { display: flex; }
+.modal { background: var(--kg-card); border: 1px solid var(--kg-border); border-radius: 8px; width: 520px; max-width: 95%; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+.modal-header { padding: 18px 24px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--kg-border); font-size: 16px; font-weight: 700; }
+.modal-body { padding: 24px; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--kg-border); display: flex; justify-content: flex-end; gap: 12px; }
+
+.fg { margin-bottom: 20px; }
+.fg label { display: block; font-size: 12px; text-transform: uppercase; color: var(--kg-text-dim); margin-bottom: 8px; font-weight: 600; }
+.fg input, .fg select, .fg textarea { width: 100%; padding: 12px; border: 1px solid var(--kg-border); border-radius: 4px; background: rgba(0,0,0,0.2); color: #fff; font-size: 14px; outline: none; }
+.fr { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+/* Inbound Row */
+.ib-row { background: rgba(255,255,255,0.02); border: 1px solid var(--kg-border); border-radius: 6px; padding: 20px 30px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; transition: 0.2s; }
+.ib-row:hover { border-color: var(--kg-blue); background: rgba(0,168,232,0.05); }
+.ib-info { display: flex; align-items: center; gap: 24px; }
+.ib-icon-box { width: 44px; height: 44px; background: rgba(0,168,232,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--kg-blue); font-size: 20px; font-weight: 800; }
+.ib-details h4 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.ib-details p { font-size: 13px; color: var(--kg-text-dim); }
+.ib-actions { display: flex; gap: 12px; align-items: center; }
+
+.log-box { background: #000; color: #0f0; font-family: 'Courier New', monospace; font-size: 12px; padding: 20px; border-radius: 4px; height: 400px; overflow-y: auto; white-space: pre-wrap; }
 </style></head><body>
 
 <div class="sidebar">
-  <div class="logo"><h2>Sky-Net</h2><span>VPN Panel v2.0</span></div>
+  <div class="logo">SKY-NET</div>
   <nav>
-    <div class="section-label">Monitoring</div>
-    <a href="#" data-page="dashboard" class="active">Dashboard</a>
-    <div class="section-label">VPN</div>
-    <a href="#" data-page="inbounds">Inbounds</a>
-    <a href="#" data-page="clients">Clients</a>
-    <div class="section-label">Server</div>
-    <a href="#" data-page="firewall">Firewall</a>
-    <a href="#" data-page="system">System</a>
-    <a href="#" data-page="logs">Logs</a>
-    <div class="section-label">Admin</div>
-    <a href="#" data-page="settings">Settings</a>
+    <div class="section">Статус</div>
+    <a href="#" data-page="dashboard" class="active">Системный монитор</a>
+    <div class="section">Интернет</div>
+    <a href="#" data-page="inbounds">VPN серверы</a>
+    <a href="#" data-page="clients">Подключенные клиенты</a>
+    <div class="section">Сетевые правила</div>
+    <a href="#" data-page="firewall">Межсетевой экран</a>
+    <div class="section">Управление</div>
+    <a href="#" data-page="system">Настройки системы</a>
+    <a href="#" data-page="logs">Журнал событий</a>
+    <a href="#" data-page="settings">Параметры панели</a>
   </nav>
-  <div class="bottom">
-    <button class="theme-btn" onclick="toggleTheme()">Switch Theme</button>
-    <a href="/logout">Sign Out ({{ session.get('username','admin') }})</a>
-  </div>
 </div>
 
 <div class="main">
+  <div class="header">
+    <h1 id="page-title-text">Системный монитор</h1>
+    <div class="header-right">
+      <span style="font-size: 13px; color: var(--kg-text-dim)">{{ session.get('username') }}</span>
+      <a href="/logout" style="margin-left: 15px; color: var(--kg-red); text-decoration: none; font-size: 13px">Выход</a>
+    </div>
+  </div>
+  <div class="content">
 
 <!-- DASHBOARD -->
 <div class="page active" id="page-dashboard">
-  <div class="page-title">Dashboard</div>
-  <div class="stats">
-    <div class="stat"><div class="label">CPU</div><div class="val" id="cpu-val">0%</div><div class="bar"><div class="fill fill-blue" id="cpu-bar" style="width:0%"></div></div></div>
-    <div class="stat"><div class="label">Memory</div><div class="val" id="ram-val">0%</div><div class="bar"><div class="fill fill-green" id="ram-bar" style="width:0%"></div></div></div>
-    <div class="stat"><div class="label">Disk</div><div class="val" id="disk-val">0%</div><div class="bar"><div class="fill fill-orange" id="disk-bar" style="width:0%"></div></div></div>
-    <div class="stat"><div class="label">Uptime</div><div class="val" id="uptime-val">--</div></div>
+  <div class="grid">
+    <div class="card">
+      <div class="card-header"><h3>ИНТЕРНЕТ</h3></div>
+      <div class="stat-item"><span class="stat-label">Внешний IP адрес</span><span class="stat-val" id="d-ip">--</span></div>
+      <div class="stat-item"><span class="stat-label">Загрузка (общее)</span><span class="stat-val" id="d-up">0 B</span></div>
+      <div class="stat-item"><span class="stat-label">Прием (общее)</span><span class="stat-val" id="d-down">0 B</span></div>
+      <div class="chart-container"><canvas id="trafficChart"></canvas></div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header"><h3>О СИСТЕМЕ</h3></div>
+      <div class="stat-item"><span class="stat-label">Имя устройства</span><span class="stat-val" id="d-host" style="color:var(--kg-blue);font-weight:600">--</span></div>
+    <div class="stat-item"><span class="stat-label">Версия системы</span><span class="stat-val" id="d-os" style="color:var(--kg-blue);font-weight:600">--</span></div>
+      <div class="stat-item"><span class="stat-label">Время работы</span><span class="stat-val" id="uptime-val">--</span></div>
+      <div class="stat-item"><span class="stat-label">Процессор</span><span class="stat-val" id="cpu-val">0%</span></div>
+      <div class="stat-item"><span class="stat-label">Память</span><span class="stat-val" id="ram-val">0%</span></div>
+      <div class="stat-item"><span class="stat-label">Диск</span><span class="stat-val" id="disk-val">0%</span></div>
+    </div>
   </div>
-  <div class="stats">
-    <div class="stat"><div class="label">Inbounds</div><div class="val" id="d-ibc">0</div></div>
-    <div class="stat"><div class="label">Clients</div><div class="val" id="d-clc">0</div></div>
-    <div class="stat"><div class="label">Upload Total</div><div class="val" id="d-up">0 B</div></div>
-    <div class="stat"><div class="label">Download Total</div><div class="val" id="d-down">0 B</div></div>
+  
+  <div class="card">
+    <div class="card-header"><h3>СЕТЕВЫЕ ИНТЕРФЕЙСЫ</h3></div>
+    <div id="net-ifaces"></div>
   </div>
-  <div class="card"><div class="hdr"><h3>Traffic History</h3></div><canvas id="trafficChart" height="70"></canvas></div>
-  <div class="card"><div class="hdr"><h3>Network Interfaces</h3></div><div id="net-ifaces"></div></div>
 </div>
 
 <!-- INBOUNDS -->
 <div class="page" id="page-inbounds">
-  <div class="card"><div class="hdr"><h3>Inbounds</h3><button class="btn btn-p" onclick="openAddInbound()">Add Inbound</button></div>
-  <table><thead><tr><th>#</th><th>Protocol</th><th>Name</th><th>Port</th><th>Upload / Download</th><th>Status</th><th>Clients</th><th>Actions</th></tr></thead>
-  <tbody id="inbounds-table"></tbody></table></div>
+  <div class="card no-blue">
+    <div class="card-header"><h3>VPN ПОДКЛЮЧЕНИЯ</h3><button class="btn btn-p" onclick="openAddInbound()">Добавить подключение</button></div>
+    <div id="inbounds-list">
+      <!-- Inbounds will be rendered as horizontal rows here -->
+    </div>
+  </div>
 </div>
 
 <!-- CLIENTS -->
 <div class="page" id="page-clients">
-  <div class="card"><div class="hdr"><h3>All Clients</h3>
-    <input id="clientSearch" placeholder="Search..." style="padding:7px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);width:220px;font-size:13px;outline:none"></div>
-  <table><thead><tr><th>Name</th><th>Inbound</th><th>IP</th><th>Upload / Download</th><th>Limit</th><th>Expiry</th><th>Status</th><th>Actions</th></tr></thead>
-  <tbody id="clients-table"></tbody></table></div>
+  <div class="card no-blue">
+    <div class="card-header"><h3>ПОДКЛЮЧЕННЫЕ КЛИЕНТЫ</h3>
+      <input id="clientSearch" placeholder="Поиск клиентов..." style="width: 250px; margin-left: 20px">
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Клиент</th>
+            <th>Сервер</th>
+            <th>IP адрес</th>
+            <th>Трафик (↑/↓)</th>
+            <th>Лимит</th>
+            <th>Статус</th>
+            <th>Действия</th>
+          </tr>
+        </thead>
+        <tbody id="clients-table"></tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 <!-- FIREWALL -->
 <div class="page" id="page-firewall">
-  <div class="card"><div class="hdr"><h3>UFW Firewall</h3>
-    <div style="display:flex;gap:8px;align-items:center">
-      <span id="fw-status" class="badge badge-off">--</span>
-      <button class="btn btn-sm btn-s" onclick="fwToggle(true)">Enable</button>
-      <button class="btn btn-sm btn-d" onclick="fwToggle(false)">Disable</button>
-    </div></div>
+  <div class="card">
+    <div class="card-header"><h3>МЕЖСЕТЕВОЙ ЭКРАН (UFW)</h3>
+      <div style="display:flex; gap:10px; align-items:center">
+        <span id="fw-status" class="badge">--</span>
+        <button class="btn btn-o btn-sm" onclick="fwToggle(true)">Включить</button>
+        <button class="btn btn-d btn-sm" onclick="fwToggle(false)">Выключить</button>
+      </div>
+    </div>
     <div id="fw-rules"></div>
   </div>
-  <div class="card"><div class="hdr"><h3>Add Rule</h3></div>
+  
+  <div class="card">
+    <div class="card-header"><h3>ДОБАВИТЬ ПРАВИЛО</h3></div>
     <div class="fr">
-      <div class="fg"><label>Port</label><input id="fw-port" placeholder="22"></div>
-      <div class="fg"><label>Protocol</label><select id="fw-proto"><option value="">Any</option><option value="tcp">TCP</option><option value="udp">UDP</option></select></div>
+      <div class="fg"><label>Порт</label><input id="fw-port" placeholder="например, 22"></div>
+      <div class="fg"><label>Протокол</label><select id="fw-proto"><option value="">Любой</option><option value="tcp">TCP</option><option value="udp">UDP</option></select></div>
     </div>
     <div class="fr">
-      <div class="fg"><label>Action</label><select id="fw-action"><option value="allow">Allow</option><option value="deny">Deny</option><option value="reject">Reject</option></select></div>
-      <div class="fg"><label>From IP (optional)</label><input id="fw-from" placeholder="any"></div>
+      <div class="fg"><label>Действие</label><select id="fw-action"><option value="allow">Разрешить</option><option value="deny">Запретить</option></select></div>
+      <div class="fg"><label>Источник IP (опционально)</label><input id="fw-from" placeholder="any"></div>
     </div>
-    <button class="btn btn-p" onclick="fwAddRule()">Add Rule</button>
+    <button class="btn btn-p" onclick="fwAddRule()">Добавить правило</button>
   </div>
 </div>
 
 <!-- SYSTEM -->
 <div class="page" id="page-system">
-  <div class="page-title">System Management</div>
-  <div class="card"><div class="hdr"><h3>Sky-Net Persistence</h3></div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Install systemd service to keep Sky-Net running after reboot and on crashes.</p>
-    <button class="btn btn-p" onclick="setupService()">Setup Systemd Service</button>
+  <div class="card no-blue">
+    <div class="card-header"><h3>УПРАВЛЕНИЕ СИСТЕМОЙ</h3></div>
+    <div class="stat-item"><span class="stat-label">Сервис Sky-Net</span><button class="btn btn-o btn-sm" onclick="setupService()">Настроить Автозапуск</button></div>
+    <div class="stat-item"><span class="stat-label">Защита Fail2Ban</span><button class="btn btn-o btn-sm" onclick="installFail2Ban()">Установить защиту</button></div>
+    <div class="stat-item"><span class="stat-label">SSL Сертификат</span>
+      <div style="display:flex;gap:10px"><input id="ssl-domain" placeholder="vpn.example.com" style="width:150px"><button class="btn btn-o btn-sm" onclick="issueSSL()">Выпустить</button></div>
+    </div>
   </div>
-  <div class="fr" style="margin-bottom:16px">
-    <div class="card"><div class="hdr"><h3>Fail2Ban Protection</h3></div>
-      <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Install and configure Fail2Ban to protect panel port 9090.</p>
-      <button class="btn btn-o" onclick="installFail2Ban()">Install Fail2Ban</button></div>
-    <div class="card"><div class="hdr"><h3>SSL Certificate</h3></div>
-      <div class="fg"><label>Domain</label><input id="ssl-domain" placeholder="vpn.example.com"></div>
-      <button class="btn btn-o btn-sm" onclick="issueSSL()">Issue SSL (acme.sh)</button></div>
-  </div>
-  <div class="fr" style="margin-bottom:16px">
-    <div class="card"><div class="hdr"><h3>Hostname</h3></div>
-      <div class="fg"><input id="sys-hostname" placeholder="server-01"></div>
-      <button class="btn btn-p btn-sm" onclick="saveHostname()">Save</button></div>
-    <div class="card"><div class="hdr"><h3>Timezone</h3></div>
-      <div class="fg"><input id="sys-tz" placeholder="UTC"></div>
-      <button class="btn btn-p btn-sm" onclick="saveTimezone()">Save</button></div>
-  </div>
-  <div class="card"><div class="hdr"><h3>DNS Servers</h3></div>
-    <div class="fg"><label>Nameservers (one per line)</label><textarea id="sys-dns" rows="3" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:13px;resize:vertical"></textarea></div>
-    <button class="btn btn-p btn-sm" onclick="saveDNS()">Save DNS</button>
-  </div>
-  <div class="card"><div class="hdr"><h3>Running Services</h3></div>
-    <div id="services-list" style="max-height:300px;overflow-y:auto"></div>
+  <div class="fr">
+    <div class="card"><div class="card-header"><h3>ИМЯ УСТРОЙСТВА</h3></div><div class="fg"><input id="sys-hostname"></div><button class="btn btn-p btn-sm" onclick="saveHostname()">Сохранить</button></div>
+    <div class="card"><div class="card-header"><h3>ЧАСОВОЙ ПОЯС</h3></div><div class="fg"><input id="sys-tz"></div><button class="btn btn-p btn-sm" onclick="saveTimezone()">Сохранить</button></div>
   </div>
 </div>
 
 <!-- LOGS -->
 <div class="page" id="page-logs">
-  <div class="card"><div class="hdr"><h3>System Logs</h3>
-    <div style="display:flex;gap:8px">
-      <input id="log-unit" placeholder="Unit (optional)" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:12px;width:160px">
-      <select id="log-lines" style="padding:6px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:12px">
-        <option value="50">50 lines</option><option value="100">100</option><option value="200">200</option><option value="500">500</option>
-      </select>
-      <button class="btn btn-p btn-sm" onclick="loadLogs()">Refresh</button>
-    </div></div>
-    <div class="log-output" id="log-output">Loading...</div>
+  <div class="card no-blue">
+    <div class="card-header"><h3>ЖУРНАЛ СОБЫТИЙ</h3>
+      <div style="display:flex;gap:10px">
+        <input id="log-unit" placeholder="Юнит (напр. skynet)" style="width:150px">
+        <button class="btn btn-p btn-sm" onclick="loadLogs()">Обновить</button>
+      </div>
+    </div>
+    <div class="log-box" id="log-output">Загрузка...</div>
   </div>
 </div>
 
 <!-- SETTINGS -->
 <div class="page" id="page-settings">
-  <div class="page-title">Panel Settings</div>
-  <div class="card"><div class="hdr"><h3>General</h3></div>
+  <div class="card no-blue">
+    <div class="card-header"><h3>ПАРАМЕТРЫ ПАНЕЛИ</h3></div>
     <div class="fr">
-      <div class="fg"><label>Panel Port</label><input id="s-port" type="number"></div>
-      <div class="fg"><label>Base Path</label><input id="s-basepath" placeholder="/mypath"></div>
+      <div class="fg"><label>Порт панели</label><input id="s-port" type="number"></div>
+      <div class="fg"><label>Базовый путь</label><input id="s-basepath" placeholder="/panel"></div>
     </div>
-    <div class="fr">
-      <div class="fg"><label>Session Timeout (sec)</label><input id="s-timeout" type="number" value="3600"></div>
-      <div class="fg"><label>Poll Interval (sec)</label><input id="s-poll" type="number" value="15"></div>
-    </div>
-    <button class="btn btn-p" onclick="saveSettings()">Save</button>
+    <button class="btn btn-p" onclick="saveSettings()">Сохранить изменения</button>
   </div>
-  <div class="card"><div class="hdr"><h3>Telegram Notifications</h3></div>
-    <div class="fr">
-      <div class="fg"><label>Bot Token</label><input id="s-tg-token" placeholder="123456:ABC..."></div>
-      <div class="fg"><label>Chat ID</label><input id="s-tg-chat" placeholder="-100123456"></div>
-    </div>
-    <button class="btn btn-p" onclick="saveSettings()">Save</button>
-  </div>
-  <div class="card"><div class="hdr"><h3>Admin Credentials</h3></div>
-    <div class="fg"><label>Current Password</label><input id="s-oldpass" type="password"></div>
-    <div class="fr">
-      <div class="fg"><label>New Username</label><input id="s-newuser"></div>
-      <div class="fg"><label>New Password</label><input id="s-newpass" type="password"></div>
-    </div>
-    <button class="btn btn-p" onclick="changePassword()">Update Credentials</button>
-  </div>
-  <div class="card"><div class="hdr"><h3>Database</h3></div>
-    <div style="display:flex;gap:12px">
-      <button class="btn btn-s" onclick="backupDB()">Backup DB</button>
-      <a href="/panel/api/db/export" class="btn btn-o">Export DB</a>
-      <label class="btn btn-o" style="cursor:pointer">Import DB<input type="file" id="db-import-file" style="display:none" onchange="importDB()"></label>
-    </div>
-  </div>
-</div>
 </div>
 
 <!-- MODALS -->
 <div class="overlay" id="addInboundModal">
-<div class="modal"><h3>Add Inbound</h3>
-  <div class="fg"><label>Protocol</label>
-    <select id="ib-protocol" onchange="updateObfsFields()">
-      <option value="amneziawg_v1">AmneziaWG v1 (Legacy)</option>
-      <option value="amneziawg_v2">AmneziaWG v2</option>
-      <option value="openvpn_xor">OpenVPN + XOR Patch</option>
-    </select></div>
-  <div class="fr">
-    <div class="fg"><label>Name</label><input id="ib-remark" placeholder="My VPN"></div>
-    <div class="fg"><label>Port</label><input id="ib-port" type="number" value="51820"></div>
+  <div class="modal">
+    <div class="modal-header">Добавить VPN подключение</div>
+    <div class="modal-body">
+      <div class="fg"><label>Протокол</label>
+        <select id="ib-protocol" onchange="updateObfsFields()">
+          <option value="amneziawg_v1">AmneziaWG v1 (Legacy)</option>
+          <option value="amneziawg_v2">AmneziaWG v2</option>
+          <option value="openvpn_xor">OpenVPN + XOR Patch</option>
+        </select></div>
+      <div class="fr">
+        <div class="fg"><label>Имя</label><input id="ib-remark" placeholder="VPN Home"></div>
+        <div class="fg"><label>Порт</label><input id="ib-port" type="number" value="51820"></div>
+      </div>
+      <div id="obfs-fields"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-o" onclick="closeModal('addInboundModal')">Отмена</button>
+      <button class="btn btn-p" onclick="submitInbound()">Создать</button>
+    </div>
   </div>
-  <div class="fr">
-    <div class="fg"><label>Listen Address</label><input id="ib-listen" value="0.0.0.0"></div>
-    <div class="fg"><label>MTU</label><input id="ib-mtu" type="number" value="1420"></div>
-  </div>
-  <div class="fr">
-    <div class="fg"><label>Server Address</label><input id="ib-address" value="10.8.0.1/24"></div>
-    <div class="fg"><label>DNS</label><input id="ib-dns" value="1.1.1.1, 8.8.8.8"></div>
-  </div>
-  <div id="obfs-fields"></div>
-  <div style="display:flex;gap:10px;margin-top:18px">
-    <button class="btn btn-p" onclick="submitInbound()" style="flex:1">Create</button>
-    <button class="btn btn-d" onclick="closeModal('addInboundModal')" style="flex:1">Cancel</button>
-  </div>
-</div></div>
-
-<div class="overlay" id="addClientModal">
-<div class="modal"><h3>Add Client</h3>
-  <input type="hidden" id="cl-inbound-id">
-  <div class="fg"><label>Username</label><input id="cl-username" placeholder="user1"></div>
-  <div class="fr">
-    <div class="fg"><label>Traffic Limit (bytes, 0 = unlimited)</label><input id="cl-limit" type="number" value="0"></div>
-    <div class="fg"><label>Traffic Limit (GB helper)</label>
-      <select onchange="document.getElementById('cl-limit').value=this.value">
-        <option value="0">Unlimited</option><option value="1073741824">1 GB</option><option value="5368709120">5 GB</option>
-        <option value="10737418240">10 GB</option><option value="53687091200">50 GB</option><option value="107374182400">100 GB</option>
-      </select></div>
-  </div>
-  <div class="fr">
-    <div class="fg"><label>Expiry (days from now, 0 = never)</label><input id="cl-expiry-days" type="number" value="0"></div>
-    <div class="fg"><label>Allowed IPs (client side)</label><input id="cl-allowed" value="0.0.0.0/0, ::/0"></div>
-  </div>
-  <div style="display:flex;gap:10px;margin-top:18px">
-    <button class="btn btn-p" onclick="submitClient()" style="flex:1">Create</button>
-    <button class="btn btn-d" onclick="closeModal('addClientModal')" style="flex:1">Cancel</button>
-  </div>
-</div></div>
+</div>
 
 <div class="overlay" id="qrModal">
-<div class="modal"><h3>Client Configuration</h3>
-  <div style="background:#fff;padding:12px;display:inline-block;border-radius:12px;margin-bottom:12px">
-    <img id="qrImage" style="display:block;width:200px;height:200px">
+  <div class="modal">
+    <div class="modal-header">Конфигурация клиента</div>
+    <div class="modal-body" style="text-align:center">
+      <div style="background:#fff;padding:15px;display:inline-block;border-radius:10px;margin-bottom:15px">
+        <img id="qrImage" style="width:200px;height:200px">
+      </div>
+      <textarea id="qrConfigText" readonly style="width:100%;height:150px;font-family:monospace;font-size:12px;background:#111419;color:#00a8e8;border:1px solid #30363d;padding:10px;border-radius:4px"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-o" onclick="copyConfig()">Копировать</button>
+      <button class="btn btn-s" id="downloadBtn">Скачать .conf</button>
+      <button class="btn btn-o" onclick="closeModal('qrModal')">Закрыть</button>
+    </div>
   </div>
-  <textarea id="qrConfigText" readonly></textarea>
-  <div style="display:flex;gap:10px;margin-top:12px">
-    <button class="btn btn-p" onclick="copyConfig()" style="flex:1">Copy</button>
-    <button class="btn btn-s" id="downloadBtn" style="flex:1">Download</button>
-    <button class="btn btn-d" onclick="closeModal('qrModal')" style="flex:1">Close</button>
-  </div>
-</div></div>
+</div>
 
 <script>
 const API=p=>fetch(p).then(r=>r.json());
 const POST=(p,b)=>fetch(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).then(r=>r.json());
 function fmtB(b){if(!b||b===0)return'0 B';const k=1024,s=['B','KB','MB','GB','TB'];const i=Math.floor(Math.log(b)/Math.log(k));return(b/Math.pow(k,i)).toFixed(1)+' '+s[i]}
 function fmtUp(s){const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);return d+'d '+h+'h '+m+'m'}
-function fmtDate(ts){if(!ts||ts===0)return'Never';return new Date(ts*1000).toLocaleDateString()}
+function fmtDate(ts){if(!ts||ts===0)return'Никогда';return new Date(ts*1000).toLocaleDateString()}
 function closeModal(id){document.getElementById(id).classList.remove('show')}
 
 // Theme
@@ -378,171 +380,141 @@ const initPage='{{page}}';if(initPage){document.querySelectorAll('.sidebar nav a
 let chart;
 async function loadDashboard(){
   const st=await API('/server/status');
-  document.getElementById('cpu-val').textContent=st.cpu+'%';document.getElementById('cpu-bar').style.width=st.cpu+'%';
-  document.getElementById('ram-val').textContent=Math.round(st.mem_percent)+'%';document.getElementById('ram-bar').style.width=st.mem_percent+'%';
-  document.getElementById('disk-val').textContent=Math.round(st.disk_percent||0)+'%';document.getElementById('disk-bar').style.width=(st.disk_percent||0)+'%';
+  const d_ip=document.getElementById('d-ip'), d_host=document.getElementById('d-host'), d_os=document.getElementById('d-os');
+  if(d_ip) d_ip.textContent = st.public_ip || '--';
+  if(d_host) d_host.textContent = st.hostname || 'Sky-Net';
+  if(d_os) d_os.textContent = st.os_version || 'Ubuntu';
+  document.getElementById('cpu-val').textContent=st.cpu+'%';
+  document.getElementById('ram-val').textContent=Math.round(st.mem_percent)+'%';
+  document.getElementById('disk-val').textContent=Math.round(st.disk_percent||0)+'%';
   document.getElementById('uptime-val').textContent=fmtUp(st.uptime||0);
+  
   const ib=await API('/panel/api/inbounds/list');
-  if(ib.success){let tc=0,tu=0,td=0;ib.obj.forEach(i=>{tc+=i.clients?i.clients.length:0;(i.clients||[]).forEach(c=>{tu+=c.up||0;td+=c.down||0})});
-    document.getElementById('d-ibc').textContent=ib.obj.length;document.getElementById('d-clc').textContent=tc;
+  if(ib.success){let tu=0,td=0;ib.obj.forEach(i=>{(i.clients||[]).forEach(c=>{tu+=c.up||0;td+=c.down||0})});
     document.getElementById('d-up').textContent=fmtB(tu);document.getElementById('d-down').textContent=fmtB(td)}
+  
   const hist=await API('/panel/api/trafficHistory');
-  const cColor=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-  const cColor2=getComputedStyle(document.documentElement).getPropertyValue('--green').trim();
-  if(!chart){chart=new Chart(document.getElementById('trafficChart'),{type:'line',data:{labels:Array.from({length:60},(_,i)=>i),
-    datasets:[{label:'Upload',data:hist.up,borderColor:cColor,fill:false,tension:.3,pointRadius:0,borderWidth:2},
-              {label:'Download',data:hist.down,borderColor:cColor2,fill:false,tension:.3,pointRadius:0,borderWidth:2}]},
-    options:{scales:{x:{display:false},y:{ticks:{callback:v=>fmtB(v),color:'var(--text3)'},grid:{color:'var(--border)'}}},plugins:{legend:{labels:{color:'var(--text2)'}}},animation:false}});
+  if(!chart){
+    const ctx = document.getElementById('trafficChart').getContext('2d');
+    chart=new Chart(ctx,{type:'line',data:{labels:Array.from({length:60},(_,i)=>i),
+    datasets:[{label:'Загрузка',data:hist.up,borderColor:'#00a8e8',fill:true,backgroundColor:'rgba(0,168,232,0.1)',tension:.4,pointRadius:0},
+              {label:'Отдача',data:hist.down,borderColor:'#2fb45a',fill:true,backgroundColor:'rgba(47,180,90,0.1)',tension:.4,pointRadius:0}]},
+    options:{maintainAspectRatio:false,scales:{x:{display:false},y:{display:false}},plugins:{legend:{display:false}},animation:false}});
   }else{chart.data.datasets[0].data=hist.up;chart.data.datasets[1].data=hist.down;chart.update()}
-  // Network
+  
   const net=await API('/panel/api/system/network');
   const nc=document.getElementById('net-ifaces');nc.innerHTML='';
   if(net.success)(net.interfaces||[]).forEach(i=>{
-    const ips=i.addresses.map(a=>a.ip+' ('+a.type+')').join(', ')||'No IP';
-    nc.innerHTML+=`<div class="fw-rule"><span><b>${i.name}</b> - ${ips}</span><span class="badge ${i.is_up?'badge-on':'badge-off'}">${i.is_up?'UP':'DOWN'}</span></div>`})
+    const ips=i.addresses.map(a=>a.ip).join(', ')||'Нет IP';
+    nc.innerHTML+=`<div class="stat-item"><span class="stat-label"><b>${i.name}</b> (${ips})</span><span class="badge ${i.is_up?'badge-on':'badge-off'}">${i.is_up?'ПОДКЛЮЧЕНО':'ОТКЛЮЧЕНО'}</span></div>`})
 }
 
-// Inbounds
-const PL={'amneziawg_v1':'AWG v1','amneziawg_v2':'AWG v2','openvpn_xor':'OVPN+XOR'};
-async function loadInbounds(){const r=await API('/panel/api/inbounds/list');if(!r.success)return;
-  const tb=document.getElementById('inbounds-table');tb.innerHTML='';
-  r.obj.forEach(ib=>{tb.innerHTML+=`<tr><td>${ib.id}</td><td><span class="badge badge-proto">${PL[ib.protocol]||ib.protocol}</span></td>
-    <td>${ib.remark}</td><td>${ib.port}</td><td>${fmtB(ib.up)} / ${fmtB(ib.down)}</td>
-    <td><span class="badge ${ib.enable?'badge-on':'badge-off'}">${ib.enable?'Active':'Off'}</span></td>
-    <td>${(ib.clients||[]).length}</td>
-    <td><button class="btn btn-sm btn-s" onclick="openAddClient(${ib.id})">+Client</button>
-     <button class="btn btn-sm btn-o" onclick="toggleInbound(${ib.id})">${ib.enable?'Pause':'Start'}</button>
-     <button class="btn btn-sm btn-d" onclick="deleteInbound(${ib.id})">Del</button></td></tr>`})}
-function openAddInbound(){document.getElementById('addInboundModal').classList.add('show');updateObfsFields()}
-function openAddClient(id){document.getElementById('cl-inbound-id').value=id;document.getElementById('addClientModal').classList.add('show')}
-async function toggleInbound(id){await POST(`/panel/api/inbounds/toggle/${id}`,{});loadInbounds()}
-async function deleteInbound(id){if(!confirm('Delete this inbound and all clients?'))return;await POST(`/panel/api/inbounds/del/${id}`,{});loadInbounds()}
+const PL={'amneziawg_v1':'AmneziaWG v1','amneziawg_v2':'AmneziaWG v2','openvpn_xor':'OpenVPN XOR'};
 
-function updateObfsFields(){const p=document.getElementById('ib-protocol').value;const c=document.getElementById('obfs-fields');
-  if(p==='openvpn_xor'){c.innerHTML=`<div class="obfs-box"><h4>XOR Obfuscation</h4>
-    <div class="fg"><label>Scramble Password</label><input id="obfs-scramble" value="skynet_xor_secret"></div>
-    <div class="fr"><div class="fg"><label>Protocol</label><select id="obfs-proto"><option>udp</option><option>tcp</option></select></div>
-    <div class="fg"><label>Cipher</label><input id="obfs-cipher" value="AES-256-GCM"></div></div></div>`}
-  else{const v2=p==='amneziawg_v2';
-    c.innerHTML=`<div class="obfs-box"><h4>Obfuscation Parameters ${v2?'(v2)':'(v1)'}</h4>
-    <div class="fr3"><div class="fg"><label>Jc</label><input id="obfs-Jc" type="number" value="5"></div>
-    <div class="fg"><label>Jmin</label><input id="obfs-Jmin" type="number" value="50"></div>
-    <div class="fg"><label>Jmax</label><input id="obfs-Jmax" type="number" value="1000"></div></div>
-    <div class="fr"><div class="fg"><label>S1</label><input id="obfs-S1" type="number" value="69"></div>
-    <div class="fg"><label>S2</label><input id="obfs-S2" type="number" value="115"></div>
-    ${v2?'<div class="fg"><label>S3</label><input id="obfs-S3" type="number" value="69"></div><div class="fg"><label>S4</label><input id="obfs-S4" type="number" value="69"></div>':''}</div>
-    <div class="fr"><div class="fg"><label>H1</label><input id="obfs-H1" value="${v2?'5-2147483647':'924883749'}"></div>
-    <div class="fg"><label>H2</label><input id="obfs-H2" value="${v2?'5-2147483647':'16843009'}"></div></div>
-    <div class="fr"><div class="fg"><label>H3</label><input id="obfs-H3" value="${v2?'5-2147483647':'305419896'}"></div>
-    <div class="fg"><label>H4</label><input id="obfs-H4" value="${v2?'5-2147483647':'878082202'}"></div></div>
-    ${v2?`<div class="fg"><label>I1 (CPS Packet)</label><input id="obfs-I1" placeholder="<b 0x0d0a><r 32>"></div>
-    <div class="fr"><div class="fg"><label>I2</label><input id="obfs-I2"></div><div class="fg"><label>I3</label><input id="obfs-I3"></div></div>
-    <div class="fr"><div class="fg"><label>I4</label><input id="obfs-I4"></div><div class="fg"><label>I5</label><input id="obfs-I5"></div></div>`:''}</div>`}}
+async function loadInbounds(){
+  const r=await API('/panel/api/inbounds/list');if(!r.success)return;
+  const cont=document.getElementById('inbounds-list');cont.innerHTML='';
+  r.obj.forEach(ib=>{
+    cont.innerHTML+=`<div class="ib-row">
+      <div class="ib-info">
+        <div class="ib-icon-box">${ib.protocol.includes('wg')?'W':'O'}</div>
+        <div class="ib-details">
+          <h4>${ib.remark}</h4>
+          <p>${PL[ib.protocol]} • Порт: ${ib.port} • Клиентов: ${(ib.clients||[]).length}</p>
+        </div>
+      </div>
+      <div class="ib-actions">
+        <span class="badge ${ib.enable?'badge-on':'badge-off'}">${ib.enable?'Работает':'Пауза'}</span>
+        <button class="btn btn-o btn-sm" onclick="toggleInbound(${ib.id})">${ib.enable?'Выключить':'Включить'}</button>
+        <button class="btn btn-p btn-sm" onclick="openAddClient(${ib.id})">+ Клиент</button>
+        <button class="btn btn-d btn-sm" onclick="deleteInbound(${ib.id})">Удалить</button>
+      </div>
+    </div>`
+  })}
 
-async function submitInbound(){const p=document.getElementById('ib-protocol').value;
-  const body={protocol:p,remark:document.getElementById('ib-remark').value,port:document.getElementById('ib-port').value,obfuscation:{},
-    settings:{address:document.getElementById('ib-address').value,dns:document.getElementById('ib-dns').value,mtu:parseInt(document.getElementById('ib-mtu').value)}};
-  if(p==='openvpn_xor'){body.obfuscation={scramble_password:document.getElementById('obfs-scramble').value};
-    body.settings.proto=document.getElementById('obfs-proto').value;body.settings.cipher=document.getElementById('obfs-cipher').value}
-  else{['Jc','Jmin','Jmax','S1','S2','H1','H2','H3','H4'].forEach(k=>{const el=document.getElementById('obfs-'+k);if(el)body.obfuscation[k]=el.value});
-    if(p==='amneziawg_v2'){['S3','S4','I1','I2','I3','I4','I5'].forEach(k=>{const el=document.getElementById('obfs-'+k);if(el&&el.value)body.obfuscation[k]=el.value})}}
-  await POST('/panel/api/inbounds/add',body);closeModal('addInboundModal');loadInbounds()}
-
-// Clients
-async function loadAllClients(){const r=await API('/panel/api/inbounds/list');if(!r.success)return;
+async function loadAllClients(){
+  const r=await API('/panel/api/inbounds/list');if(!r.success)return;
   const tb=document.getElementById('clients-table');tb.innerHTML='';
   r.obj.forEach(ib=>{(ib.clients||[]).forEach(c=>{
-    const used=c.up+c.down;const lim=c.total_limit||0;const pct=lim?Math.min(100,used/lim*100):0;
-    tb.innerHTML+=`<tr><td>${c.username}</td><td>${ib.remark} <span class="badge badge-proto">${PL[ib.protocol]}</span></td>
-      <td><code>${c.allowed_ips}</code></td><td>${fmtB(c.up)} / ${fmtB(c.down)}</td>
-      <td>${lim?fmtB(lim):'Unlim.'}<div class="tbar"><div class="fill" style="width:${pct}%"></div></div></td>
-      <td>${fmtDate(c.expiry_time)}</td>
-      <td><span class="badge ${c.enable?'badge-on':'badge-off'}">${c.enable?'On':'Off'}</span></td>
-      <td><button class="btn btn-sm btn-o" onclick="showQR(${c.id}, '${c.username}', '${ib.protocol}')">QR</button>
-       <button class="btn btn-sm btn-s" onclick="toggleClient(${c.id})">${c.enable?'Pause':'Start'}</button>
-       <button class="btn btn-sm btn-o" onclick="resetTraffic(${c.id})">Reset</button>
-       <button class="btn btn-sm btn-d" onclick="deleteClient(${c.id})">Del</button></td></tr>`})});
+    tb.innerHTML+=`<tr>
+      <td><b>${c.username}</b></td>
+      <td><span class="badge badge-proto">${PL[ib.protocol]}</span></td>
+      <td><code>${c.allowed_ips}</code></td>
+      <td>${fmtB(c.up)} / ${fmtB(c.down)}</td>
+      <td>${c.total_limit?fmtB(c.total_limit):'Без лимита'}</td>
+      <td><span class="badge ${c.enable?'badge-on':'badge-off'}">${c.enable?'Вкл':'Выкл'}</span></td>
+      <td>
+        <button class="btn btn-o btn-sm" onclick="showQR(${c.id}, '${c.username}', '${ib.protocol}')">QR</button>
+        <button class="btn btn-d btn-sm" onclick="deleteClient(${c.id})">Удалить</button>
+      </td></tr>`})});
   document.getElementById('clientSearch').oninput=function(){const q=this.value.toLowerCase();
-    tb.querySelectorAll('tr').forEach(tr=>{tr.style.display=tr.textContent.toLowerCase().includes(q)?'':'none'})}}
+    tb.querySelectorAll('tr').forEach(tr=>{tr.style.display=tr.textContent.toLowerCase().includes(q)?'':'none'})}
+}
 
-async function submitClient(){const days=parseInt(document.getElementById('cl-expiry-days').value)||0;
-  const expiry=days>0?Math.floor(Date.now()/1000)+days*86400:0;
-  await POST('/panel/api/inbounds/addClient',{inbound_id:document.getElementById('cl-inbound-id').value,
-    username:document.getElementById('cl-username').value,total_limit:document.getElementById('cl-limit').value,expiry_time:expiry});
-  closeModal('addClientModal');loadAllClients();loadInbounds()}
-async function toggleClient(id){await POST(`/panel/api/inbounds/toggleClient/${id}`,{});loadAllClients()}
-async function resetTraffic(id){await POST(`/panel/api/inbounds/resetClientTraffic/${id}`,{});loadAllClients()}
-async function deleteClient(id){if(!confirm('Delete client?'))return;await POST(`/panel/api/inbounds/delClient/${id}`,{});loadAllClients();loadInbounds()}
-async function showQR(cid, username, proto){const r=await API(`/panel/api/inbounds/clientConfig/${cid}`);if(!r.success)return;
+function openAddInbound(){document.getElementById('addInboundModal').classList.add('show');updateObfsFields()}
+function openAddClient(id){
+  const user = prompt('Введите имя пользователя:');
+  if(user) POST('/panel/api/inbounds/addClient',{inbound_id:id,username:user,total_limit:0,expiry_time:0}).then(()=>loadInbounds());
+}
+async function toggleInbound(id){await POST(`/panel/api/inbounds/toggle/${id}`,{});loadInbounds()}
+async function deleteInbound(id){if(!confirm('Удалить этот сервер и всех клиентов?'))return;await POST(`/panel/api/inbounds/del/${id}`,{});loadInbounds()}
+
+function updateObfsFields(){const p=document.getElementById('ib-protocol').value;const c=document.getElementById('obfs-fields');
+  if(p==='openvpn_xor'){c.innerHTML=`<div class="fg"><label>Пароль обфускации</label><input id="obfs-scramble" value="skynet_xor_secret"></div>`}
+  else{const v2=p==='amneziawg_v2';
+    c.innerHTML=`<div class="fr"><div class="fg"><label>Jc</label><input id="obfs-Jc" type="number" value="5"></div><div class="fg"><label>Jmin</label><input id="obfs-Jmin" type="number" value="50"></div><div class="fg"><label>Jmax</label><input id="obfs-Jmax" type="number" value="1000"></div></div>
+    <div class="fr"><div class="fg"><label>S1</label><input id="obfs-S1" type="number" value="69"></div><div class="fg"><label>S2</label><input id="obfs-S2" type="number" value="115"></div></div>`
+  }}
+
+async function submitInbound(){
+  const p=document.getElementById('ib-protocol').value;
+  const body={protocol:p,remark:document.getElementById('ib-remark').value,port:document.getElementById('ib-port').value,obfuscation:{},settings:{}};
+  if(p==='openvpn_xor'){body.obfuscation={scramble_password:document.getElementById('obfs-scramble').value}}
+  else{['Jc','Jmin','Jmax','S1','S2'].forEach(k=>{const el=document.getElementById('obfs-'+k);if(el)body.obfuscation[k]=el.value})}
+  await POST('/panel/api/inbounds/add',body);closeModal('addInboundModal');loadInbounds()}
+
+async function showQR(cid, username, proto){
+  const r=await API(`/panel/api/inbounds/clientConfig/${cid}`);if(!r.success)return;
   document.getElementById('qrConfigText').value=r.config;
   const img=document.getElementById('qrImage');
-  try{QRCode.toDataURL(r.config,{width:400,margin:1,color:{dark:'#000000',light:'#ffffff'}},(err,url)=>{
-    if(!err) img.src=url; else console.error(err)
-  })}catch(e){console.error(e)}
-  const dbtn=document.getElementById('downloadBtn');
-  const ext=proto.includes('openvpn')?'.ovpn':'.conf';
-  dbtn.onclick=()=>{
-    const blob=new Blob([r.config],{type:'text/plain'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download=username+ext;
-    document.body.appendChild(a);a.click();
-    document.body.removeChild(a);URL.revokeObjectURL(url);
-  };
+  try{QRCode.toDataURL(r.config,{width:400,margin:1},(err,url)=>{if(!err)img.src=url})}catch(e){}
+  document.getElementById('downloadBtn').onclick=()=>{
+    const blob=new Blob([r.config],{type:'text/plain'});const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=username+(proto.includes('openvpn')?'.ovpn':'.conf');
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url)};
   document.getElementById('qrModal').classList.add('show')}
-function copyConfig(){const t=document.getElementById('qrConfigText');t.select();document.execCommand('copy')}
 
-// Firewall
+function copyConfig(){const t=document.getElementById('qrConfigText');t.select();document.execCommand('copy')}
+async function deleteClient(id){if(!confirm('Удалить клиента?'))return;await POST(`/panel/api/inbounds/delClient/${id}`,{});loadAllClients()}
+
 async function loadFirewall(){const r=await API('/panel/api/firewall/status');
-  document.getElementById('fw-status').textContent=r.active?'Active':'Inactive';
+  document.getElementById('fw-status').textContent=r.active?'ВКЛЮЧЕН':'ВЫКЛЮЧЕН';
   document.getElementById('fw-status').className='badge '+(r.active?'badge-on':'badge-off');
   const c=document.getElementById('fw-rules');c.innerHTML='';
-  (r.rules||[]).forEach((rule,i)=>{c.innerHTML+=`<div class="fw-rule"><span>${rule}</span><button class="btn btn-sm btn-d" onclick="fwDel(${i+1})">Delete</button></div>`})}
-async function fwToggle(en){await POST('/panel/api/firewall/toggle',{enable:en});loadFirewall()}
-async function fwAddRule(){await POST('/panel/api/firewall/addRule',{port:document.getElementById('fw-port').value,
-  proto:document.getElementById('fw-proto').value,action:document.getElementById('fw-action').value,
-  from_ip:document.getElementById('fw-from').value||'any'});loadFirewall()}
-async function fwDel(n){if(!confirm('Delete rule #'+n+'?'))return;await POST('/panel/api/firewall/delRule',{rule_num:n});loadFirewall()}
+  (r.rules||[]).forEach((rule,i)=>{c.innerHTML+=`<div class="stat-item"><span>${rule}</span><button class="btn btn-d btn-sm" onclick="fwDel(${i+1})">Удалить</button></div>`})}
 
-// System
+async function fwToggle(en){await POST('/panel/api/firewall/toggle',{enable:en});loadFirewall()}
+async function fwAddRule(){await POST('/panel/api/firewall/addRule',{port:document.getElementById('fw-port').value,proto:document.getElementById('fw-proto').value,action:document.getElementById('fw-action').value,from_ip:document.getElementById('fw-from').value||'any'});loadFirewall()}
+async function fwDel(n){if(!confirm('Удалить правило #'+n+'?'))return;await POST('/panel/api/firewall/delRule',{rule_num:n});loadFirewall()}
+
 async function loadSystem(){
   const h=await API('/panel/api/system/hostname');document.getElementById('sys-hostname').value=h.hostname||'';
   const tz=await API('/panel/api/system/timezone');document.getElementById('sys-tz').value=tz.timezone||'';
-  const dns=await API('/panel/api/system/dns');document.getElementById('sys-dns').value=(dns.servers||[]).join('\n');
-  const sv=await API('/panel/api/system/services');const sl=document.getElementById('services-list');sl.innerHTML='';
-  (sv.services||[]).forEach(s=>{sl.innerHTML+=`<div class="fw-rule"><span><b>${s.name}</b></span><span>${s.description||''}</span></div>`})}
+}
 async function saveHostname(){await POST('/panel/api/system/hostname',{hostname:document.getElementById('sys-hostname').value})}
 async function saveTimezone(){await POST('/panel/api/system/timezone',{timezone:document.getElementById('sys-tz').value})}
-async function saveDNS(){const lines=document.getElementById('sys-dns').value.split('\n').map(s=>s.trim()).filter(Boolean);
-  await POST('/panel/api/system/dns',{servers:lines})}
+async function loadLogs(){const unit=document.getElementById('log-unit').value;
+  const r=await API(`/panel/api/system/logs?lines=100&unit=${unit}`);
+  document.getElementById('log-output').textContent=r.logs||'Нет логов'}
 
-// Logs
-async function loadLogs(){const unit=document.getElementById('log-unit').value;const lines=document.getElementById('log-lines').value;
-  const r=await API(`/panel/api/system/logs?lines=${lines}&unit=${unit}`);
-  document.getElementById('log-output').textContent=r.logs||'No output'}
-
-// Settings
 async function loadSettings(){const r=await API('/panel/api/settings');if(!r.success)return;
-  document.getElementById('s-port').value=r.obj.panel_port||'9090';
-  document.getElementById('s-basepath').value=r.obj.web_base_path||'';
-  document.getElementById('s-timeout').value=r.obj.session_timeout||'3600';
-  document.getElementById('s-tg-token').value=r.obj.tg_bot_token||'';
-  document.getElementById('s-tg-chat').value=r.obj.tg_chat_id||''}
-async function saveSettings(){await POST('/panel/api/settings',{panel_port:document.getElementById('s-port').value,
-  web_base_path:document.getElementById('s-basepath').value,session_timeout:document.getElementById('s-timeout').value,
-  tg_bot_token:document.getElementById('s-tg-token').value,tg_chat_id:document.getElementById('s-tg-chat').value})}
-async function changePassword(){const r=await POST('/panel/api/settings/updateUser',{old_password:document.getElementById('s-oldpass').value,
-  new_username:document.getElementById('s-newuser').value,new_password:document.getElementById('s-newpass').value});
-  alert(r.success?'Updated':'Error: '+(r.msg||''))}
-function importDB(){const f=document.getElementById('db-import-file').files[0];if(!f)return;
-  const fd=new FormData();fd.append('file',f);fetch('/panel/api/db/import',{method:'POST',body:fd}).then(r=>r.json()).then(r=>alert(r.msg||'Done'))}
+  document.getElementById('s-port').value=r.obj.panel_port||'9090';document.getElementById('s-basepath').value=r.obj.web_base_path||''}
 
-async function setupService(){if(!confirm('Create systemd service?'))return;const r=await POST('/panel/api/system/setupService',{});alert(r.msg)}
-async function installFail2Ban(){if(!confirm('Install Fail2Ban?'))return;const r=await POST('/panel/api/system/installFail2Ban',{});alert(r.msg)}
-async function issueSSL(){const d=document.getElementById('ssl-domain').value;if(!d)return alert('Domain required');const r=await POST('/panel/api/system/issueSSL',{domain:d});alert(r.msg)}
-async function backupDB(){const r=await POST('/panel/api/db/backup',{});alert(r.msg)}
+async function saveSettings(){await POST('/panel/api/settings',{panel_port:document.getElementById('s-port').value,web_base_path:document.getElementById('s-basepath').value})}
+async function setupService(){if(!confirm('Создать службу автозапуска?'))return;const r=await POST('/panel/api/system/setupService',{});alert(r.msg)}
+async function installFail2Ban(){if(!confirm('Установить Fail2Ban?'))return;const r=await POST('/panel/api/system/installFail2Ban',{});alert(r.msg)}
+async function issueSSL(){const d=document.getElementById('ssl-domain').value;if(!d)return alert('Укажите домен');const r=await POST('/panel/api/system/issueSSL',{domain:d});alert(r.msg)}
 
-// Init
 loadDashboard();setInterval(loadDashboard,15000);
 </script>
 </body></html>"""

@@ -320,7 +320,10 @@ def api_inbound_add():
         keys["public_key"] = kp.get("public_key", "")
     except Exception as e:
         log.warning(f"Keypair generation skipped: {e}")
-    settings = json.dumps({**keys, **data.get("settings", {})})
+    settings_dict = data.get("settings", {})
+    if not isinstance(settings_dict, dict):
+        settings_dict = {}
+    settings = json.dumps({**keys, **settings_dict})
 
     with get_db() as db:
         db.execute(
@@ -460,6 +463,7 @@ def api_client_config(client_id):
 @app.route("/server/status")
 @login_required
 def api_server_status():
+    import platform
     try:
         import psutil
         cpu = psutil.cpu_percent(interval=0.5)
@@ -472,6 +476,8 @@ def api_server_status():
             "mem_used": mem.used, "mem_total": mem.total,
             "disk_percent": disk.percent, "disk_used": disk.used, "disk_total": disk.total,
             "uptime": uptime, "net_sent": net.bytes_sent, "net_recv": net.bytes_recv,
+            "hostname": platform.node(),
+            "os_version": f"{platform.system()} {platform.release()}"
         })
     except ImportError:
         return jsonify({"cpu": 0, "mem_percent": 0, "uptime": 0, "error": "psutil not installed"})
@@ -615,11 +621,15 @@ def api_system_services():
         ["systemctl", "list-units", "--type=service", "--state=running", "--no-pager", "--plain"],
         capture_output=True, text=True
     )
-    services = []
-    for line in r.stdout.strip().split("\n")[1:]:
+    services: list[dict[str, str]] = []
+    for line in r.stdout.strip().split("\n"):
         parts = line.split()
-        if len(parts) >= 4:
-            services.append({"name": parts[0], "status": parts[2], "description": " ".join(parts[4:])})
+        if len(parts) >= 5:
+            services.append({
+                "name": parts[0], 
+                "status": parts[2], 
+                "description": " ".join(parts[4:])
+            })
     return jsonify({"success": True, "services": services[:30]})
 
 @app.route("/panel/api/system/logs")
@@ -759,8 +769,12 @@ def poll_traffic():
                                     "UPDATE client_traffics SET up=?, down=?, last_online=? WHERE id=?",
                                     (s.get("tx", 0), s.get("rx", 0), int(time.time()), client["id"])
                                 )
-                                total_up += s.get("tx", 0)
-                                total_down += s.get("rx", 0)
+                                tx = s.get("tx", 0)
+                                rx = s.get("rx", 0)
+                                if isinstance(tx, (int, float)):
+                                    total_up += int(tx)
+                                if isinstance(rx, (int, float)):
+                                    total_down += int(rx)
                                 # Traffic limit enforcement
                                 if client["total_limit"] > 0:
                                     used = s.get("tx", 0) + s.get("rx", 0)
