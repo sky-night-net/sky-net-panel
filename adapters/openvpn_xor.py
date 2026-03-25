@@ -63,7 +63,7 @@ class OpenVPNXORAdapter(ProtocolAdapter):
         settings = json.loads(inbound.get("settings", "{}"))
         obfs = json.loads(inbound.get("obfuscation", "{}"))
         port = inbound.get("port", 1194)
-        scramble_password = obfs.get("scramble_password", "skynet_xor_secret")
+        scramble_password = obfs.get("scramble_password", "")
         proto = settings.get("proto", "udp")
         cipher = settings.get("cipher", "AES-256-GCM")
 
@@ -93,7 +93,7 @@ verb 3
         obfs = json.loads(inbound.get("obfuscation", "{}"))
         port = inbound.get("port", 1194)
         server_ip = settings.get("server_ip", "0.0.0.0")
-        scramble_password = obfs.get("scramble_password", "skynet_xor_secret")
+        scramble_password = obfs.get("scramble_password", "")
 
         def r(p): 
             try: return open(p).read().strip()
