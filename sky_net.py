@@ -11,6 +11,7 @@ from flask import (Flask, jsonify, request, Response, redirect,
                    render_template_string, session, send_file, abort)
 from flask_cors import CORS
 from collections import deque
+import urllib.request
 
 # Импорт адаптеров
 from adapters import AdapterFactory
@@ -157,6 +158,14 @@ def api_db_backup():
     except Exception as e:
         return jsonify({"success": False, "msg": str(e)})
 
+def get_public_ip():
+    try:
+        url = 'https://ifconfig.me'
+        req = urllib.request.Request(url, headers={'User-Agent': 'curl/7.64.1'})
+        return urllib.request.urlopen(req, timeout=5).read().decode('utf-8').strip()
+    except:
+        return ""
+
 def init_db():
     with get_db() as db:
         db.executescript("""
@@ -213,16 +222,16 @@ def init_db():
         existing = db.execute("SELECT id FROM users LIMIT 1").fetchone()
         if not existing:
             pwd_hash = hashlib.sha256("admin".encode()).hexdigest()
-            db.execute("INSERT INTO users (username, password) VALUES (?, ?)",
-                       ("admin", pwd_hash))
+            db.execute("INSERT INTO users (username, password) VALUES (?, ?)", ("admin", pwd_hash))
+        
         # Default settings
+        detect_ip = get_public_ip()
         defaults = {
             "panel_port": str(PORT),
             "web_base_path": "",
             "session_timeout": "3600",
-            "tg_bot_token": "",
-            "tg_chat_id": "",
             "fail2ban_enabled": "false",
+            "server_ip": detect_ip
         }
         for k, v in defaults.items():
             db.execute("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)", (k, v))
@@ -288,7 +297,22 @@ def api_inbound_add():
     obfuscation = json.dumps(data.get("obfuscation", {}))
 
     adapter = AdapterFactory.get(protocol)
-    keys = {"private_key": "", "public_key": "", "server_ip": "", "address": "10.8.0.1/24",
+    # Get server IP from settings or detect it
+    with get_db() as db:
+        res = db.execute("SELECT value FROM settings WHERE key='server_ip'").fetchone()
+        server_ip = res["value"] if res and res["value"] else get_public_ip()
+        if server_ip and (not res or not res["value"]):
+             db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('server_ip', ?)", (server_ip,))
+             db.commit()
+
+    # Ensure binaries are installed
+    try:
+        adapter.check_and_install(server_ip)
+    except Exception as e:
+        log.error(f"Failed to ensure binaries for {protocol}: {e}")
+        return jsonify({"success": False, "msg": f"Ошибка подготовки протокола: {e}"}), 500
+
+    keys = {"private_key": "", "public_key": "", "server_ip": server_ip, "address": "10.8.0.1/24",
             "dns": "1.1.1.1, 8.8.8.8", "mtu": 1420}
     try:
         kp = adapter.generate_keypair()
@@ -305,12 +329,26 @@ def api_inbound_add():
             (protocol, remark, port, settings, obfuscation, int(time.time()))
         )
         db.commit()
+    
+    # Auto-allow port in UFW
+    import subprocess
+    try:
+        subprocess.run(["ufw", "allow", f"{port}/{'tcp' if 'openvpn' in protocol else 'udp'}"], check=False)
+    except: pass
+
     return jsonify({"success": True, "msg": "Inbound создан"})
 
 @app.route("/panel/api/inbounds/del/<int:ib_id>", methods=["POST"])
 @login_required
 def api_inbound_del(ib_id):
     with get_db() as db:
+        ib = db.execute("SELECT port, protocol FROM inbounds WHERE id=?", (ib_id,)).fetchone()
+        if ib:
+             # Auto-delete port in UFW
+             import subprocess
+             try:
+                 subprocess.run(["ufw", "delete", "allow", f"{ib['port']}/{'tcp' if 'openvpn' in ib['protocol'] else 'udp'}"], check=False)
+             except: pass
         db.execute("DELETE FROM inbounds WHERE id=?", (ib_id,))
         db.commit()
     return jsonify({"success": True})

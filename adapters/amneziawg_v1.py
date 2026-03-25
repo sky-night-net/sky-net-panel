@@ -33,6 +33,7 @@ DEFAULT_AWG_V1_OBFUSCATION = {
 
 class AmneziaWGv1Adapter(ProtocolAdapter):
     PROTOCOL_NAME = "amneziawg_v1"
+    REQUIRED_BINARIES = ["awg", "awg-quick"]
     INTERFACE_PREFIX = "awg"
     CONFIG_DIR = "/etc/amnezia/amneziawg"
 
@@ -68,14 +69,21 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
         mtu = settings.get("mtu", 1420)
         port = inbound.get("port", 51820)
 
+        # Detect default interface
+        import subprocess
+        try:
+            iface_out = subprocess.check_output("ip route get 8.8.8.8 | grep dev | awk '{print $5}'", shell=True).decode().strip()
+            if not iface_out: iface_out = "ens18" # fallback
+        except: iface_out = "ens18"
+
         lines = [
             "[Interface]",
             f"PrivateKey = {private_key}",
             f"Address = {address}",
             f"ListenPort = {port}",
             f"MTU = {mtu}",
-            f"PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o ens18 -j MASQUERADE",
-            f"PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o ens18 -j MASQUERADE",
+            f"PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o {iface_out} -j MASQUERADE",
+            f"PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o {iface_out} -j MASQUERADE",
             "",
             "# AmneziaWG v1 Obfuscation Parameters",
             f"S1 = {obfs['S1']}",

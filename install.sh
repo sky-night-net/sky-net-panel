@@ -45,9 +45,11 @@ apt-get install -y python3 python3-pip python3-flask python3-flask-cors python3-
 
 # Install VPN Dependencies
 echo -e "${BLUE}Installing VPN protocols (AmneziaWG, OpenVPN)...${NC}"
-add-apt-repository ppa:amnezia/ppa -y || true
+# Use non-interactive for PPA
+DEBIAN_FRONTEND=noninteractive add-apt-repository ppa:amnezia/ppa -y || true
 apt-get update
-apt-get install -y amneziawg wireguard-tools || echo "AmneziaWG PPA failed"
+# AmneziaWG-tools is usually needed for awg-quick
+apt-get install -y amneziawg amneziawg-tools wireguard-tools || echo "AmneziaWG installation from PPA failed, will try on-demand"
 apt-get install -y openvpn easy-rsa
 
 # Setup Sky-Net Directory and Source Code

@@ -17,6 +17,7 @@ class ProtocolAdapter:
     """Базовый класс для всех VPN-адаптеров."""
 
     PROTOCOL_NAME = "base"
+    REQUIRED_BINARIES = []
 
     def __init__(self, db_conn=None):
         self.db = db_conn
@@ -26,6 +27,16 @@ class ProtocolAdapter:
         for b in binaries:
             if subprocess.run(["which", b], capture_output=True).returncode != 0:
                 raise Exception(f"Программа '{b}' не найдена. Установите её для работы протокола {self.PROTOCOL_NAME}.")
+
+    def check_and_install(self, server_ip: str):
+        """Проверить наличие бинарников, если нет - запустить install."""
+        try:
+            self.check_binaries(self.REQUIRED_BINARIES)
+        except Exception as e:
+            log.info(f"[{self.PROTOCOL_NAME}] Binaries missing, attempting install: {e}")
+            self.install(server_ip)
+            # Second check after install
+            self.check_binaries(self.REQUIRED_BINARIES)
 
     def install(self, server_ip: str):
         """Установить необходимые пакеты/контейнеры на сервере."""

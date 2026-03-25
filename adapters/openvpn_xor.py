@@ -22,6 +22,7 @@ from . import ProtocolAdapter, AdapterFactory
 
 class OpenVPNXORAdapter(ProtocolAdapter):
     PROTOCOL_NAME = "openvpn_xor"
+    REQUIRED_BINARIES = ["openvpn", "make-cadir"]
     CONFIG_DIR = "/etc/openvpn"
     EASYRSA_DIR = "/etc/openvpn/easy-rsa"
     STATUS_LOG = "/var/log/openvpn/status.log"
@@ -38,13 +39,15 @@ class OpenVPNXORAdapter(ProtocolAdapter):
         """Инициализировать PKI (если нужно) и вернуть пути к CA."""
         self.check_binaries(["openvpn", "make-cadir"])
         if not os.path.exists(f"{self.EASYRSA_DIR}/pki"):
-            os.makedirs(self.EASYRSA_DIR, exist_ok=True)
+            # Clean up if partially exists
+            self._run(["rm", "-rf", self.EASYRSA_DIR])
+            os.makedirs(os.path.dirname(self.EASYRSA_DIR), exist_ok=True)
             self._run(["make-cadir", self.EASYRSA_DIR])
-            # Easy-RSA init logic (simplified commands for brevity in example)
-            # В реальности тут сложнее вызовы из-за bash окружения
+            # Easy-RSA init logic
             self._run(["bash", "-c", f"cd {self.EASYRSA_DIR} && ./easyrsa init-pki"])
-            self._run(["bash", "-c", f"cd {self.EASYRSA_DIR} && ./easyrsa --batch build-ca nopass"])
-            self._run(["bash", "-c", f"cd {self.EASYRSA_DIR} && ./easyrsa --batch build-server-full server nopass"])
+            # Workaround for build-ca nopass in some easy-rsa versions
+            self._run(["bash", "-c", f"cd {self.EASYRSA_DIR} && EASYRSA_BATCH=1 ./easyrsa build-ca nopass"])
+            self._run(["bash", "-c", f"cd {self.EASYRSA_DIR} && EASYRSA_BATCH=1 ./easyrsa build-server-full server nopass"])
             self._run(["bash", "-c", f"cd {self.EASYRSA_DIR} && ./easyrsa gen-dh"])
             self._run(["openvpn", "--genkey", "--secret", f"{self.EASYRSA_DIR}/pki/ta.key"])
         
