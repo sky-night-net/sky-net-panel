@@ -507,16 +507,20 @@ function openAddClient(id){
 async function toggleInbound(id){await POST(`/panel/api/inbounds/toggle/${id}`,{});loadInbounds()}
 async function deleteInbound(id){if(!confirm('Удалить этот сервер и всех клиентов?'))return;await POST(`/panel/api/inbounds/del/${id}`,{});loadInbounds()}
 
-function updateObfsFields(){const p=document.getElementById('ib-protocol').value;const c=document.getElementById('obfs-fields');
-  if(p==='openvpn_xor'){c.innerHTML=`
+  const addr = document.getElementById('ib-address');
+  if(p==='openvpn_xor'){
+    if(addr) addr.value = '10.9.0.1/24';
+    c.innerHTML=`
     <div class="fg"><label>Пароль обфускации</label><input id="obfs-scramble" value=""></div>
     <div class="fg" style="flex-direction:row;align-items:center;gap:10px;margin-top:10px">
       <input type="checkbox" id="obfs-bypass" style="width:20px;height:20px">
       <label style="margin:0">Маршруты для обхода (bypassing)</label>
     </div>`}
-  else{const v2=p==='amneziawg_v2';
+  else{
+    if(addr) addr.value = '10.8.0.1/24';
+    const v2=p==='amneziawg_v2';
     c.innerHTML=`<div class="fr"><div class="fg"><label>Jc</label><input id="obfs-Jc" type="number" value="5"></div><div class="fg"><label>Jmin</label><input id="obfs-Jmin" type="number" value="50"></div><div class="fg"><label>Jmax</label><input id="obfs-Jmax" type="number" value="1000"></div></div>
-    <div class="fr"><div class="fg"><label>S1</label><input id="obfs-S1" type="number" value="69"></div><div class="fg"><label>S2</label><input id="obfs-S2" type="number" value="115"></div></div>`
+    <div class="fr"><div class="fg"><label>S1</label><input id="obfs-S1" type="number" value="69"></div><div class="fg"><label>S2</label><input id="obfs-S2" type="number" value="115"></div>`
   }}
 
 async function submitInbound(){
