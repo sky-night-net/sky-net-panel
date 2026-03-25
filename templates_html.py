@@ -508,7 +508,12 @@ async function toggleInbound(id){await POST(`/panel/api/inbounds/toggle/${id}`,{
 async function deleteInbound(id){if(!confirm('Удалить этот сервер и всех клиентов?'))return;await POST(`/panel/api/inbounds/del/${id}`,{});loadInbounds()}
 
 function updateObfsFields(){const p=document.getElementById('ib-protocol').value;const c=document.getElementById('obfs-fields');
-  if(p==='openvpn_xor'){c.innerHTML=`<div class="fg"><label>Пароль обфускации</label><input id="obfs-scramble" value="skynet_xor_secret"></div>`}
+  if(p==='openvpn_xor'){c.innerHTML=`
+    <div class="fg"><label>Пароль обфускации</label><input id="obfs-scramble" value=""></div>
+    <div class="fg" style="flex-direction:row;align-items:center;gap:10px;margin-top:10px">
+      <input type="checkbox" id="obfs-bypass" style="width:20px;height:20px">
+      <label style="margin:0">Маршруты для обхода (bypassing)</label>
+    </div>`}
   else{const v2=p==='amneziawg_v2';
     c.innerHTML=`<div class="fr"><div class="fg"><label>Jc</label><input id="obfs-Jc" type="number" value="5"></div><div class="fg"><label>Jmin</label><input id="obfs-Jmin" type="number" value="50"></div><div class="fg"><label>Jmax</label><input id="obfs-Jmax" type="number" value="1000"></div></div>
     <div class="fr"><div class="fg"><label>S1</label><input id="obfs-S1" type="number" value="69"></div><div class="fg"><label>S2</label><input id="obfs-S2" type="number" value="115"></div></div>`
@@ -521,7 +526,12 @@ async function submitInbound(){
   const dns=document.getElementById('ib-dns');if(dns&&dns.value)body.settings.dns=dns.value;
   const address=document.getElementById('ib-address');if(address&&address.value)body.settings.address=address.value;
   const sip=document.getElementById('ib-server-ip');if(sip&&sip.value)body.settings.server_ip=sip.value;
-  if(p==='openvpn_xor'){body.obfuscation={scramble_password:document.getElementById('obfs-scramble').value}}
+  if(p==='openvpn_xor'){
+    body.obfuscation={
+      scramble_password:document.getElementById('obfs-scramble').value,
+      bypass_routes:document.getElementById('obfs-bypass').checked
+    }
+  }
   else{['Jc','Jmin','Jmax','S1','S2'].forEach(k=>{const el=document.getElementById('obfs-'+k);if(el)body.obfuscation[k]=el.value})}
   await POST('/panel/api/inbounds/add',body);closeModal('addInboundModal');loadInbounds()}
 

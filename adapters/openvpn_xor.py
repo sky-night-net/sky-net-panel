@@ -30,6 +30,40 @@ class OpenVPNXORAdapter(ProtocolAdapter):
     CONFIG_DIR = "/etc/openvpn"
     EASYRSA_DIR = "/etc/openvpn/easy-rsa"
     STATUS_LOG = "/var/log/openvpn/status.log"
+    BYPASS_ROUTES = """
+route 95.85.96.0 255.255.224.0 net_gateway
+route 95.85.100.0 255.255.252.0 net_gateway
+route 95.85.104.0 255.255.255.0 net_gateway
+route 217.174.224.0 255.255.240.0 net_gateway
+route 185.69.184.0 255.255.255.0 net_gateway
+route 185.69.185.0 255.255.255.0 net_gateway
+route 185.69.186.0 255.255.255.0 net_gateway
+route 185.69.187.0 255.255.255.0 net_gateway
+route 185.246.72.0 255.255.255.0 net_gateway
+route 93.171.220.0 255.255.252.0 net_gateway
+route 103.220.0.0 255.255.252.0 net_gateway
+route 119.235.112.0 255.255.240.0 net_gateway
+route 177.93.143.0 255.255.255.0 net_gateway
+route 216.250.8.0 255.255.248.0 net_gateway
+route 91.202.232.0 255.255.255.0 net_gateway
+route 93.171.174.0 255.255.255.0 net_gateway
+route 94.102.176.0 255.255.240.0 net_gateway
+route 103.209.230.0 255.255.255.0 net_gateway
+route 104.28.13.97 255.255.255.255 net_gateway
+route 104.28.13.98 255.255.255.254 net_gateway
+route 104.28.38.186 255.255.255.254 net_gateway
+route 154.30.29.0 255.255.255.192 net_gateway
+route 172.225.137.112 255.255.255.240 net_gateway
+route 172.225.200.224 255.255.255.240 net_gateway
+route 172.225.224.48 255.255.255.240 net_gateway
+route 185.69.184.0 255.255.252.0 net_gateway
+route 185.246.72.0 255.255.252.0 net_gateway
+route 217.8.117.0 255.255.255.0 net_gateway
+route 94.200.128.0 255.255.224.0 net_gateway
+route 94.200.0.0 255.248.0.0 net_gateway
+route 95.85.116.0 255.255.255.0 net_gateway
+route 95.85.112.0 255.255.255.0 net_gateway
+"""
 
     def __init__(self, db_conn=None):
         super().__init__(db_conn)
@@ -72,7 +106,7 @@ class OpenVPNXORAdapter(ProtocolAdapter):
         cipher = settings.get("cipher", "AES-256-GCM")
 
         return f"""port {port}
-proto {proto}
+proto {proto}4
 dev tun
 ca {self.EASYRSA_DIR}/pki/ca.crt
 cert {self.EASYRSA_DIR}/pki/issued/server.crt
@@ -85,11 +119,14 @@ push "redirect-gateway def1 bypass-dhcp"
 push "dhcp-option DNS 1.1.1.1"
 keepalive 10 120
 cipher {cipher}
+auth SHA256
+explicit-exit-notify 1
+tls-version-min 1.2
 persist-key
 persist-tun
 status {self.STATUS_LOG} 10
 verb 3
-{"scramble obfuscate " + scramble_password if scramble_password else ""}
+{"scramble xormask " + scramble_password if scramble_password else ""}
 """
 
     def generate_client_config(self, client: dict, inbound: dict) -> str:
@@ -100,12 +137,20 @@ verb 3
         scramble_password = obfs.get("scramble_password", "")
 
         def r(p): 
-            try: return open(p).read().strip()
+            try:
+                content = open(p).read().strip()
+                # Remove verbose certificate info if any
+                if "-----BEGIN CERTIFICATE-----" in content:
+                    idx = content.find("-----BEGIN CERTIFICATE-----")
+                    return content[idx:]
+                return content
             except: return ""
+
+        bypass = self.BYPASS_ROUTES if obfs.get("bypass_routes") else ""
 
         return f"""client
 dev tun
-proto {settings.get('proto','udp')}
+proto {settings.get('proto','udp')}4
 remote {server_ip} {port}
 resolv-retry infinite
 nobind
@@ -113,8 +158,17 @@ persist-key
 persist-tun
 remote-cert-tls server
 cipher {settings.get('cipher','AES-256-GCM')}
+auth SHA256
+auth-nocache
+tls-client
+tls-version-min 1.2
 key-direction 1
-{"scramble obfuscate " + scramble_password if scramble_password else ""}
+explicit-exit-notify
+ignore-unknown-option block-outside-dns
+setenv opt block-outside-dns
+verb 3
+{"scramble xormask " + scramble_password if scramble_password else ""}
+{bypass}
 <ca>
 {r(self.EASYRSA_DIR+'/pki/ca.crt')}
 </ca>
