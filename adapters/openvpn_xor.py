@@ -85,7 +85,7 @@ persist-key
 persist-tun
 status {self.STATUS_LOG} 10
 verb 3
-scramble obfuscate {scramble_password}
+{"scramble obfuscate " + scramble_password if scramble_password else ""}
 """
 
     def generate_client_config(self, client: dict, inbound: dict) -> str:
@@ -110,8 +110,8 @@ persist-tun
 remote-cert-tls server
 cipher {settings.get('cipher','AES-256-GCM')}
 key-direction 1
-scramble obfuscate {scramble_password}
-<ca>\n{r(self.EASYRSA_DIR+'/pki/ca.crt')}\n</ca>
+{"scramble obfuscate " + scramble_password if scramble_password else ""}
+<ca>\\n{r(self.EASYRSA_DIR+'/pki/ca.crt')}\\n</ca>
 <cert>\n{r(self.EASYRSA_DIR+'/pki/issued/'+client['username']+'.crt')}\n</cert>
 <key>\n{r(self.EASYRSA_DIR+'/pki/private/'+client['username']+'.key')}\n</key>
 <tls-auth>\n{r(self.EASYRSA_DIR+'/pki/ta.key')}\n</tls-auth>
