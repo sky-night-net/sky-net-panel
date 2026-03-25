@@ -340,6 +340,10 @@ def api_inbound_add():
             (protocol, remark, port, settings, obfuscation, int(time.time()))
         )
         db.commit()
+        new_ib = db.execute("SELECT * FROM inbounds WHERE id=last_insert_rowid()").fetchone()
+        if new_ib:
+            try: adapter.start(dict(new_ib))
+            except Exception as e: log.error(f"Failed to start inbound: {e}")
     
     # Auto-allow port in UFW
     import subprocess
@@ -353,13 +357,15 @@ def api_inbound_add():
 @login_required
 def api_inbound_del(ib_id):
     with get_db() as db:
-        ib = db.execute("SELECT port, protocol FROM inbounds WHERE id=?", (ib_id,)).fetchone()
+        ib = db.execute("SELECT * FROM inbounds WHERE id=?", (ib_id,)).fetchone()
         if ib:
              # Auto-delete port in UFW
              import subprocess
              try:
                  subprocess.run(["ufw", "delete", "allow", f"{ib['port']}/{'tcp' if 'openvpn' in ib['protocol'] else 'udp'}"], check=False)
              except: pass
+             try: AdapterFactory.get(ib["protocol"]).stop(dict(ib))
+             except Exception as e: log.error(f"Failed to stop inbound {ib_id}: {e}")
         db.execute("DELETE FROM inbounds WHERE id=?", (ib_id,))
         db.commit()
     return jsonify({"success": True})
@@ -368,12 +374,19 @@ def api_inbound_del(ib_id):
 @login_required
 def api_inbound_toggle(ib_id):
     with get_db() as db:
-        row = db.execute("SELECT enable FROM inbounds WHERE id=?", (ib_id,)).fetchone()
+        row = db.execute("SELECT * FROM inbounds WHERE id=?", (ib_id,)).fetchone()
         if not row:
             return jsonify({"success": False}), 404
         new_state = 0 if row["enable"] else 1
         db.execute("UPDATE inbounds SET enable=? WHERE id=?", (new_state, ib_id))
         db.commit()
+        ib = db.execute("SELECT * FROM inbounds WHERE id=?", (ib_id,)).fetchone()
+        if ib:
+            try:
+                adapter = AdapterFactory.get(ib["protocol"])
+                if new_state: adapter.start(dict(ib))
+                else: adapter.stop(dict(ib))
+            except Exception as e: log.error(f"Toggle error: {e}")
     return jsonify({"success": True, "enable": new_state})
 
 # ─── API: Clients ────────────────────────────────────────────────────────────
@@ -422,12 +435,23 @@ def api_client_add():
              next_ip, total_limit, expiry_time)
         )
         db.commit()
+        if ib["enable"]:
+            try:
+                client = db.execute("SELECT * FROM client_traffics WHERE id=last_insert_rowid()").fetchone()
+                AdapterFactory.get(ib["protocol"]).add_client(dict(client), dict(ib))
+            except Exception as e: log.error(f"Failed to add client to running iface: {e}")
     return jsonify({"success": True, "msg": f"Клиент {username} добавлен"})
 
 @app.route("/panel/api/inbounds/delClient/<int:client_id>", methods=["POST"])
 @login_required
 def api_client_del(client_id):
     with get_db() as db:
+        client = db.execute("SELECT * FROM client_traffics WHERE id=?", (client_id,)).fetchone()
+        if client:
+            ib = db.execute("SELECT * FROM inbounds WHERE id=?", (client["inbound_id"],)).fetchone()
+            if ib and ib["enable"]:
+                try: AdapterFactory.get(ib["protocol"]).remove_client(dict(client), dict(ib))
+                except Exception as e: log.error(f"Failed to remove client from running iface: {e}")
         db.execute("DELETE FROM client_traffics WHERE id=?", (client_id,))
         db.commit()
     return jsonify({"success": True})
@@ -436,12 +460,17 @@ def api_client_del(client_id):
 @login_required
 def api_client_toggle(client_id):
     with get_db() as db:
-        row = db.execute("SELECT enable FROM client_traffics WHERE id=?", (client_id,)).fetchone()
+        row = db.execute("SELECT * FROM client_traffics WHERE id=?", (client_id,)).fetchone()
         if not row:
             return jsonify({"success": False}), 404
         new = 0 if row["enable"] else 1
         db.execute("UPDATE client_traffics SET enable=? WHERE id=?", (new, client_id))
         db.commit()
+        ib = db.execute("SELECT * FROM inbounds WHERE id=?", (row["inbound_id"],)).fetchone()
+        if ib and ib["enable"]:
+             client = db.execute("SELECT * FROM client_traffics WHERE id=?", (client_id,)).fetchone()
+             try: AdapterFactory.get(ib["protocol"]).toggle_client(dict(client), dict(ib), bool(new))
+             except Exception as e: log.error(f"Failed to toggle client: {e}")
     return jsonify({"success": True, "enable": new})
 
 @app.route("/panel/api/inbounds/resetClientTraffic/<int:client_id>", methods=["POST"])
@@ -802,8 +831,16 @@ def poll_traffic():
 
 # ─── Main ────────────────────────────────────────────────────────────────────
 
+def start_all_inbounds():
+    with get_db() as db:
+        inbounds = db.execute("SELECT * FROM inbounds WHERE enable=1").fetchall()
+        for ib in inbounds:
+            try: AdapterFactory.get(ib["protocol"]).start(dict(ib))
+            except Exception as e: log.error(f"Startup error for inbound {ib['id']}: {e}")
+
 if __name__ == "__main__":
     init_db()
+    start_all_inbounds()
     t = threading.Thread(target=poll_traffic, daemon=True)
     t.start()
     log.info(f"Sky-Net started on port {PORT}")
