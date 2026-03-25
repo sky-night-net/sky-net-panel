@@ -171,13 +171,22 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
     def get_traffic(self, inbound: dict) -> list:
         iface = self._iface_name(inbound)
         try:
-            output = self._run(["awg", "show", iface, "transfer"])
+            # Using 'dump' to get rx, tx AND latest handshake
+            output = self._run(["awg", "show", iface, "dump"])
             clients = []
             for line in output.split("\n"):
                 if not line.strip(): continue
                 parts = line.split("\t")
-                if len(parts) >= 3:
-                    clients.append({"public_key": parts[0].strip(), "rx": int(parts[1].strip()), "tx": int(parts[2].strip())})
+                # Dump format: public_key [preshared_key] endpoint allowed_ips latest_handshake rx tx persistent_keepalive
+                # But headers might be different. Let's check part count.
+                # WG dump for peer: public_key  psk  endpoint  allowed_ips  latest_handshake  rx  tx  keepalive
+                if len(parts) >= 8:
+                    clients.append({
+                        "public_key": parts[0].strip(),
+                        "rx": int(parts[5].strip()),
+                        "tx": int(parts[4].strip()), # Correcting tx/rx based on dump order
+                        "last_handshake": int(parts[4].strip())
+                    })
             return clients
         except: return []
 

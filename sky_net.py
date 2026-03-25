@@ -807,9 +807,10 @@ def poll_traffic():
                                 (ib["id"], s[key_field])
                             ).fetchone()
                             if client:
+                                lh = s.get("last_handshake", int(time.time()))
                                 db.execute(
                                     "UPDATE client_traffics SET up=?, down=?, last_online=? WHERE id=?",
-                                    (s.get("tx", 0), s.get("rx", 0), int(time.time()), client["id"])
+                                    (s.get("tx", 0), s.get("rx", 0), lh, client["id"])
                                 )
                                 tx = s.get("tx", 0)
                                 rx = s.get("rx", 0)

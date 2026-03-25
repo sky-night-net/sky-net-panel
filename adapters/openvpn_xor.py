@@ -17,6 +17,10 @@ OpenVPN + XOR Patch (Tunnelblick) Adapter
 import json
 import os
 import re
+import time
+import subprocess
+import logging
+from datetime import datetime
 from . import ProtocolAdapter, AdapterFactory
 
 
@@ -148,7 +152,12 @@ key-direction 1
                     if "," in line and "." in line: # Common Name, Real Address, ...
                         parts = line.split(",")
                         if len(parts) >= 5 and parts[0] != "Common Name":
-                            clients.append({"username": parts[0], "rx": int(parts[2]), "tx": int(parts[3])})
+                            try:
+                                # Connected Since is typically 'Wed Mar 25 10:40:00 2026'
+                                # OpenVPN format: %a %b %d %H:%M:%S %Y
+                                ts = int(datetime.strptime(parts[4], "%a %b %d %H:%M:%S %Y").timestamp())
+                            except: ts = int(time.time())
+                            clients.append({"username": parts[0], "rx": int(parts[2]), "tx": int(parts[3]), "last_handshake": ts})
         except: pass
         return clients
 

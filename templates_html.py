@@ -203,6 +203,25 @@ tr:hover { background: rgba(255,255,255,0.02); }
   </div>
   
   <div class="card">
+    <div class="card-header"><h3>АКТИВНЫЕ СЕССИИ И ТРАФИК</h3></div>
+    <div class="table-container">
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="text-align: left; color: var(--kg-text-dim); font-size: 12px; border-bottom: 1px solid var(--kg-border);">
+            <th style="padding: 10px 5px;">Пользователь</th>
+            <th style="padding: 10px 5px;">Протокол</th>
+            <th style="padding: 10px 5px;">Трафик (↑/↓)</th>
+            <th style="padding: 10px 5px;">Статус</th>
+          </tr>
+        </thead>
+        <tbody id="dash-clients-table">
+          <!-- Active clients will be rendered here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
     <div class="card-header"><h3>СЕТЕВЫЕ ИНТЕРФЕЙСЫ</h3></div>
     <div id="net-ifaces"></div>
   </div>
@@ -401,8 +420,26 @@ async function loadDashboard(){
   document.getElementById('uptime-val').textContent=fmtUp(st.uptime||0);
   
   const ib=await API('/panel/api/inbounds/list');
-  if(ib.success){let tu=0,td=0;ib.obj.forEach(i=>{(i.clients||[]).forEach(c=>{tu+=c.up||0;td+=c.down||0})});
-    document.getElementById('d-up').textContent=fmtB(tu);document.getElementById('d-down').textContent=fmtB(td)}
+  if(ib.success){
+    let tu=0,td=0;
+    const clt=document.getElementById('dash-clients-table'); if(clt) clt.innerHTML='';
+    ib.obj.forEach(i=>{
+      (i.clients||[]).forEach(c=>{
+        tu+=c.up||0; td+=c.down||0;
+        if(clt){
+          const now = Math.floor(Date.now()/1000);
+          const isActive = (now - (c.last_online||0)) < 180; // 3 minutes
+          clt.innerHTML += `<tr style="border-bottom: 1px solid var(--kg-border); font-size: 13px;">
+            <td style="padding: 10px 5px;"><b>${c.username}</b></td>
+            <td style="padding: 10px 5px;"><span class="badge badge-proto" style="font-size:10px">${PL[i.protocol]}</span></td>
+            <td style="padding: 10px 5px;">${fmtB(c.up)} / ${fmtB(c.down)}</td>
+            <td style="padding: 10px 5px;"><span class="badge ${isActive?'badge-on':'badge-off'}">${isActive?'Активен':'Оффлайн'}</span></td>
+          </tr>`;
+        }
+      })
+    });
+    document.getElementById('d-up').textContent=fmtB(tu); document.getElementById('d-down').textContent=fmtB(td);
+  }
   
   const hist=await API('/panel/api/trafficHistory');
   if(!chart){
