@@ -53,13 +53,6 @@ class AmneziaWGv2Adapter(AmneziaWGv1Adapter):
         mtu = settings.get("mtu", 1420)
         port = inbound.get("port", 51820)
 
-        # Detect default interface
-        import subprocess
-        try:
-            iface_out = subprocess.check_output("ip route get 8.8.8.8 | grep dev | awk '{print $5}'", shell=True).decode().strip()
-            if not iface_out: iface_out = "ens18" 
-        except: iface_out = "ens18"
-
         lines = [
             "[Interface]",
             f"PrivateKey = {private_key}",
