@@ -339,10 +339,13 @@ tr:hover{background:var(--bg3)}
 
 <div class="overlay" id="qrModal">
 <div class="modal"><h3>Client Configuration</h3>
-  <canvas id="qrCanvas"></canvas>
+  <div style="background:#fff;padding:12px;display:inline-block;border-radius:12px;margin-bottom:12px">
+    <canvas id="qrCanvas"></canvas>
+  </div>
   <textarea id="qrConfigText" readonly></textarea>
   <div style="display:flex;gap:10px;margin-top:12px">
     <button class="btn btn-p" onclick="copyConfig()" style="flex:1">Copy</button>
+    <button class="btn btn-s" id="downloadBtn" style="flex:1">Download</button>
     <button class="btn btn-d" onclick="closeModal('qrModal')" style="flex:1">Close</button>
   </div>
 </div></div>
@@ -455,7 +458,7 @@ async function loadAllClients(){const r=await API('/panel/api/inbounds/list');if
       <td>${lim?fmtB(lim):'Unlim.'}<div class="tbar"><div class="fill" style="width:${pct}%"></div></div></td>
       <td>${fmtDate(c.expiry_time)}</td>
       <td><span class="badge ${c.enable?'badge-on':'badge-off'}">${c.enable?'On':'Off'}</span></td>
-      <td><button class="btn btn-sm btn-o" onclick="showQR(${c.id})">QR</button>
+      <td><button class="btn btn-sm btn-o" onclick="showQR(${c.id}, '${c.username}', '${ib.protocol}')">QR</button>
        <button class="btn btn-sm btn-s" onclick="toggleClient(${c.id})">${c.enable?'Pause':'Start'}</button>
        <button class="btn btn-sm btn-o" onclick="resetTraffic(${c.id})">Reset</button>
        <button class="btn btn-sm btn-d" onclick="deleteClient(${c.id})">Del</button></td></tr>`})});
@@ -470,10 +473,20 @@ async function submitClient(){const days=parseInt(document.getElementById('cl-ex
 async function toggleClient(id){await POST(`/panel/api/inbounds/toggleClient/${id}`,{});loadAllClients()}
 async function resetTraffic(id){await POST(`/panel/api/inbounds/resetClientTraffic/${id}`,{});loadAllClients()}
 async function deleteClient(id){if(!confirm('Delete client?'))return;await POST(`/panel/api/inbounds/delClient/${id}`,{});loadAllClients();loadInbounds()}
-async function showQR(cid){const r=await API(`/panel/api/inbounds/clientConfig/${cid}`);if(!r.success)return;
+async function showQR(cid, username, proto){const r=await API(`/panel/api/inbounds/clientConfig/${cid}`);if(!r.success)return;
   document.getElementById('qrConfigText').value=r.config;
   const cv=document.getElementById('qrCanvas');cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
-  try{QRCode.toCanvas(cv,r.config,{width:240,margin:2,color:{dark:'#3b82f6',light:'#1f2937'}})}catch(e){}
+  try{QRCode.toCanvas(cv,r.config,{width:200,margin:0,color:{dark:'#000000',light:'#ffffff'}})}catch(e){console.error(e)}
+  const dbtn=document.getElementById('downloadBtn');
+  const ext=proto.includes('openvpn')?'.ovpn':'.conf';
+  dbtn.onclick=()=>{
+    const blob=new Blob([r.config],{type:'text/plain'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=username+ext;
+    document.body.appendChild(a);a.click();
+    document.body.removeChild(a);URL.revokeObjectURL(url);
+  };
   document.getElementById('qrModal').classList.add('show')}
 function copyConfig(){const t=document.getElementById('qrConfigText');t.select();document.execCommand('copy')}
 
