@@ -81,6 +81,20 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
 .sidebar nav a.active { color: #fff; border-left-color: var(--kg-blue); background: rgba(0,168,232,0.15); font-weight: 600; }
 .sidebar nav .section { font-size: 10px; text-transform: uppercase; color: rgba(255,255,255,0.2); padding: 20px 20px 5px; font-weight: 800; letter-spacing: 1px; }
 
+/* Mobile Sidebar Overlay */
+@media (max-width: 768px) {
+  .sidebar { width: 260px; transform: translateX(-100%); transition: transform 0.3s ease; }
+  .sidebar.show { transform: translateX(0); box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
+  .main { margin-left: 0; }
+  .header { padding: 0 15px; }
+  .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 95; backdrop-filter: blur(2px); }
+  .sidebar-overlay.show { display: block; }
+}
+
+.hamburger { display: none; cursor: pointer; padding: 10px; margin-left: -10px; color: var(--kg-text); }
+@media (max-width: 768px) { .hamburger { display: block; } }
+.hamburger div { width: 22px; height: 2px; background: currentColor; margin: 4px 0; border-radius: 2px; transition: 0.2s; }
+
 /* Main Area */
 .main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .header { height: 60px; background: var(--kg-card); border-bottom: 1px solid var(--kg-border); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; position: sticky; top: 0; z-index: 90; }
@@ -136,11 +150,18 @@ tr:hover { background: rgba(255,255,255,0.02); }
 .modal-body { padding: 24px; }
 .modal-footer { padding: 16px 24px; border-top: 1px solid var(--kg-border); display: flex; justify-content: flex-end; gap: 12px; }
 
+.stat-circle { text-align: center; flex: 1; }
+.stat-circle-val { font-size: 22px; font-weight: 700; color: var(--kg-blue); }
+.stat-circle-label { font-size: 10px; color: var(--kg-text-dim); text-transform: uppercase; margin-top: 4px; font-weight: 800; letter-spacing: 0.5px; }
+.glass-card { background: rgba(28, 33, 40, 0.7) !important; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.05) !important; }
+@media (max-width: 768px) { .hide-mobile { display: none; } }
+
 .fg { margin-bottom: 20px; }
 .fg label { display: block; font-size: 11px; text-transform: uppercase; color: var(--kg-text-dim); margin-bottom: 6px; font-weight: 700; letter-spacing: 0.5px; }
 .fg input:not([type="checkbox"]), .fg select, .fg textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--kg-border); border-radius: 6px; background: rgba(0,0,0,0.3); color: #fff; font-size: 14px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
 .fg input:focus { border-color: var(--kg-blue); box-shadow: 0 0 0 2px rgba(0,168,232,0.1); }
 .fr { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+@media (max-width: 600px) { .fr, .grid-3, .grid-4, .grid-5 { grid-template-columns: 1fr !important; } }
 .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
 .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
 .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
@@ -178,34 +199,51 @@ tr:hover { background: rgba(255,255,255,0.02); }
 </div>
 
 <div class="main">
-  <div class="header">
+    <div class="hamburger" onclick="toggleSidebar()">
+      <div></div><div></div><div></div>
+    </div>
     <h1 id="page-title-text">Системный монитор</h1>
     <div class="header-right">
-      <span style="font-size: 13px; color: var(--kg-text-dim)">{{ session.get('username') }}</span>
+      <span style="font-size: 13px; color: var(--kg-text-dim)" class="hide-mobile">{{ session.get('username') }}</span>
       <a href="/logout" style="margin-left: 15px; color: var(--kg-red); text-decoration: none; font-size: 13px">Выход</a>
     </div>
   </div>
+  <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
   <div class="content">
 
 <!-- DASHBOARD -->
 <div class="page active" id="page-dashboard">
   <div class="grid">
-    <div class="card">
+    <div class="card glass-card">
       <div class="card-header"><h3>ИНТЕРНЕТ</h3></div>
       <div class="stat-item"><span class="stat-label">Внешний IP адрес</span><span class="stat-val" id="d-ip">--</span></div>
-      <div class="stat-item"><span class="stat-label">Загрузка (общее)</span><span class="stat-val" id="d-up">0 B</span></div>
-      <div class="stat-item"><span class="stat-label">Прием (общее)</span><span class="stat-val" id="d-down">0 B</span></div>
+      <div class="stat-item"><span class="stat-label">Скорость приема</span><span class="stat-val" id="d-down-speed">0 Mbit/s</span></div>
+      <div class="stat-item"><span class="stat-label">Скорость передачи</span><span class="stat-val" id="d-up-speed">0 Mbit/s</span></div>
       <div class="chart-container"><canvas id="trafficChart"></canvas></div>
     </div>
     
-    <div class="card">
+    <div class="card glass-card">
       <div class="card-header"><h3>О СИСТЕМЕ</h3></div>
-      <div class="stat-item"><span class="stat-label">Имя устройства</span><span class="stat-val" id="d-host" style="color:var(--kg-blue);font-weight:600">--</span></div>
-    <div class="stat-item"><span class="stat-label">Версия системы</span><span class="stat-val" id="d-os" style="color:var(--kg-blue);font-weight:600">--</span></div>
+      <div class="stat-item"><span class="stat-label">Имя устройства</span><span class="stat-val" id="d-host">--</span></div>
+      <div class="stat-item"><span class="stat-label">Версия системы</span><span class="stat-val" id="d-os">--</span></div>
       <div class="stat-item"><span class="stat-label">Время работы</span><span class="stat-val" id="uptime-val">--</span></div>
-      <div class="stat-item"><span class="stat-label">Процессор</span><span class="stat-val" id="cpu-val">0%</span></div>
-      <div class="stat-item"><span class="stat-label">Память</span><span class="stat-val" id="ram-val">0%</span></div>
-      <div class="stat-item"><span class="stat-label">Диск</span><span class="stat-val" id="disk-val">0%</span></div>
+      <div class="fr" style="margin-top:20px">
+        <div class="stat-circle"><div class="stat-circle-val" id="cpu-val">0%</div><div class="stat-circle-label">CPU</div></div>
+        <div class="stat-circle"><div class="stat-circle-val" id="ram-val">0%</div><div class="stat-circle-label">RAM</div></div>
+      </div>
+      <div class="stat-item" style="margin-top:20px"><span class="stat-label">Диск</span><span class="stat-val" id="disk-val">0%</span></div>
+    </div>
+
+    <div class="card glass-card">
+      <div class="card-header"><h3>УПРАВЛЕНИЕ</h3></div>
+      <div style="display:grid; gap:12px">
+        <button class="btn btn-o" style="width:100%; justify-content:center" onclick="rebootServer()">
+          <span style="font-size:16px">🔄</span> Перезагрузить сервер
+        </button>
+        <button class="btn btn-o" style="width:100%; justify-content:center" onclick="POST('/panel/api/system/setupService',{}).then(()=>alert('Сервис перезапущен'))">
+          <span style="font-size:16px">⚙️</span> Перезапустить панель
+        </button>
+      </div>
     </div>
   </div>
   
@@ -415,12 +453,25 @@ const initPage='{{page}}';if(initPage){document.querySelectorAll('.sidebar nav a
 
 // Dashboard
 let chart;
+let lastNetS=0, lastNetR=0, lastTime=0;
+async function rebootServer(){ if(confirm('Вы действительно хотите перезагрузить СЕРВЕР? Соединение будет разорвано.')) { await POST('/panel/api/system/reboot',{}); alert('Запрос отправлен. Подождите 1-2 минуты.'); } }
 async function loadDashboard(){
   const st=await API('/server/status');
   const d_ip=document.getElementById('d-ip'), d_host=document.getElementById('d-host'), d_os=document.getElementById('d-os');
   if(d_ip) d_ip.textContent = st.public_ip || '--';
   if(d_host) d_host.textContent = st.hostname || 'Sky-Net';
   if(d_os) d_os.textContent = st.os_version || 'Ubuntu';
+  
+  const now = Date.now();
+  if(lastTime > 0){
+    const dt = (now - lastTime) / 1000;
+    const ds = ((st.net_sent - lastNetS) * 8 / 1000000 / dt).toFixed(2);
+    const dr = ((st.net_recv - lastNetR) * 8 / 1000000 / dt).toFixed(2);
+    document.getElementById('d-up-speed').textContent = ds + ' Mbit/s';
+    document.getElementById('d-down-speed').textContent = dr + ' Mbit/s';
+  }
+  lastNetS = st.net_sent; lastNetR = st.net_recv; lastTime = now;
+
   document.getElementById('cpu-val').textContent=st.cpu+'%';
   document.getElementById('ram-val').textContent=Math.round(st.mem_percent)+'%';
   document.getElementById('disk-val').textContent=Math.round(st.disk_percent||0)+'%';
@@ -506,6 +557,10 @@ async function loadAllClients(){
     tb.querySelectorAll('tr').forEach(tr=>{tr.style.display=tr.textContent.toLowerCase().includes(q)?'':'none'})}
 }
 
+function toggleSidebar(){
+  document.querySelector('.sidebar').classList.toggle('show');
+  document.querySelector('.sidebar-overlay').classList.toggle('show');
+}
 function openAddInbound(){document.getElementById('addInboundModal').classList.add('show');updateObfsFields()}
 function openAddClient(id){
   const user = prompt('Введите имя пользователя:');

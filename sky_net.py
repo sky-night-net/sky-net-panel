@@ -509,6 +509,14 @@ def api_client_config(client_id):
 @login_required
 def api_server_status():
     import platform
+    public_ip = "--"
+    try:
+        # Quick check for public IP
+        import urllib.request
+        public_ip = urllib.request.urlopen('https://ifconfig.me/ip', timeout=1).read().decode('utf-8').strip()
+    except:
+        pass
+
     try:
         import psutil
         cpu = psutil.cpu_percent(interval=0.5)
@@ -522,10 +530,11 @@ def api_server_status():
             "disk_percent": disk.percent, "disk_used": disk.used, "disk_total": disk.total,
             "uptime": uptime, "net_sent": net.bytes_sent, "net_recv": net.bytes_recv,
             "hostname": platform.node(),
-            "os_version": f"{platform.system()} {platform.release()}"
+            "os_version": f"{platform.system()} {platform.release()}",
+            "public_ip": public_ip
         })
     except ImportError:
-        return jsonify({"cpu": 0, "mem_percent": 0, "uptime": 0, "error": "psutil not installed"})
+        return jsonify({"cpu": 0, "mem_percent": 0, "uptime": 0, "public_ip": public_ip, "error": "psutil not installed"})
 
 # ─── API: Settings ───────────────────────────────────────────────────────────
 
@@ -743,6 +752,13 @@ def api_system_timezone():
 # ─── Traffic History ─────────────────────────────────────────────────────────
 
 traffic_history = {"up": deque([0]*60, maxlen=60), "down": deque([0]*60, maxlen=60)}
+
+@app.route("/panel/api/system/reboot", methods=["POST"])
+@login_required
+def api_system_reboot():
+    log.warning("User requested system reboot")
+    subprocess.Popen(["reboot"])
+    return jsonify({"success": True, "message": "Rebooting..."})
 
 @app.route("/panel/api/trafficHistory")
 @login_required
