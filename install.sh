@@ -19,15 +19,15 @@ LOCAL_IP=$(hostname -I | awk '{print $1}')
 EXT_IP=$(curl -s ifconfig.me || echo "unknown")
 
 echo -n -e "${BLUE}Enter Panel Port [default 9090]: ${NC}"
-read PANEL_PORT
+read PANEL_PORT < /dev/tty
 PANEL_PORT=${PANEL_PORT:-9090}
 
 echo -n -e "${BLUE}Confirm Local IP [$LOCAL_IP]: ${NC}"
-read USER_LOCAL_IP
+read USER_LOCAL_IP < /dev/tty
 LOCAL_IP=${USER_LOCAL_IP:-$LOCAL_IP}
 
 echo -n -e "${BLUE}Confirm External IP [$EXT_IP]: ${NC}"
-read USER_EXT_IP
+read USER_EXT_IP < /dev/tty
 EXT_IP=${USER_EXT_IP:-$EXT_IP}
 
 echo -e "${BLUE}Using Port: $PANEL_PORT, Local IP: $LOCAL_IP, External IP: $EXT_IP${NC}"

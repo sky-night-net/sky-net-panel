@@ -31,6 +31,6 @@ curl -sSL https://raw.githubusercontent.com/sky-night-net/sky-net-panel/main/uni
 
 ## Manual Setup
 If you prefer manual installation:
-1. Clone the repo: `git clone https://github.com/USER/sky-net.git /opt/sky-net`
+1. Clone the repo: `git clone https://github.com/sky-night-net/sky-net-panel.git /opt/sky-net`
 2. Install dependencies: `apt install python3-flask python3-psutil python3-flask-cors`
 3. Run the panel: `python3 sky_net.py`

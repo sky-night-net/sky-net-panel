@@ -13,7 +13,7 @@ NC='\033[0m'
 
 echo -e "${RED}=== Sky-Net VPN Panel Uninstallation ===${NC}"
 echo -e "${RED}WARNING: This will remove all Sky-Net files, database, and service.${NC}"
-read -p "Are you sure you want to continue? (y/n) " -n 1 -r
+read -p "Are you sure you want to continue? (y/n) " -n 1 -r < /dev/tty
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]
 then
