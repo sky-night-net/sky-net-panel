@@ -10,6 +10,7 @@ LOGIN_HTML = r"""<!DOCTYPE html>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sky-Net | Login</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
 :root {
   --bg: #0f172a;
   --bg-grad: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
@@ -49,6 +50,7 @@ MAIN_HTML = r"""<!DOCTYPE html>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1/build/qrcode.min.js"></script>
 <style>
+:root {
   --kg-bg: #0f172a;
   --kg-bg-grad: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
   --kg-sidebar: rgba(15, 23, 42, 0.95);
