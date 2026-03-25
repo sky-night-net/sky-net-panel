@@ -8,7 +8,7 @@ Supports: **AmneziaWG (v1/v2)** and **OpenVPN (XOR patch)**.
 Run this command on your Ubuntu server as root:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/USER/sky-net/main/install.sh | sudo bash
+curl -sSL https://raw.githubusercontent.com/sky-night-net/sky-net-panel/main/install.sh | sudo bash
 ```
 
 ## Features
