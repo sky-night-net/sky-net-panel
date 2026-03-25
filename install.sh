@@ -81,6 +81,7 @@ Restart=always
 RestartSec=5
 Environment=PYTHONUNBUFFERED=1
 Environment=SKYNET_PORT=$PANEL_PORT
+Environment=SKYNET_EXT_IP=$EXT_IP
 
 [Install]
 WantedBy=multi-user.target

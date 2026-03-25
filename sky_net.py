@@ -75,6 +75,7 @@ Restart=always
 RestartSec=5
 Environment=SKYNET_PORT={PORT}
 Environment=SKYNET_DB={DB_FILE}
+Environment=SKYNET_EXT_IP={get_public_ip()}
 
 [Install]
 WantedBy=multi-user.target
@@ -159,8 +160,10 @@ def api_db_backup():
         return jsonify({"success": False, "msg": str(e)})
 
 def get_public_ip():
+    env_ip = os.getenv("SKYNET_EXT_IP")
+    if env_ip: return env_ip
     try:
-        url = 'https://ifconfig.me'
+        url = 'https://api.ipify.org'
         req = urllib.request.Request(url, headers={'User-Agent': 'curl/7.64.1'})
         return urllib.request.urlopen(req, timeout=5).read().decode('utf-8').strip()
     except:
@@ -235,6 +238,11 @@ def init_db():
         }
         for k, v in defaults.items():
             db.execute("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)", (k, v))
+        
+        # Override with env var if present
+        env_ip = os.getenv("SKYNET_EXT_IP")
+        if env_ip:
+            db.execute("UPDATE settings SET value=? WHERE key='server_ip'", (env_ip,))
         db.commit()
     log.info("Database initialized")
 

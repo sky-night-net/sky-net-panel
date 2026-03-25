@@ -326,6 +326,17 @@ tr:hover { background: rgba(255,255,255,0.02); }
         <div class="fg"><label>Имя</label><input id="ib-remark" placeholder="VPN Home"></div>
         <div class="fg"><label>Порт</label><input id="ib-port" type="number" value="51820"></div>
       </div>
+      <details style="margin-bottom:15px; cursor:pointer;" class="adv-params">
+        <summary style="color:#00a8e8; font-weight:bold;">Дополнительные параметры (MTU, DNS, Подсеть)</summary>
+        <div class="fr" style="margin-top:10px;">
+          <div class="fg"><label>MTU</label><input id="ib-mtu" type="number" value="1420"></div>
+          <div class="fg"><label>DNS (через запятую)</label><input id="ib-dns" value="1.1.1.1, 8.8.8.8"></div>
+        </div>
+        <div class="fr">
+          <div class="fg"><label>Подсеть VPN</label><input id="ib-address" value="10.8.0.1/24"></div>
+          <div class="fg"><label>Внешний IP сервера (опцио)</label><input id="ib-server-ip" placeholder="Авто"></div>
+        </div>
+      </details>
       <div id="obfs-fields"></div>
     </div>
     <div class="modal-footer">
@@ -469,6 +480,10 @@ function updateObfsFields(){const p=document.getElementById('ib-protocol').value
 async function submitInbound(){
   const p=document.getElementById('ib-protocol').value;
   const body={protocol:p,remark:document.getElementById('ib-remark').value,port:document.getElementById('ib-port').value,obfuscation:{},settings:{}};
+  const mtu=document.getElementById('ib-mtu');if(mtu&&mtu.value)body.settings.mtu=parseInt(mtu.value);
+  const dns=document.getElementById('ib-dns');if(dns&&dns.value)body.settings.dns=dns.value;
+  const address=document.getElementById('ib-address');if(address&&address.value)body.settings.address=address.value;
+  const sip=document.getElementById('ib-server-ip');if(sip&&sip.value)body.settings.server_ip=sip.value;
   if(p==='openvpn_xor'){body.obfuscation={scramble_password:document.getElementById('obfs-scramble').value}}
   else{['Jc','Jmin','Jmax','S1','S2'].forEach(k=>{const el=document.getElementById('obfs-'+k);if(el)body.obfuscation[k]=el.value})}
   await POST('/panel/api/inbounds/add',body);closeModal('addInboundModal');loadInbounds()}
