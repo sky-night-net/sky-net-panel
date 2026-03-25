@@ -342,7 +342,9 @@ def api_inbound_add():
         db.commit()
         new_ib = db.execute("SELECT * FROM inbounds WHERE id=last_insert_rowid()").fetchone()
         if new_ib:
-            try: adapter.start(dict(new_ib))
+            try:
+                ib_dict = enrich_inbound_with_clients(db, dict(new_ib))
+                adapter.start(ib_dict)
             except Exception as e: log.error(f"Failed to start inbound: {e}")
     
     # Auto-allow port in UFW
@@ -384,8 +386,11 @@ def api_inbound_toggle(ib_id):
         if ib:
             try:
                 adapter = AdapterFactory.get(ib["protocol"])
-                if new_state: adapter.start(dict(ib))
-                else: adapter.stop(dict(ib))
+                if new_state:
+                    ib_dict = enrich_inbound_with_clients(db, dict(ib))
+                    adapter.start(ib_dict)
+                else:
+                    adapter.stop(dict(ib))
             except Exception as e: log.error(f"Toggle error: {e}")
     return jsonify({"success": True, "enable": new_state})
 
@@ -831,11 +836,33 @@ def poll_traffic():
 
 # ─── Main ────────────────────────────────────────────────────────────────────
 
+def enrich_inbound_with_clients(db, ib_dict: dict) -> dict:
+    """Fetch clients from DB and inject them into inbound settings for config generation."""
+    clients = db.execute(
+        "SELECT * FROM client_traffics WHERE inbound_id=? AND enable=1",
+        (ib_dict["id"],)
+    ).fetchall()
+    settings = json.loads(ib_dict.get("settings", "{}"))
+    settings["clients"] = [
+        {
+            "username": c["username"],
+            "public_key": c["public_key"],
+            "preshared_key": c["preshared_key"],
+            "allowed_ips": c["allowed_ips"],
+            "enable": bool(c["enable"]),
+        }
+        for c in clients
+    ]
+    ib_dict["settings"] = json.dumps(settings)
+    return ib_dict
+
 def start_all_inbounds():
     with get_db() as db:
         inbounds = db.execute("SELECT * FROM inbounds WHERE enable=1").fetchall()
         for ib in inbounds:
-            try: AdapterFactory.get(ib["protocol"]).start(dict(ib))
+            try:
+                ib_dict = enrich_inbound_with_clients(db, dict(ib))
+                AdapterFactory.get(ib["protocol"]).start(ib_dict)
             except Exception as e: log.error(f"Startup error for inbound {ib['id']}: {e}")
 
 if __name__ == "__main__":
