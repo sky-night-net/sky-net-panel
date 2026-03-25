@@ -519,9 +519,39 @@ async function deleteInbound(id){if(!confirm('Удалить этот серве
   else{
     if(addr) addr.value = '10.8.0.1/24';
     const v2=p==='amneziawg_v2';
-    c.innerHTML=`<div class="fr"><div class="fg"><label>Jc</label><input id="obfs-Jc" type="number" value="5"></div><div class="fg"><label>Jmin</label><input id="obfs-Jmin" type="number" value="50"></div><div class="fg"><label>Jmax</label><input id="obfs-Jmax" type="number" value="1000"></div></div>
-    <div class="fr"><div class="fg"><label>S1</label><input id="obfs-S1" type="number" value="69"></div><div class="fg"><label>S2</label><input id="obfs-S2" type="number" value="115"></div>`
-  }}
+    let html = `
+      <div class="fr">
+        <div class="fg"><label title="Junk Packet Count">Jc</label><input id="obfs-Jc" type="number" value="5"></div>
+        <div class="fg"><label title="Min Junk Size">Jmin</label><input id="obfs-Jmin" type="number" value="50"></div>
+        <div class="fg"><label title="Max Junk Size">Jmax</label><input id="obfs-Jmax" type="number" value="1000"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label title="Init Packet Padding">S1</label><input id="obfs-S1" type="number" value="69"></div>
+        <div class="fg"><label title="Response Packet Padding">S2</label><input id="obfs-S2" type="number" value="115"></div>
+    `;
+    if(v2){
+      html += `
+        <div class="fg"><label title="Cookie Packet Padding">S3</label><input id="obfs-S3" type="number" value="69"></div>
+        <div class="fg"><label title="Data Packet Padding">S4</label><input id="obfs-S4" type="number" value="69"></div>
+      `;
+    }
+    html += `</div><div class="fr">`;
+    ['H1','H2','H3','H4'].forEach(h=>{
+      html += `<div class="fg"><label>${h}</label><input id="obfs-${h}" type="text" value="${h==='H1'?924883749:h==='H2'?16843009:h==='H3'?305419896:878082202}"></div>`;
+    });
+    html += `</div>`;
+    if(v2){
+      html += `<div style="margin-top:10px; border-top:1px solid #333; padding-top:10px">
+        <label style="font-size:11px; color:#888">Custom Protocol Signatures (I1-I5). Format: &lt;b 0xHEX&gt;, &lt;r SIZE&gt;, &lt;t&gt;</label>
+        <div class="fr" style="flex-wrap:wrap">`;
+      ['I1','I2','I3','I4','I5'].forEach(i=>{
+        html += `<div class="fg" style="min-width:18%"><label>${i}</label><input id="obfs-${i}" type="text" value="" placeholder="e.g. <b 0x01>"></div>`;
+      });
+      html += `</div></div>`;
+    }
+    c.innerHTML = html;
+  }
+}
 
 async function submitInbound(){
   const p=document.getElementById('ib-protocol').value;
@@ -536,7 +566,12 @@ async function submitInbound(){
       bypass_routes:document.getElementById('obfs-bypass').checked
     }
   }
-  else{['Jc','Jmin','Jmax','S1','S2'].forEach(k=>{const el=document.getElementById('obfs-'+k);if(el)body.obfuscation[k]=el.value})}
+  else{
+    ['Jc','Jmin','Jmax','S1','S2','S3','S4','H1','H2','H3','H4','I1','I2','I3','I4','I5'].forEach(k=>{
+      const el=document.getElementById('obfs-'+k);
+      if(el && el.value !== "") body.obfuscation[k]=el.value;
+    });
+  }
   await POST('/panel/api/inbounds/add',body);closeModal('addInboundModal');loadInbounds()}
 
 async function showQR(cid, username, proto){
