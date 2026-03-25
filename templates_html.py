@@ -340,7 +340,7 @@ tr:hover{background:var(--bg3)}
 <div class="overlay" id="qrModal">
 <div class="modal"><h3>Client Configuration</h3>
   <div style="background:#fff;padding:12px;display:inline-block;border-radius:12px;margin-bottom:12px">
-    <canvas id="qrCanvas"></canvas>
+    <img id="qrImage" style="display:block;width:200px;height:200px">
   </div>
   <textarea id="qrConfigText" readonly></textarea>
   <div style="display:flex;gap:10px;margin-top:12px">
@@ -475,8 +475,10 @@ async function resetTraffic(id){await POST(`/panel/api/inbounds/resetClientTraff
 async function deleteClient(id){if(!confirm('Delete client?'))return;await POST(`/panel/api/inbounds/delClient/${id}`,{});loadAllClients();loadInbounds()}
 async function showQR(cid, username, proto){const r=await API(`/panel/api/inbounds/clientConfig/${cid}`);if(!r.success)return;
   document.getElementById('qrConfigText').value=r.config;
-  const cv=document.getElementById('qrCanvas');cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
-  try{QRCode.toCanvas(cv,r.config,{width:200,margin:0,color:{dark:'#000000',light:'#ffffff'}})}catch(e){console.error(e)}
+  const img=document.getElementById('qrImage');
+  try{QRCode.toDataURL(r.config,{width:400,margin:1,color:{dark:'#000000',light:'#ffffff'}},(err,url)=>{
+    if(!err) img.src=url; else console.error(err)
+  })}catch(e){console.error(e)}
   const dbtn=document.getElementById('downloadBtn');
   const ext=proto.includes('openvpn')?'.ovpn':'.conf';
   dbtn.onclick=()=>{

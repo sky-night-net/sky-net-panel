@@ -29,8 +29,15 @@ curl -sSL https://raw.githubusercontent.com/sky-night-net/sky-net-panel/main/uni
 - **Username**: `admin`
 - **Password**: `admin`
 
-## Manual Setup
-If you prefer manual installation:
+## 📋 System Requirements
+- **OS**: Ubuntu 22.04 / 24.04 LTS (x86_64 / ARM64)
+- **CPU**: 1 Core (min), 2+ recommended for multiple inbounds
+- **RAM**: 1 GB (min), 2 GB recommended
+- **Disk**: 10 GB free space
+- **Network**: Public IPv4 address, ports 22 and Panel Port must be open
+
+## 🚀 One-Line Installation
+:
 1. Clone the repo: `git clone https://github.com/sky-night-net/sky-net-panel.git /opt/sky-net`
 2. Install dependencies: `apt install python3-flask python3-psutil python3-flask-cors`
 3. Run the panel: `python3 sky_net.py`
