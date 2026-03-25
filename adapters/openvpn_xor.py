@@ -244,7 +244,7 @@ verb 3
         proto = settings.get("proto", "udp")
         
         # Start Docker container with XOR patched binary in HOST network mode 
-        # for better compatibility with special protocols and routing.
+        # using a working image: lawtancool/docker-openvpn-xor
         cmd = [
             "docker", "run", "-d",
             "--name", container_name,
@@ -254,7 +254,7 @@ verb 3
             "--device", "/dev/net/tun",
             "-v", f"{self.CONFIG_DIR}:/etc/openvpn",
             "-v", "/var/log/openvpn:/var/log/openvpn",
-            "jeff47/openvpn-xor",
+            "lawtancool/docker-openvpn-xor",
             "openvpn", "--config", f"/etc/openvpn/server_{inbound['id']}.conf"
         ]
         
