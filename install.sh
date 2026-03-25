@@ -50,10 +50,12 @@ apt-get update
 apt-get install -y amneziawg wireguard-tools || echo "AmneziaWG PPA failed"
 apt-get install -y openvpn easy-rsa
 
-# Setup Sky-Net Directory
+# Setup Sky-Net Directory and Source Code
 INSTALL_DIR="/opt/sky-net"
-echo -e "${BLUE}Setting up directory: ${INSTALL_DIR}${NC}"
-mkdir -p $INSTALL_DIR
+echo -e "${BLUE}Downloading Sky-Net source code...${NC}"
+rm -rf $INSTALL_DIR
+git clone https://github.com/sky-night-net/sky-net-panel.git $INSTALL_DIR
+cd $INSTALL_DIR
 
 # Setup Firewall
 echo -e "${BLUE}Configuring UFW...${NC}"
