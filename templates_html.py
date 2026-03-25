@@ -131,15 +131,22 @@ tr:hover { background: rgba(255,255,255,0.02); }
 /* Modals */
 .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
 .overlay.show { display: flex; }
-.modal { background: var(--kg-card); border: 1px solid var(--kg-border); border-radius: 8px; width: 520px; max-width: 95%; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+.modal { background: var(--kg-card); border: 1px solid var(--kg-border); border-radius: 12px; width: 600px; max-width: 95%; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
 .modal-header { padding: 18px 24px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--kg-border); font-size: 16px; font-weight: 700; }
 .modal-body { padding: 24px; }
 .modal-footer { padding: 16px 24px; border-top: 1px solid var(--kg-border); display: flex; justify-content: flex-end; gap: 12px; }
 
 .fg { margin-bottom: 20px; }
-.fg label { display: block; font-size: 12px; text-transform: uppercase; color: var(--kg-text-dim); margin-bottom: 8px; font-weight: 600; }
-.fg input, .fg select, .fg textarea { width: 100%; padding: 12px; border: 1px solid var(--kg-border); border-radius: 4px; background: rgba(0,0,0,0.2); color: #fff; font-size: 14px; outline: none; }
-.fr { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.fg label { display: block; font-size: 11px; text-transform: uppercase; color: var(--kg-text-dim); margin-bottom: 6px; font-weight: 700; letter-spacing: 0.5px; }
+.fg input:not([type="checkbox"]), .fg select, .fg textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--kg-border); border-radius: 6px; background: rgba(0,0,0,0.3); color: #fff; font-size: 14px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+.fg input:focus { border-color: var(--kg-blue); box-shadow: 0 0 0 2px rgba(0,168,232,0.1); }
+.fr { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+.grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+.grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.modal-section { margin-top: 15px; border-top: 1px solid var(--kg-border); padding-top: 15px; }
+.section-title { font-size: 10px; text-transform: uppercase; color: var(--kg-blue); font-weight: 800; margin-bottom: 12px; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+.section-title::after { content: ""; flex: 1; height: 1px; background: rgba(0,168,232,0.15); }
 
 /* Inbound Row */
 .ib-row { background: rgba(255,255,255,0.02); border: 1px solid var(--kg-border); border-radius: 6px; padding: 20px 30px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; transition: 0.2s; }
@@ -520,34 +527,53 @@ function updateObfsFields(){const p=document.getElementById('ib-protocol').value
     if(addr) addr.value = '10.8.0.1/24';
     const v2=p==='amneziawg_v2';
     let html = `
-      <div class="fr">
-        <div class="fg"><label title="Junk Packet Count">Jc</label><input id="obfs-Jc" type="number" value="5"></div>
-        <div class="fg"><label title="Min Junk Size">Jmin</label><input id="obfs-Jmin" type="number" value="50"></div>
-        <div class="fg"><label title="Max Junk Size">Jmax</label><input id="obfs-Jmax" type="number" value="1000"></div>
+      <div class="modal-section">
+        <div class="section-title">Мусорные пакеты (Junk)</div>
+        <div class="grid-3">
+          <div class="fg"><label title="Количество мусорных пакетов">Jc</label><input id="obfs-Jc" type="number" value="5"></div>
+          <div class="fg"><label title="Мин. размер мусора">Jmin</label><input id="obfs-Jmin" type="number" value="50"></div>
+          <div class="fg"><label title="Макс. размер мусора">Jmax</label><input id="obfs-Jmax" type="number" value="1000"></div>
+        </div>
       </div>
-      <div class="fr">
-        <div class="fg"><label title="Init Packet Padding">S1</label><input id="obfs-S1" type="number" value="69"></div>
-        <div class="fg"><label title="Response Packet Padding">S2</label><input id="obfs-S2" type="number" value="115"></div>
+      
+      <div class="modal-section">
+        <div class="section-title">Паддинг пакетов (Padding)</div>
+        <div class="grid-4">
+          <div class="fg"><label title="Init Padding">S1</label><input id="obfs-S1" type="number" value="69"></div>
+          <div class="fg"><label title="Response Padding">S2</label><input id="obfs-S2" type="number" value="115"></div>
+          ${v2 ? `
+            <div class="fg"><label title="Cookie Padding">S3</label><input id="obfs-S3" type="number" value="69"></div>
+            <div class="fg"><label title="Data Padding">S4</label><input id="obfs-S4" type="number" value="69"></div>
+          ` : ''}
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="section-title">Заголовки (Headers)</div>
+        <div class="fr">
+          <div class="fg"><label>H1 (Init)</label><input id="obfs-H1" type="text" value="924883749"></div>
+          <div class="fg"><label>H2 (Resp)</label><input id="obfs-H2" type="text" value="16843009"></div>
+        </div>
+        <div class="fr">
+          <div class="fg"><label>H3 (Cookie)</label><input id="obfs-H3" type="text" value="305419896"></div>
+          <div class="fg"><label>H4 (Data)</label><input id="obfs-H4" type="text" value="878082202"></div>
+        </div>
+      </div>
     `;
+    
     if(v2){
       html += `
-        <div class="fg"><label title="Cookie Packet Padding">S3</label><input id="obfs-S3" type="number" value="69"></div>
-        <div class="fg"><label title="Data Packet Padding">S4</label><input id="obfs-S4" type="number" value="69"></div>
+      <div class="modal-section">
+        <div class="section-title">Сигнатуры (CPS)</div>
+        <div class="grid-5">
+          <div class="fg"><label>I1</label><input id="obfs-I1" type="text" value="" placeholder="<b 0x..>"></div>
+          <div class="fg"><label>I2</label><input id="obfs-I2" type="text" value="" placeholder="<r ..>"></div>
+          <div class="fg"><label>I3</label><input id="obfs-I3" type="text" value="" placeholder="<t>"></div>
+          <div class="fg"><label>I4</label><input id="obfs-I4" type="text" value="" placeholder=""></div>
+          <div class="fg"><label>I5</label><input id="obfs-I5" type="text" value="" placeholder=""></div>
+        </div>
+      </div>
       `;
-    }
-    html += `</div><div class="fr">`;
-    ['H1','H2','H3','H4'].forEach(h=>{
-      html += `<div class="fg"><label>${h}</label><input id="obfs-${h}" type="text" value="${h==='H1'?924883749:h==='H2'?16843009:h==='H3'?305419896:878082202}"></div>`;
-    });
-    html += `</div>`;
-    if(v2){
-      html += `<div style="margin-top:10px; border-top:1px solid #333; padding-top:10px">
-        <label style="font-size:11px; color:#888">Custom Protocol Signatures (I1-I5). Format: &lt;b 0xHEX&gt;, &lt;r SIZE&gt;, &lt;t&gt;</label>
-        <div class="fr" style="flex-wrap:wrap">`;
-      ['I1','I2','I3','I4','I5'].forEach(i=>{
-        html += `<div class="fg" style="min-width:18%"><label>${i}</label><input id="obfs-${i}" type="text" value="" placeholder="e.g. <b 0x01>"></div>`;
-      });
-      html += `</div></div>`;
     }
     c.innerHTML = html;
   }
