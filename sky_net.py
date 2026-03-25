@@ -350,7 +350,10 @@ def api_inbound_add():
     # Auto-allow port in UFW
     import subprocess
     try:
-        subprocess.run(["ufw", "allow", f"{port}/{'tcp' if 'openvpn' in protocol else 'udp'}"], check=False)
+        # Extract proto from settings if available
+        settings_dict = request.get_json(silent=True).get("settings", {})
+        proto_cfg = settings_dict.get("proto", "tcp" if "openvpn" in protocol else "udp")
+        subprocess.run(["ufw", "allow", f"{port}/{proto_cfg}"], check=False)
     except: pass
 
     return jsonify({"success": True, "msg": "Inbound создан"})

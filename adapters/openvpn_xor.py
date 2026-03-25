@@ -238,6 +238,11 @@ verb 3
         # We need to map the config directory and make sure logging exists
         os.makedirs("/var/log/openvpn", exist_ok=True)
         
+        # Centralized Routing Setup
+        settings = json.loads(inbound.get("settings", "{}"))
+        address_full = settings.get("address", "10.9.0.0/24")
+        proto = settings.get("proto", "udp")
+        
         # Start Docker container with XOR patched binary
         # We use jeff47/openvpn-xor or similar
         cmd = [
@@ -248,18 +253,12 @@ verb 3
             "--device", "/dev/net/tun",
             "-v", f"{self.CONFIG_DIR}:/etc/openvpn",
             "-v", "/var/log/openvpn:/var/log/openvpn",
-            "-p", f"{inbound['port']}:{inbound['port']}/udp",
+            "-p", f"{inbound['port']}:{inbound['port']}/{proto}",
             "jeff47/openvpn-xor",
             "openvpn", "--config", f"/etc/openvpn/server_{inbound['id']}.conf"
         ]
         
         self._run(cmd)
-        
-        self._run(cmd)
-        
-        # Centralized Routing Setup
-        settings = json.loads(inbound.get("settings", "{}"))
-        address_full = settings.get("address", "10.9.0.0/24")
         self._setup_nat(address_full)
         
         return True
