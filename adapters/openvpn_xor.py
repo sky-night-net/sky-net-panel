@@ -111,10 +111,18 @@ remote-cert-tls server
 cipher {settings.get('cipher','AES-256-GCM')}
 key-direction 1
 {"scramble obfuscate " + scramble_password if scramble_password else ""}
-<ca>\\n{r(self.EASYRSA_DIR+'/pki/ca.crt')}\\n</ca>
-<cert>\n{r(self.EASYRSA_DIR+'/pki/issued/'+client['username']+'.crt')}\n</cert>
-<key>\n{r(self.EASYRSA_DIR+'/pki/private/'+client['username']+'.key')}\n</key>
-<tls-auth>\n{r(self.EASYRSA_DIR+'/pki/ta.key')}\n</tls-auth>
+<ca>
+{r(self.EASYRSA_DIR+'/pki/ca.crt')}
+</ca>
+<cert>
+{r(self.EASYRSA_DIR+'/pki/issued/'+client['username']+'.crt')}
+</cert>
+<key>
+{r(self.EASYRSA_DIR+'/pki/private/'+client['username']+'.key')}
+</key>
+<tls-auth>
+{r(self.EASYRSA_DIR+'/pki/ta.key')}
+</tls-auth>
 """
 
     def add_client(self, client: dict, inbound: dict) -> bool:
