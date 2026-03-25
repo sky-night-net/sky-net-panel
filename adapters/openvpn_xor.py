@@ -138,7 +138,7 @@ persist-key
 persist-tun
 status {self.STATUS_LOG} 10
 verb 3
-{"scramble xormask " + scramble_password if scramble_password else ""}
+{"scramble obfuscate " + scramble_password if scramble_password else ""}
 """
 
     def generate_client_config(self, client: dict, inbound: dict) -> str:
@@ -179,7 +179,7 @@ explicit-exit-notify
 ignore-unknown-option block-outside-dns
 setenv opt block-outside-dns
 verb 3
-{"scramble xormask " + scramble_password if scramble_password else ""}
+{"scramble obfuscate " + scramble_password if scramble_password else ""}
 {bypass}
 <ca>
 {r(self.EASYRSA_DIR+'/pki/ca.crt')}
