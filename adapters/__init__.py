@@ -97,6 +97,54 @@ class ProtocolAdapter:
             log.error(f"[{self.PROTOCOL_NAME}] failed: {e.cmd} | err: {e.stderr}")
             raise Exception(f"Ошибка команды: {e.stderr or str(e)}")
 
+    def _get_external_iface(self) -> str:
+        """Определить внешний сетевой интерфейс (с маршрутом по умолчанию)."""
+        try:
+            # Query the interface used to reach the internet (Google DNS)
+            res = self._run(["bash", "-c", "ip route get 8.8.8.8 | grep dev | awk '{print $5}'"], check=False)
+            if not res:
+                # Fallback to general default route
+                res = self._run(["bash", "-c", "ip route | grep default | awk '{print $5}' | head -n1"], check=False)
+            return res.strip() or "eth0"
+        except:
+            return "eth0"
+
+    def _setup_nat(self, subnet: str):
+        """Настроить NAT (MASQUERADE) и пересылку (FORWARD) для указанной подсети."""
+        iface = self._get_external_iface()
+        log.info(f"[{self.PROTOCOL_NAME}] Setting up NAT for {subnet} via {iface}")
+        try:
+            # Enable IP Forwarding
+            self._run(["sysctl", "-w", "net.ipv4.ip_forward=1"], check=False)
+            
+            # FORWARD rules (Insert at top to bypass UFW if needed)
+            # Accept traffic from VPN subnet to internet
+            self._run(["iptables", "-I", "FORWARD", "-s", subnet, "-j", "ACCEPT"], check=False)
+            # Accept established/related traffic back to VPN subnet
+            self._run(["iptables", "-I", "FORWARD", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"], check=False)
+            
+            # NAT rule (append if not exists)
+            # We check if it exists first to avoid duplicates
+            check_cmd = ["iptables", "-t", "nat", "-C", "POSTROUTING", "-s", subnet, "-o", iface, "-j", "MASQUERADE"]
+            res = subprocess.run(check_cmd, capture_output=True)
+            if res.returncode != 0:
+                self._run(["iptables", "-t", "nat", "-A", "POSTROUTING", "-s", subnet, "-o", iface, "-j", "MASQUERADE"], check=False)
+            
+            # TCP MSS Clamping to avoid MTU issues (common in VPNs)
+            self._run(["iptables", "-t", "mangle", "-I", "FORWARD", "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--clamp-mss-to-pmtu"], check=False)
+        except Exception as e:
+            log.error(f"[{self.PROTOCOL_NAME}] NAT setup error: {e}")
+
+    def _cleanup_nat(self, subnet: str):
+        """Удалить правила NAT и FORWARD для указанной подсети."""
+        iface = self._get_external_iface()
+        log.info(f"[{self.PROTOCOL_NAME}] Cleaning up NAT for {subnet}")
+        try:
+            self._run(["iptables", "-D", "FORWARD", "-s", subnet, "-j", "ACCEPT"], check=False)
+            self._run(["iptables", "-t", "nat", "-D", "POSTROUTING", "-s", subnet, "-o", iface, "-j", "MASQUERADE"], check=False)
+        except Exception as e:
+            log.debug(f"[{self.PROTOCOL_NAME}] NAT cleanup error (expected if rules gone): {e}")
+
 
 class AdapterFactory:
     """Фабрика адаптеров — возвращает экземпляр по имени протокола."""

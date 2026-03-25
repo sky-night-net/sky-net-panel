@@ -5,7 +5,7 @@ Sky-Net v1.0 — Universal VPN Control Panel
 Поддерживаемые протоколы: AmneziaWG v1, AmneziaWG v2, OpenVPN+XOR
 """
 
-import json, os, time, threading, logging, sqlite3, hashlib, secrets, functools
+import json, os, time, threading, logging, sqlite3, hashlib, secrets, functools, subprocess
 from datetime import datetime
 from flask import (Flask, jsonify, request, Response, redirect,
                    render_template_string, session, send_file, abort)
@@ -868,6 +868,22 @@ def start_all_inbounds():
 
 if __name__ == "__main__":
     init_db()
+    
+    # Global Routing & System Optimization
+    try:
+        # Enable IP Forwarding
+        subprocess.run(["sysctl", "-w", "net.ipv4.ip_forward=1"], check=False)
+        
+        # We don't need to add hardcoded MASQUERADE here because each dynamic 
+        # inbound setup (via Adapter) will now call _setup_nat() which 
+        # handles interface detection and NAT for its specific subnet.
+        
+        log.info("Global IP forwarding enabled")
+    except Exception as e:
+        log.error(f"Global routing error: {e}")
+
+    # This will trigger start() on all enabled inbounds, 
+    # which now includes centralized routing setup.
     start_all_inbounds()
     t = threading.Thread(target=poll_traffic, daemon=True)
     t.start()

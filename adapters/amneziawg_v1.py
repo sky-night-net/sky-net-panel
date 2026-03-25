@@ -82,8 +82,7 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
             f"Address = {address}",
             f"ListenPort = {port}",
             f"MTU = {mtu}",
-            f"PostUp = iptables -I FORWARD -i %i -j ACCEPT; iptables -I FORWARD -o %i -m state --state RELATED,ESTABLISHED -j ACCEPT; iptables -t nat -A POSTROUTING -o {iface_out} -j MASQUERADE",
-            f"PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -m state --state RELATED,ESTABLISHED -j ACCEPT; iptables -t nat -D POSTROUTING -o {iface_out} -j MASQUERADE",
+            "# NAT and Forwarding are managed by the panel's central routing engine",
             "",
             "# AmneziaWG v1 Obfuscation Parameters",
             f"S1 = {obfs['S1']}",
@@ -195,11 +194,28 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
         os.makedirs(self.CONFIG_DIR, exist_ok=True)
         conf = self._config_path(inbound)
         with open(conf, "w") as f: f.write(self.generate_server_config(inbound))
+        
+        # Centralized Routing Setup
+        settings = json.loads(inbound.get("settings", "{}"))
+        subnet = settings.get("address", "10.8.0.0/24")
+        if "/" not in subnet: subnet = "10.8.0.0/24" # safety
+        # Ensure it's a network address, not an IP
+        try:
+            net = ipaddress.ip_network(subnet, strict=False)
+            subnet = str(net)
+        except: pass
+
         self._run(["awg-quick", "up", conf])
+        self._setup_nat(subnet)
+        
         return True
 
     def stop(self, inbound: dict) -> bool:
-        try: self._run(["awg-quick", "down", self._config_path(inbound)])
+        try:
+            settings = json.loads(inbound.get("settings", "{}"))
+            subnet = settings.get("address", "10.8.0.0/24")
+            self._run(["awg-quick", "down", self._config_path(inbound)])
+            self._cleanup_nat(subnet)
         except: pass
         return True
 

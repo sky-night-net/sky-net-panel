@@ -105,6 +105,18 @@ route 95.85.112.0 255.255.255.0 net_gateway
         proto = settings.get("proto", "udp")
         cipher = settings.get("cipher", "AES-256-GCM")
 
+        address_full = settings.get("address", "10.9.0.0/24")
+        address = address_full.split("/")[0]
+        netmask = "255.255.255.0" # Assuming /24 for now, or we can calculate
+        if "/" in address_full:
+            # Simple CIDR to Netmask conversion for common /24
+            if "/24" in address_full: netmask = "255.255.255.0"
+        
+        # OpenVPN needs the network address (e.g. 10.9.0.0)
+        net_parts = address.split(".")
+        net_parts[3] = "0"
+        network = ".".join(net_parts)
+
         return f"""port {port}
 proto {proto}4
 dev tun
@@ -113,7 +125,7 @@ cert {self.EASYRSA_DIR}/pki/issued/server.crt
 key {self.EASYRSA_DIR}/pki/private/server.key
 dh {self.EASYRSA_DIR}/pki/dh.pem
 tls-auth {self.EASYRSA_DIR}/pki/ta.key 0
-server 10.9.0.0 255.255.255.0
+server {network} {netmask}
 ifconfig-pool-persist ipp.txt
 push "redirect-gateway def1 bypass-dhcp"
 push "dhcp-option DNS 1.1.1.1"
@@ -218,11 +230,52 @@ verb 3
     def start(self, inbound: dict) -> bool:
         conf_path = f"{self.CONFIG_DIR}/server_{inbound['id']}.conf"
         with open(conf_path, "w") as f: f.write(self.generate_server_config(inbound))
-        self._run(["systemctl", "start", f"openvpn@server_{inbound['id']}"])
+        
+        container_name = f"openvpn_xor_{inbound['id']}"
+        # Stop existing if any
+        self._run(["docker", "rm", "-f", container_name], check=False)
+        
+        # We need to map the config directory and make sure logging exists
+        os.makedirs("/var/log/openvpn", exist_ok=True)
+        
+        # Start Docker container with XOR patched binary
+        # We use jeff47/openvpn-xor or similar
+        cmd = [
+            "docker", "run", "-d",
+            "--name", container_name,
+            "--restart", "unless-stopped",
+            "--cap-add", "NET_ADMIN",
+            "--device", "/dev/net/tun",
+            "-v", f"{self.CONFIG_DIR}:/etc/openvpn",
+            "-v", "/var/log/openvpn:/var/log/openvpn",
+            "-p", f"{inbound['port']}:{inbound['port']}/udp",
+            "jeff47/openvpn-xor",
+            "openvpn", "--config", f"/etc/openvpn/server_{inbound['id']}.conf"
+        ]
+        
+        self._run(cmd)
+        
+        self._run(cmd)
+        
+        # Centralized Routing Setup
+        settings = json.loads(inbound.get("settings", "{}"))
+        address_full = settings.get("address", "10.9.0.0/24")
+        self._setup_nat(address_full)
+        
         return True
 
     def stop(self, inbound: dict) -> bool:
-        try: self._run(["systemctl", "stop", f"openvpn@server_{inbound['id']}"])
+        container_name = f"openvpn_xor_{inbound['id']}"
+        try:
+            settings = json.loads(inbound.get("settings", "{}"))
+            address_full = settings.get("address", "10.9.0.0/24")
+            
+            self._run(["docker", "stop", container_name], check=False)
+            self._run(["docker", "rm", container_name], check=False)
+            # Cleanup native if it was running
+            self._run(["systemctl", "stop", f"openvpn@server_{inbound['id']}"], check=False)
+            
+            self._cleanup_nat(address_full)
         except: pass
         return True
 
@@ -231,9 +284,6 @@ verb 3
             res = self._run(["systemctl", "is-active", f"openvpn@server_{inbound['id']}"])
             return res == "active"
         except: return False
-
-AdapterFactory.register("openvpn_xor", OpenVPNXORAdapter)
-
 
 # Регистрация
 AdapterFactory.register("openvpn_xor", OpenVPNXORAdapter)
