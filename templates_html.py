@@ -10,32 +10,34 @@ LOGIN_HTML = r"""<!DOCTYPE html>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sky-Net | Login</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',sans-serif;min-height:100vh;display:flex}
-.left{flex:1;background:#1c2128;display:flex;align-items:center;justify-content:center;padding:40px}
-.right{flex:1;background:#00a8e8;display:flex;align-items:center;justify-content:center;color:#fff}
-.right h1{font-size:48px;font-weight:700;letter-spacing:2px;text-transform:uppercase}
-.card{width:100%;max-width:360px;text-align:center}
-.card h2{font-size:24px;color:#fff;margin-bottom:30px;font-weight:600}
-.fg{margin-bottom:15px;text-align:left}
-.fg input{width:100%;padding:14px;border:1px solid #374151;border-radius:6px;background:#252a33;color:#fff;font-size:15px;outline:none}
-.fg input:focus{border-color:#00a8e8}
-.btn{width:100%;padding:14px;border:none;border-radius:6px;background:#00a8e8;color:#fff;font-size:16px;font-weight:600;cursor:pointer;transition:opacity .2s}
-.btn:hover{opacity:.9}
-.error{color:#ef4444;font-size:14px;margin-bottom:15px}
-.links{margin-top:20px;font-size:13px;color:#777d85}
-.links a{color:#00a8e8;text-decoration:none}
+:root {
+  --bg: #0f172a;
+  --bg-grad: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
+  --blue: #00a8e8;
+  --card: rgba(30, 41, 59, 0.6);
+  --border: rgba(255, 255, 255, 0.1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; height: 100vh; background: var(--bg); background-image: var(--bg-grad); display: flex; align-items: center; justify-content: center; color: #fff; overflow: hidden; }
+.login-card { background: var(--card); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 24px; padding: 50px; width: 100%; max-width: 420px; box-shadow: 0 25px 50px rgba(0,0,0,0.3); text-align: center; }
+.logo { font-size: 28px; font-weight: 900; color: var(--blue); letter-spacing: 3px; margin-bottom: 40px; }
+.fg { margin-bottom: 20px; text-align: left; }
+.fg label { display: block; font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+.fg input { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; color: #fff; font-size: 15px; outline: none; transition: 0.2s; }
+.fg input:focus { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(0, 168, 232, 0.1); }
+.btn { width: 100%; background: var(--blue); color: #fff; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; margin-top: 20px; }
+.btn:hover { transform: translateY(-1px); opacity: 0.9; }
+.error { color: #f43f5e; background: rgba(244, 63, 94, 0.1); padding: 10px; border-radius: 8px; font-size: 14px; margin-bottom: 20px; }
 </style></head><body>
-<div class="left"><form class="card" method="POST">
-  <h2>Вход в веб-конфигуратор</h2>
+<div class="login-card">
+  <div class="logo">SKY-NET</div>
   {% if error %}<div class="error">{{ error }}</div>{% endif %}
-  <div class="fg"><input name="username" placeholder="Имя пользователя" required></div>
-  <div class="fg"><input name="password" type="password" placeholder="Пароль" required></div>
-  <button class="btn" type="submit">Войти</button>
-  <div class="links"><a href="#">Не могу войти</a> &nbsp;|&nbsp; <a href="#">Центр поддержки</a></div>
-</form></div>
-<div class="right"><h1>Sky-Net Panel</h1></div>
+  <form method="POST">
+    <div class="fg"><label>Имя пользователя</label><input name="username" required></div>
+    <div class="fg"><label>Пароль</label><input name="password" type="password" required></div>
+    <button class="btn" type="submit">ВОЙТИ В ПАНЕЛЬ</button>
+  </form>
+</div>
 </body></html>"""
 
 
@@ -47,124 +49,105 @@ MAIN_HTML = r"""<!DOCTYPE html>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1/build/qrcode.min.js"></script>
 <style>
-:root {
-  --kg-sidebar: #1d252f;
-  --kg-bg: #111419;
-  --kg-card: #1c2128;
-  --kg-text: #ffffff;
-  --kg-text-dim: #9aa0a6;
-  --kg-border: #30363d;
+  --kg-bg: #0f172a;
+  --kg-bg-grad: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
+  --kg-sidebar: rgba(15, 23, 42, 0.95);
+  --kg-card: rgba(30, 41, 59, 0.6);
+  --kg-border: rgba(255, 255, 255, 0.08);
   --kg-blue: #00a8e8;
-  --kg-green: #2fb45a;
-  --kg-red: #e63946;
-}
-
-[data-theme="light"] {
-  --kg-bg: #f3f5f6;
-  --kg-card: #ffffff;
-  --kg-text: #333333;
-  --kg-text-dim: #777d85;
-  --kg-border: #e2e4e7;
-  --kg-sidebar: #015caa;
-  --kg-blue: #015caa;
+  --kg-text: #f1f5f9;
+  --kg-text-dim: #94a3b8;
+  --kg-red: #f43f5e;
+  --kg-green: #10b981;
+  --kg-shadow: 0 20px 50px rgba(0,0,0,0.3);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg); color: var(--kg-text); display: flex; min-height: 100vh; line-height: 1.5; }
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg); background-image: var(--kg-bg-grad); background-attachment: fixed; color: var(--kg-text); min-height: 100vh; line-height: 1.5; overflow-x: hidden; }
 
 /* Sidebar */
-.sidebar { width: 220px; background: var(--kg-sidebar); border-right: 1px solid var(--kg-border); display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 100; transition: width 0.3s; }
-.sidebar .logo { padding: 24px 20px; text-align: center; border-bottom: 1px solid var(--kg-border); color: var(--kg-blue); font-weight: 700; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; }
+.sidebar { width: 260px; background: var(--kg-sidebar); border-right: 1px solid var(--kg-border); display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 100; backdrop-filter: blur(20px); transition: transform 0.3s ease; }
+.sidebar .logo { padding: 35px 30px; color: var(--kg-blue); font-weight: 900; font-size: 22px; text-transform: uppercase; letter-spacing: 2px; }
 .sidebar nav { flex: 1; padding: 10px 0; overflow-y: auto; }
-.sidebar nav a { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: var(--kg-text-dim); text-decoration: none; font-size: 13px; font-weight: 500; transition: 0.2s; border-left: 3px solid transparent; }
-.sidebar nav a:hover { color: #fff; background: rgba(255,255,255,0.05); }
-.sidebar nav a.active { color: #fff; border-left-color: var(--kg-blue); background: rgba(0,168,232,0.15); font-weight: 600; }
-.sidebar nav .section { font-size: 10px; text-transform: uppercase; color: rgba(255,255,255,0.2); padding: 20px 20px 5px; font-weight: 800; letter-spacing: 1px; }
+.sidebar nav a { display: flex; align-items: center; gap: 15px; padding: 14px 30px; color: var(--kg-text-dim); text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.2s; border-left: 3px solid transparent; }
+.sidebar nav a:hover { color: #fff; background: rgba(255,255,255,0.03); }
+.sidebar nav a.active { color: #fff; border-left-color: var(--kg-blue); background: rgba(0,168,232,0.1); font-weight: 600; }
+.sidebar nav .section { font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,0.2); padding: 30px 30px 10px; font-weight: 800; letter-spacing: 1.5px; }
 
-/* Mobile Sidebar Overlay */
+/* Mobile Overlay */
 @media (max-width: 768px) {
-  .sidebar { width: 260px; transform: translateX(-100%); transition: transform 0.3s ease; }
-  .sidebar.show { transform: translateX(0); box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
-  .main { margin-left: 0; }
-  .header { padding: 0 15px; }
-  .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 95; backdrop-filter: blur(2px); }
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.show { transform: translateX(0); box-shadow: 20px 0 60px rgba(0,0,0,0.5); }
+  .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 95; backdrop-filter: blur(4px); }
   .sidebar-overlay.show { display: block; }
 }
 
-.hamburger { display: none; cursor: pointer; padding: 10px; margin-left: -10px; color: var(--kg-text); }
+/* Header */
+.main { margin-left: 260px; flex: 1; display: flex; flex-direction: column; min-width: 0; transition: margin 0.3s; }
+@media (max-width: 768px) { .main { margin-left: 0; } }
+
+.header { height: 80px; background: rgba(15, 23, 42, 0.4); border-bottom: 1px solid var(--kg-border); display: flex; align-items: center; justify-content: space-between; padding: 0 40px; position: sticky; top: 0; z-index: 90; backdrop-filter: blur(10px); }
+.header h1 { font-size: 22px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+.header-right { display: flex; align-items: center; gap: 25px; }
+.user-info { font-size: 13px; color: var(--kg-text-dim); display: flex; align-items: center; gap: 8px; }
+.user-info strong { color: #fff; }
+.logout-btn { background: rgba(244, 63, 94, 0.1); color: var(--kg-red); text-decoration: none; font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 8px; transition: 0.2s; }
+.logout-btn:hover { background: rgba(244, 63, 94, 0.2); transform: translateY(-1px); }
+
+.hamburger { display: none; cursor: pointer; padding: 10px; color: #fff; }
 @media (max-width: 768px) { .hamburger { display: block; } }
-.hamburger div { width: 22px; height: 2px; background: currentColor; margin: 4px 0; border-radius: 2px; transition: 0.2s; }
+.hamburger div { width: 24px; height: 2px; background: currentColor; margin: 5px 0; border-radius: 2px; }
 
-/* Main Area */
-.main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.header { height: 60px; background: var(--kg-card); border-bottom: 1px solid var(--kg-border); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; position: sticky; top: 0; z-index: 90; }
-.header h1 { font-size: 18px; font-weight: 600; }
+/* Content & Grid */
+.content { padding: 40px; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; }
+.grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 30px; }
+.card { grid-column: span 6; background: var(--kg-card); border: 1px solid var(--kg-border); border-radius: 24px; padding: 30px; box-shadow: var(--kg-shadow); backdrop-filter: blur(20px); transition: 0.3s; position: relative; overflow: hidden; }
+.card:hover { transform: translateY(-5px); border-color: rgba(0, 168, 232, 0.3); }
+@media (max-width: 1100px) { .card { grid-column: span 12; } }
 
-.content { padding: 30px; }
-.page { display: none; max-width: 1200px; }
-.page.active { display: block; animation: fadeIn 0.3s ease; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.card-header { margin-bottom: 25px; display: flex; align-items: center; gap: 12px; }
+.card-icon { width: 32px; height: 32px; background: rgba(0, 168, 232, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--kg-blue); }
+.card-header h3 { font-size: 14px; font-weight: 800; color: var(--kg-blue); text-transform: uppercase; letter-spacing: 1.5px; }
 
-/* Cards & Widgets */
-.card { background: var(--kg-card); border: 1px solid var(--kg-border); border-radius: 6px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--kg-border); padding-bottom: 12px; }
-.card-header h3 { font-size: 14px; text-transform: uppercase; color: var(--kg-text-dim); letter-spacing: 1px; font-weight: 700; }
-
-/* Dashboard Widgets */
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
-.stat-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+/* Stats */
+.stat-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
 .stat-item:last-child { border-bottom: none; }
-.stat-label { font-size: 14px; color: var(--kg-text-dim); }
-.stat-val { font-size: 15px; font-weight: 600; color: var(--kg-blue); }
+.stat-label { font-size: 14px; color: var(--kg-text-dim); font-weight: 500; }
+.stat-val { font-size: 15px; font-weight: 700; color: #fff; font-family: 'JetBrains Mono', monospace; }
 
-/* Tables */
-.table-container { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; min-width: 600px; }
-th { text-align: left; padding: 12px 15px; font-size: 12px; text-transform: uppercase; color: var(--kg-text-dim); border-bottom: 2px solid var(--kg-border); font-weight: 700; }
-td { padding: 15px; font-size: 14px; border-bottom: 1px solid var(--kg-border); vertical-align: middle; }
-tr:hover { background: rgba(255,255,255,0.02); }
+.stat-circles { display: flex; justify-content: space-around; margin-top: 20px; gap: 20px; }
+.circle-stat { text-align: center; }
+.circle-val { font-size: 26px; font-weight: 800; color: var(--kg-blue); }
+.circle-label { font-size: 11px; color: var(--kg-text-dim); text-transform: uppercase; font-weight: 800; margin-top: 5px; letter-spacing: 1px; }
 
-/* Buttons & Badges */
-.btn { border: none; padding: 9px 18px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; outline: none; }
+.chart-container { height: 200px; margin-top: 20px; }
+
+/* Forms & Buttons */
+.fg { margin-bottom: 20px; }
+.fg label { display: block; font-size: 12px; font-weight: 800; color: var(--kg-text-dim); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+.fg input:not([type="checkbox"]), .fg select, .fg textarea { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--kg-border); border-radius: 10px; padding: 12px 16px; color: #fff; font-size: 14px; outline: none; transition: 0.2s; }
+.fg input:focus { border-color: var(--kg-blue); box-shadow: 0 0 0 3px rgba(0, 168, 232, 0.1); }
+
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s; border: none; outline: none; }
 .btn-p { background: var(--kg-blue); color: #fff; }
 .btn-p:hover { opacity: 0.9; transform: translateY(-1px); }
-.btn-o { background: transparent; border: 1px solid var(--kg-border); color: var(--kg-text); }
-.btn-o:hover { border-color: var(--kg-blue); color: var(--kg-blue); }
-.btn-d { color: var(--kg-red); background: transparent; border: 1px solid transparent; }
-.btn-d:hover { border-color: var(--kg-red); }
-.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn-o { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--kg-border); }
+.btn-o:hover { background: rgba(255,255,255,0.1); border-color: var(--kg-blue); }
+.btn-s { background: var(--kg-green); color: #fff; }
 
-.badge { padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
-.badge-on { background: rgba(47,180,90,0.15); color: #2fb45a; }
-.badge-off { background: rgba(230,57,70,0.15); color: #e63946; }
-.badge-proto { background: rgba(0,168,232,0.1); color: var(--kg-blue); }
-
-/* Chart */
-.chart-container { height: 180px; position: relative; margin-top: 15px; }
+.fr { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 600px) { .fr, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
 
 /* Modals */
-.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
 .overlay.show { display: flex; }
-.modal { background: var(--kg-card); border: 1px solid var(--kg-border); border-radius: 12px; width: 600px; max-width: 95%; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
-.modal-header { padding: 18px 24px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--kg-border); font-size: 16px; font-weight: 700; }
-.modal-body { padding: 24px; }
-.modal-footer { padding: 16px 24px; border-top: 1px solid var(--kg-border); display: flex; justify-content: flex-end; gap: 12px; }
+.modal { background: #1e293b; border: 1px solid var(--kg-border); border-radius: 24px; width: 650px; max-width: 95%; box-shadow: var(--kg-shadow); overflow: hidden; }
+.modal-header { padding: 25px 30px; border-bottom: 1px solid var(--kg-border); background: rgba(255,255,255,0.02); font-weight: 700; font-size: 18px; }
+.modal-body { padding: 30px; max-height: 80vh; overflow-y: auto; }
+.modal-footer { padding: 20px 30px; border-top: 1px solid var(--kg-border); display: flex; justify-content: flex-end; gap: 15px; }
 
-.stat-circle { text-align: center; flex: 1; }
-.stat-circle-val { font-size: 22px; font-weight: 700; color: var(--kg-blue); }
-.stat-circle-label { font-size: 10px; color: var(--kg-text-dim); text-transform: uppercase; margin-top: 4px; font-weight: 800; letter-spacing: 0.5px; }
-.glass-card { background: rgba(28, 33, 40, 0.7) !important; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.05) !important; }
-@media (max-width: 768px) { .hide-mobile { display: none; } }
-
-.fg { margin-bottom: 20px; }
-.fg label { display: block; font-size: 11px; text-transform: uppercase; color: var(--kg-text-dim); margin-bottom: 6px; font-weight: 700; letter-spacing: 0.5px; }
-.fg input:not([type="checkbox"]), .fg select, .fg textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--kg-border); border-radius: 6px; background: rgba(0,0,0,0.3); color: #fff; font-size: 14px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
-.fg input:focus { border-color: var(--kg-blue); box-shadow: 0 0 0 2px rgba(0,168,232,0.1); }
-.fr { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-@media (max-width: 600px) { .fr, .grid-3, .grid-4, .grid-5 { grid-template-columns: 1fr !important; } }
-.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
-.grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
-.grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
 .modal-section { margin-top: 15px; border-top: 1px solid var(--kg-border); padding-top: 15px; }
 .section-title { font-size: 10px; text-transform: uppercase; color: var(--kg-blue); font-weight: 800; margin-bottom: 12px; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
 .section-title::after { content: ""; flex: 1; height: 1px; background: rgba(0,168,232,0.15); }
@@ -185,64 +168,77 @@ tr:hover { background: rgba(255,255,255,0.02); }
   <div class="logo">SKY-NET</div>
   <nav>
     <div class="section">Статус</div>
-    <a href="#" data-page="dashboard" class="active">Системный монитор</a>
+    <a href="#" data-page="dashboard" class="active"><span>📊</span> Системный монитор</a>
     <div class="section">Интернет</div>
-    <a href="#" data-page="inbounds">VPN серверы</a>
-    <a href="#" data-page="clients">Подключенные клиенты</a>
+    <a href="#" data-page="inbounds"><span>🌐</span> VPN серверы</a>
+    <a href="#" data-page="clients"><span>👥</span> Подключенные клиенты</a>
     <div class="section">Сетевые правила</div>
-    <a href="#" data-page="firewall">Межсетевой экран</a>
+    <a href="#" data-page="firewall"><span>🛡️</span> Межсетевой экран</a>
     <div class="section">Управление</div>
-    <a href="#" data-page="system">Настройки системы</a>
-    <a href="#" data-page="logs">Журнал событий</a>
-    <a href="#" data-page="settings">Параметры панели</a>
+    <a href="#" data-page="system"><span>⚙️</span> Настройки системы</a>
+    <a href="#" data-page="logs"><span>📋</span> Журнал событий</a>
+    <a href="#" data-page="settings"><span>🔧</span> Параметры панели</a>
   </nav>
 </div>
 
 <div class="main">
-    <div class="hamburger" onclick="toggleSidebar()">
-      <div></div><div></div><div></div>
+    <div class="header">
+      <div style="display:flex; align-items:center; gap:20px">
+        <div class="hamburger" onclick="toggleSidebar()">
+          <div></div><div></div><div></div>
+        </div>
+        <h1 id="page-title-text">Системный монитор</h1>
+      </div>
+      <div class="header-right">
+        <div class="user-info hide-mobile">
+          <span style="opacity:0.5">Пользователь:</span>
+          <strong>{{ session.get('username') }}</strong>
+        </div>
+        <a href="/logout" class="logout-btn">Выход</a>
+      </div>
     </div>
-    <h1 id="page-title-text">Системный монитор</h1>
-    <div class="header-right">
-      <span style="font-size: 13px; color: var(--kg-text-dim)" class="hide-mobile">{{ session.get('username') }}</span>
-      <a href="/logout" style="margin-left: 15px; color: var(--kg-red); text-decoration: none; font-size: 13px">Выход</a>
-    </div>
-  </div>
   <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
   <div class="content">
 
 <!-- DASHBOARD -->
 <div class="page active" id="page-dashboard">
   <div class="grid">
-    <div class="card glass-card">
-      <div class="card-header"><h3>ИНТЕРНЕТ</h3></div>
-      <div class="stat-item"><span class="stat-label">Внешний IP адрес</span><span class="stat-val" id="d-ip">--</span></div>
-      <div class="stat-item"><span class="stat-label">Скорость приема</span><span class="stat-val" id="d-down-speed">0 Mbit/s</span></div>
-      <div class="stat-item"><span class="stat-label">Скорость передачи</span><span class="stat-val" id="d-up-speed">0 Mbit/s</span></div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">🌐</div>
+        <h3>ИНТЕРНЕТ</h3>
+      </div>
+      <div class="stat-item"><span class="stat-label">Внешний IP адрес</span><span class="stat-val" id="d-ip" style="color:var(--kg-blue)">--</span></div>
+      <div class="stat-item"><span class="stat-label">Скорость приема</span><span class="stat-val" id="d-down-speed">0.00 Mbit/s</span></div>
+      <div class="stat-item"><span class="stat-label">Скорость передачи</span><span class="stat-val" id="d-up-speed">0.00 Mbit/s</span></div>
       <div class="chart-container"><canvas id="trafficChart"></canvas></div>
     </div>
     
-    <div class="card glass-card">
-      <div class="card-header"><h3>О СИСТЕМЕ</h3></div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">🛡️</div>
+        <h3>О СИСТЕМЕ</h3>
+      </div>
       <div class="stat-item"><span class="stat-label">Имя устройства</span><span class="stat-val" id="d-host">--</span></div>
       <div class="stat-item"><span class="stat-label">Версия системы</span><span class="stat-val" id="d-os">--</span></div>
       <div class="stat-item"><span class="stat-label">Время работы</span><span class="stat-val" id="uptime-val">--</span></div>
-      <div class="fr" style="margin-top:20px">
-        <div class="stat-circle"><div class="stat-circle-val" id="cpu-val">0%</div><div class="stat-circle-label">CPU</div></div>
-        <div class="stat-circle"><div class="stat-circle-val" id="ram-val">0%</div><div class="stat-circle-label">RAM</div></div>
+      
+      <div class="stat-circles">
+        <div class="circle-stat"><div class="circle-val" id="cpu-val">0%</div><div class="circle-label">CPU</div></div>
+        <div class="circle-stat"><div class="circle-val" id="ram-val">0%</div><div class="circle-label">RAM</div></div>
       </div>
       <div class="stat-item" style="margin-top:20px"><span class="stat-label">Диск</span><span class="stat-val" id="disk-val">0%</span></div>
     </div>
 
-    <div class="card glass-card">
-      <div class="card-header"><h3>УПРАВЛЕНИЕ</h3></div>
-      <div style="display:grid; gap:12px">
-        <button class="btn btn-o" style="width:100%; justify-content:center" onclick="rebootServer()">
-          <span style="font-size:16px">🔄</span> Перезагрузить сервер
-        </button>
-        <button class="btn btn-o" style="width:100%; justify-content:center" onclick="POST('/panel/api/system/setupService',{}).then(()=>alert('Сервис перезапущен'))">
-          <span style="font-size:16px">⚙️</span> Перезапустить панель
-        </button>
+    <div class="card card-wide">
+      <div class="card-header">
+        <div class="card-icon">⚡</div>
+        <h3>БЫСТРОЕ УПРАВЛЕНИЕ</h3>
+      </div>
+      <div class="grid-3">
+        <button class="btn btn-o" onclick="rebootServer()">🔄 Перезагрузить ОС</button>
+        <button class="btn btn-o" onclick="POST('/panel/api/system/setupService',{}).then(()=>alert('Сервис перезапущен'))">⚙️ Рестарт Панели</button>
+        <button class="btn btn-o" onclick="loadDashboard()">📡 Обновить статус</button>
       </div>
     </div>
   </div>
