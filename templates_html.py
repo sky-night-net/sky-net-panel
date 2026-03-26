@@ -49,23 +49,23 @@ MAIN_HTML = r"""<!DOCTYPE html>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <style>
 :root {
-  --kg-bg: #0f172a;
-  --kg-bg-grad: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
-  --kg-sidebar: rgba(15, 23, 42, 0.95);
-  --kg-card: rgba(30, 41, 59, 0.6);
-  --kg-border: rgba(255, 255, 255, 0.08);
-  --kg-blue: #00a8e8;
-  --kg-text: #f1f5f9;
-  --kg-text-dim: #94a3b8;
-  --kg-red: #f43f5e;
-  --kg-green: #10b981;
-  --kg-shadow: 0 20px 50px rgba(0,0,0,0.3);
+  --kg-bg: #1c2128;
+  --kg-sidebar: #171b22;
+  --kg-card: #222b37;
+  --kg-border: #30363d;
+  --kg-blue: #2fa1ed;
+  --kg-text: #c9d1d9;
+  --kg-text-dim: #8b949e;
+  --kg-red: #ff5252;
+  --kg-green: #37c871;
+  --kg-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg); background-image: var(--kg-bg-grad); background-attachment: fixed; color: var(--kg-text); min-height: 100vh; line-height: 1.5; overflow-x: hidden; }
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg); color: var(--kg-text); min-height: 100vh; line-height: 1.5; overflow-x: hidden; }
 
 /* Sidebar */
 .sidebar { width: 260px; background: var(--kg-sidebar); border-right: 1px solid var(--kg-border); display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 100; backdrop-filter: blur(20px); transition: transform 0.3s ease; }
@@ -88,28 +88,44 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
 .main { margin-left: 260px; flex: 1; display: flex; flex-direction: column; min-width: 0; transition: margin 0.3s; }
 @media (max-width: 768px) { .main { margin-left: 0; } }
 
-.header { height: 80px; background: rgba(15, 23, 42, 0.4); border-bottom: 1px solid var(--kg-border); display: flex; align-items: center; justify-content: space-between; padding: 0 40px; position: sticky; top: 0; z-index: 90; backdrop-filter: blur(10px); }
-.header h1 { font-size: 22px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
-.header-right { display: flex; align-items: center; gap: 25px; }
+.header { height: 60px; background: var(--kg-sidebar); border-bottom: 1px solid var(--kg-border); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; position: sticky; top: 0; z-index: 90; }
+.header h1 { font-size: 18px; font-weight: 600; color: #fff; display:none; }
+.header-right { display: flex; align-items: center; gap: 20px; margin-left: auto; }
 .user-info { font-size: 13px; color: var(--kg-text-dim); display: flex; align-items: center; gap: 8px; }
 .user-info strong { color: #fff; }
-.logout-btn { background: rgba(244, 63, 94, 0.1); color: var(--kg-red); text-decoration: none; font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 8px; transition: 0.2s; }
-.logout-btn:hover { background: rgba(244, 63, 94, 0.2); transform: translateY(-1px); }
+.logout-btn { background: rgba(255, 82, 82, 0.1); color: var(--kg-red); text-decoration: none; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 6px; transition: 0.2s; }
+.logout-btn:hover { background: rgba(255, 82, 82, 0.2); }
 
-.hamburger { display: none; cursor: pointer; padding: 10px; color: #fff; }
-@media (max-width: 768px) { .hamburger { display: block; } }
-.hamburger div { width: 24px; height: 2px; background: currentColor; margin: 5px 0; border-radius: 2px; }
+.hamburger { display: none; cursor: pointer; padding: 10px; color: #fff; margin-right: 15px; }
+@media (max-width: 768px) { .hamburger { display: block; } .header { padding: 0 15px; } }
+.hamburger div { width: 22px; height: 2px; background: currentColor; margin: 4px 0; border-radius: 2px; }
 
 /* Content & Grid */
-.content { padding: 40px; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; }
-.grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 30px; }
-.card { grid-column: span 6; background: var(--kg-card); border: 1px solid var(--kg-border); border-radius: 24px; padding: 30px; box-shadow: var(--kg-shadow); backdrop-filter: blur(20px); transition: 0.3s; position: relative; overflow: hidden; }
-.card:hover { transform: translateY(-5px); border-color: rgba(0, 168, 232, 0.3); }
+.content { padding: 25px max(25px, calc((100% - 1400px)/2)); flex: 1; width: 100%; display: flex; flex-direction: column; gap: 25px; }
+.grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 25px; }
+.card { grid-column: span 6; background: var(--kg-card); border: 1px solid var(--kg-border); border-radius: 8px; box-shadow: var(--kg-shadow); overflow: hidden; position: relative; transition: box-shadow 0.2s; }
 @media (max-width: 1100px) { .card { grid-column: span 12; } }
 
-.card-header { margin-bottom: 25px; display: flex; align-items: center; gap: 12px; }
-.card-icon { width: 32px; height: 32px; background: rgba(0, 168, 232, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--kg-blue); }
-.card-header h3 { font-size: 14px; font-weight: 800; color: var(--kg-blue); text-transform: uppercase; letter-spacing: 1.5px; }
+.card-header { display: flex; align-items: center; gap: 10px; padding: 18px 25px; border-bottom: 1px solid var(--kg-border); cursor: grab; background: rgba(0,0,0,0.1); }
+.card-header:active { cursor: grabbing; }
+.card-header h3 { font-size: 11px; font-weight: 700; color: var(--kg-text-dim); text-transform: uppercase; letter-spacing: 1px; }
+
+.sortable-ghost { opacity: 0.3; transform: scale(0.98); }
+
+.card-padd { padding: 25px; }
+
+/* Dashboard Keenetic Styles */
+.k-conn-block { padding: 20px 25px; }
+.k-conn-title { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+.k-conn-subtitle { font-size: 12px; color: var(--kg-text-dim); display: flex; align-items: center; gap: 10px; }
+.k-badge { display: inline-block; padding: 3px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; background: rgba(55,200,113,0.1); color: var(--kg-green); }
+
+.k-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px 25px; }
+@media(max-width: 600px) { .k-grid { grid-template-columns: 1fr; } }
+.k-kv { display: flex; flex-direction: column; gap: 2px; }
+.k-lbl { font-size: 11px; color: var(--kg-text-dim); }
+.k-val { font-size: 13px; color: #fff; font-weight: 500; }
+.k-val-link { color: var(--kg-blue); cursor: pointer; text-decoration: none; }
 
 /* Stats */
 .stat-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -122,7 +138,7 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
 .circle-val { font-size: 26px; font-weight: 800; color: var(--kg-blue); }
 .circle-label { font-size: 11px; color: var(--kg-text-dim); text-transform: uppercase; font-weight: 800; margin-top: 5px; letter-spacing: 1px; }
 
-.chart-container { height: 200px; margin-top: 20px; }
+.chart-container { height: 160px; width: 100%; border-bottom: 1px solid var(--kg-border); position: relative; }
 
 /* Forms & Buttons */
 .fg { margin-bottom: 20px; }
@@ -203,11 +219,11 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
 <div class="main">
     <div class="header">
-      <div style="display:flex; align-items:center; gap:20px">
+      <div style="display:flex; align-items:center;">
         <div class="hamburger" onclick="toggleSidebar()">
           <div></div><div></div><div></div>
         </div>
-        <h1 id="page-title-text">Системный монитор</h1>
+        <h1 id="page-title-text" style="display:none">Системный монитор</h1>
       </div>
       <div class="header-right">
         <div class="user-info hide-mobile">
@@ -222,67 +238,86 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
 <!-- DASHBOARD -->
 <div class="page active" id="page-dashboard">
-  <div class="grid">
-    <div class="card">
+  
+  <div class="grid" id="sortable-dashboard">
+    <!-- BLOCK 1: ИНТЕРНЕТ (Keenetic Replica) -->
+    <div class="card" id="block-internet">
       <div class="card-header">
+        <svg fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" viewBox="0 0 24 24" style="color:var(--kg-text-dim); margin-right:4px;"><path d="M21 12A9 9 0 013 12m18 0A9 9 0 003 12m18 0c0-4.97-4.03-9-9-9s-9 4.03-9 9 9 9 9-4.03 9-9.m-9-9v18m6-9H6"></path></svg>
         <h3>ИНТЕРНЕТ</h3>
       </div>
-      <div class="stat-item"><span class="stat-label">Внешний IP адрес</span><span class="stat-val" id="d-ip" style="color:var(--kg-blue)">--</span></div>
-      <div class="stat-item"><span class="stat-label">Скорость приема</span><span class="stat-val" id="d-down-speed">0.00 Mbit/s</span></div>
-      <div class="stat-item"><span class="stat-label">Скорость передачи</span><span class="stat-val" id="d-up-speed">0.00 Mbit/s</span></div>
-      <div class="chart-container"><canvas id="trafficChart"></canvas></div>
+      
+      <div class="k-conn-block">
+        <div class="k-conn-title">Sky-Net Public Server</div>
+        <div class="k-conn-subtitle">Ethernet Connection <span class="k-badge">ПОДКЛЮЧЕНО</span></div>
+      </div>
+      
+      <div class="chart-container">
+        <canvas id="trafficChart"></canvas>
+      </div>
+      
+      <div class="k-grid">
+        <div class="k-kv"><span class="k-lbl">IP-адрес</span><span class="k-val k-val-link" id="d-ip">--</span></div>
+        <div class="k-kv"><span class="k-lbl">MAC-адрес</span><span class="k-val">Авто (Server)</span></div>
+        <div class="k-kv"><span class="k-lbl">Скорость приема</span><span class="k-val" id="d-down-speed">--</span></div>
+        <div class="k-kv"><span class="k-lbl">Скорость отдачи</span><span class="k-val" id="d-up-speed">--</span></div>
+        <div class="k-kv"><span class="k-lbl">Всего принято</span><span class="k-val" id="d-down">--</span></div>
+        <div class="k-kv"><span class="k-lbl">Всего отправлено</span><span class="k-val" id="d-up">--</span></div>
+      </div>
     </div>
     
-    <div class="card">
+    <!-- BLOCK 2: О СИСТЕМЕ -->
+    <div class="card" id="block-system">
       <div class="card-header">
+        <svg fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" viewBox="0 0 24 24" style="color:var(--kg-text-dim); margin-right:4px;"><path d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path></svg>
         <h3>О СИСТЕМЕ</h3>
       </div>
-      <div class="stat-item"><span class="stat-label">Имя устройства</span><span class="stat-val" id="d-host">--</span></div>
-      <div class="stat-item"><span class="stat-label">Версия системы</span><span class="stat-val" id="d-os">--</span></div>
-      <div class="stat-item"><span class="stat-label">Время работы</span><span class="stat-val" id="uptime-val">--</span></div>
       
-      <div class="stat-circles">
-        <div class="circle-stat"><div class="circle-val" id="cpu-val">0%</div><div class="circle-label">CPU</div></div>
-        <div class="circle-stat"><div class="circle-val" id="ram-val">0%</div><div class="circle-label">RAM</div></div>
+      <div class="k-grid">
+        <div class="k-kv"><span class="k-lbl">Имя устройства</span><span class="k-val" id="d-host">--</span></div>
+        <div class="k-kv"><span class="k-lbl">Версия системы</span><span class="k-val" id="d-os">--</span></div>
+        <div class="k-kv"><span class="k-lbl">Время работы</span><span class="k-val" id="uptime-val">--</span></div>
       </div>
-      <div class="stat-item" style="margin-top:20px"><span class="stat-label">Диск</span><span class="stat-val" id="disk-val">0%</span></div>
+      
+      <div style="padding: 20px 25px; border-top: 1px solid var(--kg-border); display:flex; justify-content:space-around; align-items:center;">
+        <div style="text-align:center"><div style="font-size:18px; font-weight:700; color:var(--kg-blue)" id="cpu-val">0%</div><div class="k-lbl">CPU</div></div>
+        <div style="text-align:center"><div style="font-size:18px; font-weight:700; color:var(--kg-blue)" id="ram-val">0%</div><div class="k-lbl">RAM</div></div>
+        <div style="text-align:center"><div style="font-size:18px; font-weight:700; color:var(--kg-blue)" id="disk-val">0%</div><div class="k-lbl">ДИСК</div></div>
+      </div>
     </div>
+    
+  </div> <!-- end grid -->
 
-    <div class="card card-wide">
+  <div class="grid" style="margin-top:25px;" id="sortable-dashboard-bottom">
+    <!-- BLOCK 3: АКТИВНЫЕ СЕССИИ И ТРАФИК -->
+    <div class="card" style="grid-column: span 12;" id="block-clients">
       <div class="card-header">
-        <h3>БЫСТРОЕ УПРАВЛЕНИЕ</h3>
+        <svg fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" viewBox="0 0 24 24" style="color:var(--kg-text-dim); margin-right:4px;"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        <h3>АКТИВНЫЕ СЕССИИ И ТРАФИК</h3>
       </div>
-      <div class="grid-3">
-        <button class="btn btn-o" style="width:100%;justify-content:center;" onclick="rebootServer()">Перезагрузить ОС</button>
-        <button class="btn btn-o" style="width:100%;justify-content:center;" onclick="POST('/panel/api/system/setupService',{}).then(()=>alert('Сервис перезапущен'))">Рестарт Панели</button>
-        <button class="btn btn-o" style="width:100%;justify-content:center;" onclick="loadDashboard()">Обновить статус</button>
+      <div class="table-container" style="padding: 0 25px 25px 25px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Пользователь</th>
+              <th>Протокол</th>
+              <th>Трафик (↑/↓)</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody id="dash-clients-table">
+            <!-- Active clients will be rendered here -->
+          </tbody>
+        </table>
       </div>
     </div>
-  </div>
-  
-  <div class="card">
-    <div class="card-header"><h3>АКТИВНЫЕ СЕССИИ И ТРАФИК</h3></div>
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Пользователь</th>
-            <th style="padding: 10px 5px;">Протокол</th>
-            <th style="padding: 10px 5px;">Трафик (↑/↓)</th>
-            <th>Статус</th>
-          </tr>
-        </thead>
-        <tbody id="dash-clients-table">
-          <!-- Active clients will be rendered here -->
-        </tbody>
-      </table>
-    </div>
-  </div>
 
-  <div class="card">
-    <div class="card-header"><h3>СЕТЕВЫЕ ИНТЕРФЕЙСЫ</h3></div>
-    <div id="net-ifaces"></div>
-  </div>
+    <!-- BLOCK 4: СЕТЕВЫЕ ИНТЕРФЕЙСЫ -->
+    <div class="card" id="block-interfaces" style="display:none;">
+      <div class="card-header"><h3>СЕТЕВЫЕ ИНТЕРФЕЙСЫ</h3></div>
+      <div id="net-ifaces" class="card-padd"></div>
+    </div>
+  </div> <!-- end grid -->
 </div>
 
 <!-- INBOUNDS -->
@@ -735,5 +770,15 @@ async function installFail2Ban(){if(!confirm('Установить Fail2Ban?'))r
 async function issueSSL(){const d=document.getElementById('ssl-domain').value;if(!d)return alert('Укажите домен');const r=await POST('/panel/api/system/issueSSL',{domain:d});alert(r.msg)}
 
 loadDashboard();setInterval(loadDashboard,15000);
+document.addEventListener('DOMContentLoaded', () => {
+    const s1 = document.getElementById('sortable-dashboard');
+    if(s1) new Sortable(s1, { animation: 150, handle: '.card-header', ghostClass: 'sortable-ghost',
+        store: { get: (s) => (localStorage.getItem('sort_d1')?localStorage.getItem('sort_d1').split('|'):[]), set: (s) => localStorage.setItem('sort_d1', s.toArray().join('|')) }
+    });
+    const s2 = document.getElementById('sortable-dashboard-bottom');
+    if(s2) new Sortable(s2, { animation: 150, handle: '.card-header', ghostClass: 'sortable-ghost',
+        store: { get: (s) => (localStorage.getItem('sort_d2')?localStorage.getItem('sort_d2').split('|'):[]), set: (s) => localStorage.setItem('sort_d2', s.toArray().join('|')) }
+    });
+});
 </script>
 </body></html>"""
