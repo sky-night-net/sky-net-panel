@@ -534,10 +534,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
 <!-- CLI -->
 <div class="page" id="page-cli">
-  <div class="card no-blue" style="height: calc(100vh - 120px);">
+  <div class="card no-blue">
     <div class="card-header"><h3 data-i18n="cli_title">КОМАНДНАЯ СТРОКА</h3></div>
-    <div id="cli-container" style="height: calc(100% - 60px); background: #000; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; overflow: hidden;">
-      <div id="cli-loading" style="color:var(--kg-text-dim); text-align:center; padding-top: 100px;">Инициализация терминала...</div>
+    <div class="log-box" id="cli-output" style="height: 350px;">root@sky-net:~# </div>
+    <div style="display:flex; padding: 20px; border-top: 1px solid var(--kg-border); background: rgba(0,0,0,0.1);">
+      <span style="color:var(--kg-green); font-family:monospace; margin-right: 10px; align-self: center;">$&gt;</span>
+      <input id="cli-input" style="flex:1; background: transparent; border: none; color: inherit; outline: none; font-family: monospace; font-size: 14px;" placeholder="ls -la" onkeypress="if(event.key==='Enter') runCliCommand()">
     </div>
   </div>
 </div>
@@ -719,7 +721,6 @@ function switchPage(page) {
   const fn={dashboard:loadDashboard,inbounds:loadInbounds,clients:loadAllClients,
     firewall:loadFirewall,system:loadSystem,logs:loadLogs,settings:loadSettings}[page];
   if(fn)fn();
-  if(page === 'cli') startWebSSH();
 }
 
 document.querySelectorAll('.sidebar nav a').forEach(a=>{
@@ -740,21 +741,17 @@ function downloadLogs() {
   window.open(`/panel/api/system/logs/download?unit=${u}`, '_blank');
 }
 
-let ttydStarted = false;
-async function startWebSSH() {
-  if(ttydStarted) return;
-  const lbox = document.getElementById('cli-loading');
-  if(lbox) lbox.textContent = localStorage.getItem('lang')==='en'?'Connecting to Terminal...':'Подключение к терминалу...';
-  const r = await POST('/panel/api/system/start_ttyd', {});
-  if(r.success) {
-     const p = r.port;
-     document.getElementById('cli-container').innerHTML = `<iframe src="http://${location.hostname}:${p}" style="width:100%;height:100%;border:none;"></iframe>`;
-     ttydStarted = true;
-  } else {
-     if(lbox) lbox.textContent = 'Ошибка: ' + r.msg;
-  }
+async function runCliCommand() {
+  const input = document.getElementById('cli-input');
+  const out = document.getElementById('cli-output');
+  const cmd = input.value.trim();
+  if(!cmd) return;
+  out.textContent += `root@sky-net:~# ${cmd}\n`;
+  input.value = '';
+  const r = await POST('/panel/api/system/cmd', {cmd: cmd});
+  if(r.output) out.textContent += r.output + "\n\n";
+  out.scrollTop = out.scrollHeight;
 }
-async function runCliCommand() {}
 
 // Dashboard logic
 let interfaceCharts = {};
