@@ -509,13 +509,7 @@ def api_client_config(client_id):
 @login_required
 def api_server_status():
     import platform
-    public_ip = "--"
-    try:
-        # Quick check for public IP
-        import urllib.request
-        public_ip = urllib.request.urlopen('https://ifconfig.me/ip', timeout=1).read().decode('utf-8').strip()
-    except:
-        pass
+    public_ip = get_public_ip() or "--"
 
     try:
         import psutil

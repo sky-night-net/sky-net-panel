@@ -142,6 +142,9 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
 
+.hide-mobile { display: none; }
+@media (min-width: 769px) { .hide-mobile { display: flex; } }
+
 /* Modals */
 .overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
 .overlay.show { display: flex; }
@@ -153,6 +156,10 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
 .modal-section { margin-top: 15px; border-top: 1px solid var(--kg-border); padding-top: 15px; }
 .section-title { font-size: 10px; text-transform: uppercase; color: var(--kg-blue); font-weight: 800; margin-bottom: 12px; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
 .section-title::after { content: ""; flex: 1; height: 1px; background: rgba(0,168,232,0.15); }
+
+.page { display: none; animation: fadeIn 0.4s ease; }
+.page.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Inbound Row */
 .ib-row { background: rgba(255,255,255,0.02); border: 1px solid var(--kg-border); border-radius: 6px; padding: 20px 30px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; transition: 0.2s; }
@@ -170,16 +177,16 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
   <div class="logo">SKY-NET</div>
   <nav>
     <div class="section">Статус</div>
-    <a href="#" data-page="dashboard" class="active"><span>📊</span> Системный монитор</a>
+    <a href="#" data-page="dashboard" class="active">Системный монитор</a>
     <div class="section">Интернет</div>
-    <a href="#" data-page="inbounds"><span>🌐</span> VPN серверы</a>
-    <a href="#" data-page="clients"><span>👥</span> Подключенные клиенты</a>
+    <a href="#" data-page="inbounds">VPN серверы</a>
+    <a href="#" data-page="clients">Подключенные клиенты</a>
     <div class="section">Сетевые правила</div>
-    <a href="#" data-page="firewall"><span>🛡️</span> Межсетевой экран</a>
+    <a href="#" data-page="firewall">Межсетевой экран</a>
     <div class="section">Управление</div>
-    <a href="#" data-page="system"><span>⚙️</span> Настройки системы</a>
-    <a href="#" data-page="logs"><span>📋</span> Журнал событий</a>
-    <a href="#" data-page="settings"><span>🔧</span> Параметры панели</a>
+    <a href="#" data-page="system">Настройки системы</a>
+    <a href="#" data-page="logs">Журнал событий</a>
+    <a href="#" data-page="settings">Параметры панели</a>
   </nav>
 </div>
 
@@ -207,7 +214,6 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
   <div class="grid">
     <div class="card">
       <div class="card-header">
-        <div class="card-icon">🌐</div>
         <h3>ИНТЕРНЕТ</h3>
       </div>
       <div class="stat-item"><span class="stat-label">Внешний IP адрес</span><span class="stat-val" id="d-ip" style="color:var(--kg-blue)">--</span></div>
@@ -218,7 +224,6 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
     
     <div class="card">
       <div class="card-header">
-        <div class="card-icon">🛡️</div>
         <h3>О СИСТЕМЕ</h3>
       </div>
       <div class="stat-item"><span class="stat-label">Имя устройства</span><span class="stat-val" id="d-host">--</span></div>
@@ -234,13 +239,12 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
 
     <div class="card card-wide">
       <div class="card-header">
-        <div class="card-icon">⚡</div>
         <h3>БЫСТРОЕ УПРАВЛЕНИЕ</h3>
       </div>
       <div class="grid-3">
-        <button class="btn btn-o" onclick="rebootServer()">🔄 Перезагрузить ОС</button>
-        <button class="btn btn-o" onclick="POST('/panel/api/system/setupService',{}).then(()=>alert('Сервис перезапущен'))">⚙️ Рестарт Панели</button>
-        <button class="btn btn-o" onclick="loadDashboard()">📡 Обновить статус</button>
+        <button class="btn btn-o" onclick="rebootServer()">Перезагрузить ОС</button>
+        <button class="btn btn-o" onclick="POST('/panel/api/system/setupService',{}).then(()=>alert('Сервис перезапущен'))">Рестарт Панели</button>
+        <button class="btn btn-o" onclick="loadDashboard()">Обновить статус</button>
       </div>
     </div>
   </div>
