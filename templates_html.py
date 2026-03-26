@@ -179,8 +179,9 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
 .k-val-link { color: var(--kg-blue); cursor: pointer; text-decoration: none; }
 
 /* Stats */
-.stat-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.stat-item { display: flex; justify-content: space-between; align-items: center; padding: 18px 25px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 .stat-item:last-child { border-bottom: none; }
+.stat-label { font-size: 14px; font-weight: 600; color: #fff; }
 .stat-label { font-size: 14px; color: var(--kg-text-dim); font-weight: 500; }
 .stat-val { font-size: 15px; font-weight: 700; color: #fff; font-family: 'JetBrains Mono', monospace; }
 
@@ -460,23 +461,15 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   
   <div class="card">
     <div class="card-header"><h3>ДОБАВИТЬ ПРАВИЛО</h3></div>
-    <div class="stat-item">
-      <div style="flex:1"><div class="stat-label">Порт</div><div style="font-size:12px; color:var(--kg-text-dim);">например: 22, 80, 443</div></div>
-      <div style="width:250px"><input id="fw-port" style="width:100%" placeholder="22"></div>
-    </div>
-    <div class="stat-item">
-      <div style="flex:1"><div class="stat-label">Протокол</div><div style="font-size:12px; color:var(--kg-text-dim);">TCP, UDP или Любой</div></div>
-      <div style="width:250px"><select id="fw-proto" class="sd-select" style="background:var(--kg-bg); border-color:var(--kg-border);"><option value="">Любой</option><option value="tcp">TCP</option><option value="udp">UDP</option></select></div>
-    </div>
-    <div class="stat-item">
-      <div style="flex:1"><div class="stat-label">Действие</div><div style="font-size:12px; color:var(--kg-text-dim);">Разрешить или Запретить трафик</div></div>
-      <div style="width:250px"><select id="fw-action" class="sd-select" style="background:var(--kg-bg); border-color:var(--kg-border);"><option value="allow">Разрешить</option><option value="deny">Запретить</option></select></div>
-    </div>
-    <div class="stat-item">
-      <div style="flex:1"><div class="stat-label">Источник IP</div><div style="font-size:12px; color:var(--kg-text-dim);">Опционально (по умолчанию Любой)</div></div>
-      <div style="width:250px"><input id="fw-from" style="width:100%" placeholder="any"></div>
-    </div>
-    <div style="padding:15px 25px; display:flex; justify-content:flex-end;">
+    <div style="padding:25px;">
+      <div class="fr">
+        <div class="fg"><label>Порт</label><input id="fw-port" placeholder="22"></div>
+        <div class="fg"><label>Протокол</label><select id="fw-proto"><option value="">Любой</option><option value="tcp">TCP</option><option value="udp">UDP</option></select></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>Действие</label><select id="fw-action"><option value="allow">Разрешить</option><option value="deny">Запретить</option></select></div>
+        <div class="fg"><label>Источник IP</label><input id="fw-from" placeholder="any"></div>
+      </div>
       <button class="btn btn-p" onclick="fwAddRule()">Добавить правило</button>
     </div>
   </div>
@@ -486,30 +479,21 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <div class="page" id="page-system">
   <div class="card no-blue">
     <div class="card-header"><h3>УПРАВЛЕНИЕ СИСТЕМОЙ</h3></div>
-    
-    <div class="stat-item">
-      <div style="flex:1"><div class="stat-label">ИМЯ УСТРОЙСТВА</div><div style="font-size:12px; color:var(--kg-text-dim);">Сетевое имя для идентификации</div></div>
-      <div style="display:flex; gap:10px; width:300px;"><input id="sys-hostname" style="flex:1" placeholder="avg"><button class="btn btn-o btn-sm" onclick="saveHostname()">Сохранить</button></div>
-    </div>
-    
-    <div class="stat-item">
-      <div style="flex:1"><div class="stat-label">ЧАСОВОЙ ПОЯС</div><div style="font-size:12px; color:var(--kg-text-dim);">Системное время сервера</div></div>
-      <div style="display:flex; gap:10px; width:300px;"><input id="sys-tz" style="flex:1" placeholder="Etc/UTC"><button class="btn btn-o btn-sm" onclick="saveTimezone()">Сохранить</button></div>
-    </div>
-
-    <div class="stat-item">
-      <div style="flex:1"><div class="stat-label">SSL Сертификат</div><div style="font-size:12px; color:var(--kg-text-dim);">Выпуск бесплатного сертификата Let's Encrypt</div></div>
-      <div style="display:flex; gap:10px; width:300px;"><input id="ssl-domain" style="flex:1" placeholder="vpn.example.com"><button class="btn btn-o btn-sm" onclick="issueSSL()">Выпустить</button></div>
-    </div>
-
-    <div class="stat-item">
-      <div style="flex:1"><div class="stat-label">Сервис Sky-Net</div><div style="font-size:12px; color:var(--kg-text-dim);">Добавление демона в автозапуск systemd</div></div>
-      <div style="width:300px; text-align:right;"><button class="btn btn-o btn-sm" onclick="setupService()">Настроить Автозапуск</button></div>
-    </div>
-
-    <div class="stat-item">
-      <div style="flex:1"><div class="stat-label">Защита Fail2Ban</div><div style="font-size:12px; color:var(--kg-text-dim);">Защита SSH от подбора паролей</div></div>
-      <div style="width:300px; text-align:right;"><button class="btn btn-o btn-sm" onclick="installFail2Ban()">Установить защиту</button></div>
+    <div style="padding:25px;">
+      <div class="fr">
+        <div class="fg"><label>Имя устройства</label><input id="sys-hostname" placeholder="sky-net"></div>
+        <div class="fg"><label>Часовой пояс</label><input id="sys-tz" placeholder="Etc/UTC"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>SSL домен</label><input id="ssl-domain" placeholder="vpn.example.com"></div>
+        <div class="fg" style="align-self:flex-end;"><button class="btn btn-p" onclick="issueSSL()">Выпустить сертификат</button></div>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:5px;">
+        <button class="btn btn-o" onclick="saveHostname()">Сохранить имя</button>
+        <button class="btn btn-o" onclick="saveTimezone()">Сохранить часовой пояс</button>
+        <button class="btn btn-o" onclick="setupService()">Настроить Автозапуск</button>
+        <button class="btn btn-o" onclick="installFail2Ban()">Установить Fail2Ban</button>
+      </div>
     </div>
   </div>
 </div>
@@ -762,16 +746,24 @@ async function runCliCommand() {
   if(!cmd) return;
   out.textContent += `root@sky-net:~# ${cmd}\n`;
   input.value = '';
-  const r = await POST('/panel/api/system/cmd', {cmd: cmd});
-  if(r.output) out.textContent += r.output + "\n\n";
+  try {
+    const r = await POST('/panel/api/system/cmd', {cmd: cmd});
+    if(r && r.output) out.textContent += r.output + "\n";
+    else if(r && !r.success) out.textContent += "Error: " + (r.output || 'unknown') + "\n";
+  } catch(e) { out.textContent += "Error: " + e.message + "\n"; }
+  out.textContent += "\n";
   out.scrollTop = out.scrollHeight;
 }
 async function cliQuick(cmd) {
   const out = document.getElementById('cli-output');
   if(cmd === 'clear') { out.textContent = 'root@sky-net:~# '; return; }
   out.textContent += `root@sky-net:~# ${cmd}\n`;
-  const r = await POST('/panel/api/system/cmd', {cmd: cmd});
-  if(r.output) out.textContent += r.output + "\n\n";
+  try {
+    const r = await POST('/panel/api/system/cmd', {cmd: cmd});
+    if(r && r.output) out.textContent += r.output + "\n";
+    else if(r && !r.success) out.textContent += "Error: " + (r.output || 'unknown') + "\n";
+  } catch(e) { out.textContent += "Error: " + e.message + "\n"; }
+  out.textContent += "\n";
   out.scrollTop = out.scrollHeight;
 }
 
