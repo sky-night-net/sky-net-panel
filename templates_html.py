@@ -536,6 +536,19 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <div class="page" id="page-cli">
   <div class="card no-blue">
     <div class="card-header"><h3 data-i18n="cli_title">КОМАНДНАЯ СТРОКА</h3></div>
+    <!-- Toolbar -->
+    <div style="display:flex; flex-wrap:wrap; gap:8px; padding:15px 25px; border-bottom:1px solid var(--kg-border); background:rgba(0,0,0,0.15);">
+      <button class="btn btn-o btn-sm" onclick="cliQuick('clear')" title="Очистить экран">🧹 Очистить</button>
+      <button class="btn btn-o btn-sm" onclick="cliQuick('uname -a && uptime && hostname')" title="Информация о системе">💻 Система</button>
+      <button class="btn btn-o btn-sm" onclick="cliQuick('top -bn1 | head -20')" title="Процессы">📊 Процессы</button>
+      <button class="btn btn-o btn-sm" onclick="cliQuick('systemctl list-units --type=service --state=running --no-pager')" title="Службы">⚙️ Службы</button>
+      <button class="btn btn-o btn-sm" onclick="cliQuick('ip a && echo --- && ip r')" title="Сеть">🌐 Сеть</button>
+      <button class="btn btn-o btn-sm" onclick="cliQuick('df -hT && echo --- && lsblk')" title="Диски">💾 Диски</button>
+      <button class="btn btn-o btn-sm" onclick="cliQuick('free -h')" title="Память">🧠 Память</button>
+      <button class="btn btn-o btn-sm" onclick="cliQuick('last -10')" title="Последние входы">🔐 Входы</button>
+      <button class="btn btn-o btn-sm" onclick="cliQuick('systemctl restart skynet')" title="Перезапустить Sky-Net">🔄 Рестарт Sky-Net</button>
+      <button class="btn btn-d btn-sm" onclick="if(confirm('Перезагрузить сервер?')) cliQuick('reboot')" title="Перезагрузка сервера">⚡ Reboot</button>
+    </div>
     <div class="log-box" id="cli-output" style="height: 350px;">root@sky-net:~# </div>
     <div style="display:flex; padding: 20px; border-top: 1px solid var(--kg-border); background: rgba(0,0,0,0.1);">
       <span style="color:var(--kg-green); font-family:monospace; margin-right: 10px; align-self: center;">$&gt;</span>
@@ -748,6 +761,14 @@ async function runCliCommand() {
   if(!cmd) return;
   out.textContent += `root@sky-net:~# ${cmd}\n`;
   input.value = '';
+  const r = await POST('/panel/api/system/cmd', {cmd: cmd});
+  if(r.output) out.textContent += r.output + "\n\n";
+  out.scrollTop = out.scrollHeight;
+}
+async function cliQuick(cmd) {
+  const out = document.getElementById('cli-output');
+  if(cmd === 'clear') { out.textContent = 'root@sky-net:~# '; return; }
+  out.textContent += `root@sky-net:~# ${cmd}\n`;
   const r = await POST('/panel/api/system/cmd', {cmd: cmd});
   if(r.output) out.textContent += r.output + "\n\n";
   out.scrollTop = out.scrollHeight;
