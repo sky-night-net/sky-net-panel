@@ -489,6 +489,11 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   <div class="card no-blue">
     <div class="card-header"><h3 data-i18n="sys_log">ЖУРНАЛ СОБЫТИЙ</h3>
       <div style="display:flex;gap:10px">
+        <select id="log-retention" class="sd-select" style="width:120px" onchange="applyLogSettings()">
+          <option value="">Хранение...</option><option value="1day">1 день</option>
+          <option value="1week">1 неделя</option><option value="1month">1 месяц</option>
+        </select>
+        <button class="btn btn-s btn-sm" onclick="downloadLogs()">Скачать .txt</button>
         <input id="log-unit" placeholder="Юнит (напр. skynet)" style="width:150px">
         <button class="btn btn-p btn-sm" onclick="loadLogs()">Обновить</button>
       </div>
@@ -500,11 +505,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <!-- CLI -->
 <div class="page" id="page-cli">
   <div class="card no-blue">
-    <div class="card-header"><h3 data-i18n="cli_title">КОМАНДНАЯ СТРОКА</h3></div>
-    <div class="log-box" id="cli-output" style="height: 350px;">root@sky-net:~# </div>
-    <div style="display:flex; padding: 20px; border-top: 1px solid var(--kg-border); background: rgba(0,0,0,0.1);">
-      <span style="color:var(--kg-green); font-family:monospace; margin-right: 10px; align-self: center;">$&gt;</span>
-      <input id="cli-input" style="flex:1; background: transparent; border: none; color: inherit; outline: none; font-family: monospace; font-size: 14px;" placeholder="ls -la" onkeypress="if(event.key==='Enter') runCliCommand()">
+    <div class="card-header">
+      <h3 data-i18n="cli_title">КОМАНДНАЯ СТРОКА</h3>
+      <button class="btn btn-p btn-sm" id="btn-ttyd" onclick="startWebSSH()">Запустить Web SSH</button>
+    </div>
+    <div id="cli-container" style="height: 500px; padding: 20px;">
+      <div style="color:var(--kg-text-dim); text-align:center; padding-top: 100px;">Нажмите кнопку сверху, чтобы запустить интерактивную SSH сессию</div>
     </div>
   </div>
 </div>
@@ -612,6 +618,47 @@ function changeLang(lang) {
     const key = el.getAttribute('data-i18n');
     if(I18N[lang] && I18N[lang][key]) el.textContent = I18N[lang][key];
   });
+  
+  if(lang === 'en') {
+    const textNodes = [
+       ['О СИСТЕМЕ', 'SYSTEM INFO'], ['АКТИВНЫЕ СЕССИИ И ТРАФИК', 'ACTIVE SESSIONS & TRAFFIC'],
+       ['СЕТЕВЫЕ ИНТЕРФЕЙСЫ', 'NETWORK INTERFACES'], ['VPN ПОДКЛЮЧЕНИЯ', 'VPN CONNECTIONS'],
+       ['ПОДКЛЮЧЕННЫЕ КЛИЕНТЫ', 'CONNECTED CLIENTS'], ['МЕЖСЕТЕВОЙ ЭКРАН', 'FIREWALL (UFW)'],
+       ['ДОБАВИТЬ ПРАВИЛО', 'ADD RULE'], ['УПРАВЛЕНИЕ СИСТЕМОЙ', 'SYSTEM MANAGEMENT'],
+       ['ИМЯ УСТРОЙСТВА', 'HOSTNAME'], ['ЧАСОВОЙ ПОЯС', 'TIMEZONE'],
+       ['ПАРАМЕТРЫ ПАНЕЛИ', 'PANEL SETTINGS'], ['ЖУРНАЛ СОБЫТИЙ', 'SYSTEM LOG'],
+       ['КОМАНДНАЯ СТРОКА', 'COMMAND LINE']
+    ];
+    document.querySelectorAll('h3').forEach(el => {
+       const mapped = textNodes.find(t => el.textContent.includes(t[0]));
+       if(mapped) {
+          const svg = el.querySelector('svg');
+          el.textContent = mapped[1] + (svg ? ' ' : '');
+          if(svg) el.appendChild(svg);
+       }
+    });
+    
+    const btnNodes = [
+      ['Добавить подключение', 'Add Connection'], ['Обновить', 'Refresh'], ['Создать', 'Create'],
+      ['Отмена', 'Cancel'], ['Добавить правило', 'Add Rule'], ['Готово', 'Done'],
+      ['Сброс', 'Reset'], ['Сохранить изменения', 'Save Changes'], ['Сохранить', 'Save'],
+      ['Скачать', 'Download'], ['Запустить Web SSH', 'Start Web SSH'], ['Выключить', 'Disable'],
+      ['Включить', 'Enable'], ['Удалить', 'Delete']
+    ];
+    document.querySelectorAll('button').forEach(el => {
+      const mapped = btnNodes.find(t => el.textContent.includes(t[0]));
+      if(mapped) el.textContent = mapped[1];
+    });
+    
+    const spanNodes = [
+      ['Имя устройства', 'Hostname'], ['Версия системы', 'OS Version'], ['Время работы', 'Uptime'],
+      ['Пользователь', 'User'], ['Протокол', 'Protocol'], ['Трафик', 'Traffic'], ['Статус', 'Status']
+    ];
+    document.querySelectorAll('.k-lbl, th').forEach(el => {
+      const mapped = spanNodes.find(t => el.textContent.includes(t[0]));
+      if(mapped) el.textContent = mapped[1];
+    });
+  }
 }
 function changeTheme(t){
   document.documentElement.setAttribute('data-theme',t==='light'?'light':'');
@@ -651,17 +698,32 @@ document.querySelectorAll('.sidebar nav a').forEach(a=>{
   a.addEventListener('click',e=>{e.preventDefault(); switchPage(a.dataset.page);})});
 const initPage='{{page}}';if(initPage){switchPage(initPage);}
 
-// CLI
-async function runCliCommand() {
-  const input = document.getElementById('cli-input');
-  const out = document.getElementById('cli-output');
-  const cmd = input.value.trim();
-  if(!cmd) return;
-  out.textContent += `root@sky-net:~# ${cmd}\n`;
-  input.value = '';
-  const r = await POST('/panel/api/system/cmd', {cmd: cmd});
-  if(r.output) out.textContent += r.output + "\n\n";
-  out.scrollTop = out.scrollHeight;
+// Logs & CLI
+async function applyLogSettings() {
+  const r = document.getElementById('log-retention').value;
+  if(!r) return;
+  const l = localStorage.getItem('lang');
+  alert(l==='en'?'Applying log settings...':'Применение настроек журнала...');
+  await POST('/panel/api/system/logs/settings', {retention: r});
+  alert(l==='en'?'Settings applied (old logs vacuumed).':'Настройки применены (старые логи очищены).');
+}
+function downloadLogs() {
+  const u = document.getElementById('log-unit').value || 'skynet';
+  window.open(`/panel/api/system/logs/download?unit=${u}`, '_blank');
+}
+
+async function startWebSSH() {
+  const btn = document.getElementById('btn-ttyd');
+  if(btn) btn.textContent = localStorage.getItem('lang')==='en'?'Starting...':'Запуск...';
+  const r = await POST('/panel/api/system/start_ttyd', {});
+  if(r.success) {
+     const p = r.port;
+     document.getElementById('cli-container').innerHTML = `<iframe src="http://${location.hostname}:${p}" style="width:100%;height:100%;border:none;border-radius:8px"></iframe>`;
+     if(btn) btn.style.display = 'none';
+  } else {
+     alert('Error starting ttyd: ' + r.msg);
+     if(btn) btn.textContent = 'Start Web SSH';
+  }
 }
 
 // Dashboard logic

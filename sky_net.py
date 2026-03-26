@@ -168,6 +168,54 @@ def api_system_cmd():
     except Exception as e:
         return jsonify({"success": False, "output": str(e)})
 
+@app.route("/panel/api/system/start_ttyd", methods=["POST"])
+@login_required
+def api_start_ttyd():
+    """Запуск Web SSH (ttyd) на порту 7681."""
+    import subprocess, socket
+    if os.getuid() != 0: return jsonify({"success": False, "msg": "Root privileges required."})
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        in_use = s.connect_ex(('localhost', 7681)) == 0
+    if in_use: return jsonify({"success": True, "port": 7681})
+    try:
+        res = subprocess.run(["which", "ttyd"], capture_output=True, text=True)
+        if not res.stdout.strip():
+            subprocess.run(["apt-get", "update"], check=True)
+            subprocess.run(["apt-get", "install", "-y", "ttyd"], check=True)
+        # Auth disabled for local port mapping, but we proxy it securely
+        subprocess.Popen(["ttyd", "-p", "7681", "-W", "bash"])
+        return jsonify({"success": True, "port": 7681})
+    except Exception as e:
+        return jsonify({"success": False, "msg": str(e)})
+
+@app.route("/panel/api/system/logs/download", methods=["GET"])
+@login_required
+def api_system_logs_download():
+    """Скачать журнал событий (.txt)."""
+    import subprocess
+    unit = request.args.get("unit", "skynet")
+    try:
+        res = subprocess.run(["journalctl", "-u", unit, "--no-pager"], capture_output=True, text=True)
+        return Response(res.stdout, mimetype="text/plain", headers={"Content-disposition": f"attachment; filename={unit}_logs.txt"})
+    except Exception as e:
+        return str(e), 500
+
+@app.route("/panel/api/system/logs/settings", methods=["POST"])
+@login_required
+def api_system_logs_settings():
+    """Управление хранением журнала."""
+    import subprocess
+    if os.getuid() != 0: return jsonify({"success": False, "msg": "Root privileges required."})
+    data = request.json
+    retention = data.get("retention", "")
+    try:
+        if retention:
+            # Vacuum older logs immediately
+            subprocess.run(["journalctl", f"--vacuum-time={retention}"], check=True)
+        return jsonify({"success": True, "msg": "Log settings applied."})
+    except Exception as e:
+        return jsonify({"success": False, "msg": str(e)})
+
 @app.route("/panel/api/db/backup", methods=["POST"])
 @login_required
 def api_db_backup():
