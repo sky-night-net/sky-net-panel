@@ -534,13 +534,10 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
 <!-- CLI -->
 <div class="page" id="page-cli">
-  <div class="card no-blue">
-    <div class="card-header">
-      <h3 data-i18n="cli_title">КОМАНДНАЯ СТРОКА</h3>
-      <button class="btn btn-p btn-sm" id="btn-ttyd" onclick="startWebSSH()">Запустить Web SSH</button>
-    </div>
-    <div id="cli-container" style="height: 500px; padding: 20px;">
-      <div style="color:var(--kg-text-dim); text-align:center; padding-top: 100px;">Нажмите кнопку сверху, чтобы запустить интерактивную SSH сессию</div>
+  <div class="card no-blue" style="height: calc(100vh - 120px);">
+    <div class="card-header"><h3 data-i18n="cli_title">КОМАНДНАЯ СТРОКА</h3></div>
+    <div id="cli-container" style="height: calc(100% - 60px); background: #000; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; overflow: hidden;">
+      <div id="cli-loading" style="color:var(--kg-text-dim); text-align:center; padding-top: 100px;">Инициализация терминала...</div>
     </div>
   </div>
 </div>
@@ -722,6 +719,7 @@ function switchPage(page) {
   const fn={dashboard:loadDashboard,inbounds:loadInbounds,clients:loadAllClients,
     firewall:loadFirewall,system:loadSystem,logs:loadLogs,settings:loadSettings}[page];
   if(fn)fn();
+  if(page === 'cli') startWebSSH();
 }
 
 document.querySelectorAll('.sidebar nav a').forEach(a=>{
@@ -742,17 +740,18 @@ function downloadLogs() {
   window.open(`/panel/api/system/logs/download?unit=${u}`, '_blank');
 }
 
+let ttydStarted = false;
 async function startWebSSH() {
-  const btn = document.getElementById('btn-ttyd');
-  if(btn) btn.textContent = localStorage.getItem('lang')==='en'?'Starting...':'Запуск...';
+  if(ttydStarted) return;
+  const lbox = document.getElementById('cli-loading');
+  if(lbox) lbox.textContent = localStorage.getItem('lang')==='en'?'Connecting to Terminal...':'Подключение к терминалу...';
   const r = await POST('/panel/api/system/start_ttyd', {});
   if(r.success) {
      const p = r.port;
-     document.getElementById('cli-container').innerHTML = `<iframe src="http://${location.hostname}:${p}" style="width:100%;height:100%;border:none;border-radius:8px"></iframe>`;
-     if(btn) btn.style.display = 'none';
+     document.getElementById('cli-container').innerHTML = `<iframe src="http://${location.hostname}:${p}" style="width:100%;height:100%;border:none;"></iframe>`;
+     ttydStarted = true;
   } else {
-     alert('Error starting ttyd: ' + r.msg);
-     if(btn) btn.textContent = 'Запустить Web SSH';
+     if(lbox) lbox.textContent = 'Ошибка: ' + r.msg;
   }
 }
 async function runCliCommand() {}
