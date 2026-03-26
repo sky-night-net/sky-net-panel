@@ -747,11 +747,10 @@ async function runCliCommand() {
   out.textContent += `root@sky-net:~# ${cmd}\n`;
   input.value = '';
   try {
-    const r = await POST('/panel/api/system/cmd', {cmd: cmd});
-    if(r && r.output) out.textContent += r.output + "\n";
-    else if(r && !r.success) out.textContent += "Error: " + (r.output || 'unknown') + "\n";
-  } catch(e) { out.textContent += "Error: " + e.message + "\n"; }
-  out.textContent += "\n";
+    const resp = await fetch('/panel/api/system/cmd', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({cmd: cmd})});
+    const r = await resp.json();
+    out.textContent += (r.output || '(no output)') + "\n\n";
+  } catch(e) { out.textContent += "Error: " + e.message + "\n\n"; }
   out.scrollTop = out.scrollHeight;
 }
 async function cliQuick(cmd) {
@@ -759,11 +758,10 @@ async function cliQuick(cmd) {
   if(cmd === 'clear') { out.textContent = 'root@sky-net:~# '; return; }
   out.textContent += `root@sky-net:~# ${cmd}\n`;
   try {
-    const r = await POST('/panel/api/system/cmd', {cmd: cmd});
-    if(r && r.output) out.textContent += r.output + "\n";
-    else if(r && !r.success) out.textContent += "Error: " + (r.output || 'unknown') + "\n";
-  } catch(e) { out.textContent += "Error: " + e.message + "\n"; }
-  out.textContent += "\n";
+    const resp = await fetch('/panel/api/system/cmd', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({cmd: cmd})});
+    const r = await resp.json();
+    out.textContent += (r.output || '(no output)') + "\n\n";
+  } catch(e) { out.textContent += "Error: " + e.message + "\n\n"; }
   out.scrollTop = out.scrollHeight;
 }
 

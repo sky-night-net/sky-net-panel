@@ -152,19 +152,19 @@ def api_system_issue_ssl():
 def api_system_cmd():
     """Выполнение команд оболочки через Web CLI."""
     import subprocess
-    data = request.json
+    data = request.get_json(force=True, silent=True) or {}
     cmd = data.get("cmd", "")
-    if not cmd: return jsonify({"success": False, "output": ""})
-    if os.getuid() != 0: return jsonify({"success": False, "output": "Root privileges required for CLI execution."})
+    if not cmd: return jsonify({"success": False, "output": "Empty command"})
     try:
-        # Run command with timeout and shell=True (as this is an admin panel)
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=15)
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30)
         out = result.stdout
         if result.stderr:
-            out += "\n" + result.stderr
+            out = (out + "\n" + result.stderr).strip() if out else result.stderr.strip()
+        if not out:
+            out = "(done, exit code: {})".format(result.returncode)
         return jsonify({"success": True, "output": out.strip()})
     except subprocess.TimeoutExpired:
-        return jsonify({"success": False, "output": "Command timed out (15s)."})
+        return jsonify({"success": False, "output": "Command timed out (30s)."})
     except Exception as e:
         return jsonify({"success": False, "output": str(e)})
 
