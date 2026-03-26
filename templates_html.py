@@ -1146,11 +1146,36 @@ async function loadInbounds(){
       <div class="ib-actions">
         <span class="badge ${ib.enable?'badge-on':'badge-off'}">${ib.enable?'Работает':'Пауза'}</span>
         <button class="btn btn-o btn-sm" onclick="toggleInbound(${ib.id})">${ib.enable?'Выключить':'Включить'}</button>
+        <button class="btn btn-p btn-sm" onclick="showInboundLogs(${ib.id})" style="background:var(--kg-blue); border-color:var(--kg-blue);">Журнал</button>
         <button class="btn btn-p btn-sm" onclick="openAddClient(${ib.id})">+ Клиент</button>
         <button class="btn btn-d btn-sm" onclick="deleteInbound(${ib.id})">Удалить</button>
       </div>
     </div>`
   })}
+
+async function showInboundLogs(id) {
+  const r = await API('/panel/api/inbounds/logs/' + id);
+  if(!r.success) { alert(r.msg); return; }
+  
+  const modal = document.createElement('div');
+  modal.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:2000; display:flex; align-items:center; justify-content:center; padding:20px;";
+  modal.innerHTML = `
+    <div style="background:#1a1a1a; width:90%; max-width:1000px; height:80%; border-radius:12px; border:1px solid var(--kg-border); display:flex; flex-direction:column; overflow:hidden;">
+      <div style="padding:15px 25px; border-bottom:1px solid var(--kg-border); display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0; text-transform:uppercase; font-size:14px;">Журнал подключений (Inbound #\${id})</h3>
+        <button onclick="this.parentElement.parentElement.parentElement.remove()" style="background:none; border:none; color:#fff; cursor:pointer; font-size:20px;">&times;</button>
+      </div>
+      <div style="flex:1; padding:20px; overflow:auto; font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--kg-text-dim); white-space:pre-wrap; background:#000;">
+        \${r.logs.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+      </div>
+      <div style="padding:15px 25px; border-top:1px solid var(--kg-border); text-align:right;">
+        <button onclick="showInboundLogs(\${id})" class="btn btn-p btn-sm">Обновить</button>
+        <button onclick="this.parentElement.parentElement.parentElement.remove()" class="btn btn-o btn-sm">Закрыть</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
 
 async function loadAllClients(){
   const r=await API('/panel/api/inbounds/list');if(!r.success)return;
