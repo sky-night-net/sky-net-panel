@@ -518,11 +518,17 @@ def api_server_status():
         disk = psutil.disk_usage("/")
         uptime = int(time.time() - psutil.boot_time())
         net = psutil.net_io_counters()
+        net_faces = psutil.net_io_counters(pernic=True)
+        ifaces_traffic = {}
+        for nic, st in net_faces.items():
+            ifaces_traffic[nic] = {"bytes_sent": st.bytes_sent, "bytes_recv": st.bytes_recv}
+        
         return jsonify({
             "cpu": cpu, "mem_percent": mem.percent,
             "mem_used": mem.used, "mem_total": mem.total,
             "disk_percent": disk.percent, "disk_used": disk.used, "disk_total": disk.total,
             "uptime": uptime, "net_sent": net.bytes_sent, "net_recv": net.bytes_recv,
+            "interfaces": ifaces_traffic,
             "hostname": platform.node(),
             "os_version": f"{platform.system()} {platform.release()}",
             "public_ip": public_ip
@@ -643,19 +649,22 @@ def api_firewall_del_rule():
 def api_system_network():
     try:
         import psutil
+        import socket
         addrs = psutil.net_if_addrs()
         stats = psutil.net_if_stats()
         interfaces = []
         for name, addr_list in addrs.items():
-            iface = {"name": name, "addresses": [], "is_up": False, "speed": 0}
+            iface = {"name": name, "addresses": [], "mac": "--", "is_up": False, "speed": 0}
             if name in stats:
                 iface["is_up"] = stats[name].isup
                 iface["speed"] = stats[name].speed
             for a in addr_list:
-                if a.family.name == "AF_INET":
+                if a.family == socket.AF_INET:
                     iface["addresses"].append({"ip": a.address, "netmask": a.netmask, "type": "IPv4"})
-                elif a.family.name == "AF_INET6":
+                elif a.family == socket.AF_INET6:
                     iface["addresses"].append({"ip": a.address, "type": "IPv6"})
+                elif getattr(a.family, "name", "") == "AF_LINK" or a.family == 17: # AF_PACKET
+                    iface["mac"] = a.address
             interfaces.append(iface)
         return jsonify({"success": True, "interfaces": interfaces})
     except Exception as e:

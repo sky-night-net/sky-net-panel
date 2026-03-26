@@ -156,6 +156,19 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
 .dot-green { background: var(--kg-green); }
 .dot-blue { background: var(--kg-blue); }
 
+/* Settings Modal specific */
+.widget-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+@media(max-width: 600px) { .widget-grid { grid-template-columns: 1fr; } }
+.widget-card { background: var(--kg-bg); border: 1px solid var(--kg-border); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
+.widget-card-title { font-size: 13px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
+.widget-card-toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.w-tgl { width: 34px; height: 20px; background: var(--kg-border); border-radius: 10px; position: relative; transition: 0.2s; }
+.w-tgl::after { content: ''; position: absolute; width: 16px; height: 16px; background: var(--kg-text-dim); border-radius: 50%; top: 2px; left: 2px; transition: 0.2s; }
+.w-tgl.on { background: var(--kg-blue); }
+.w-tgl.on::after { background: #fff; transform: translateX(14px); }
+.w-lbl { font-size: 13px; color: var(--kg-text-dim); }
+
+
 /* Forms & Buttons */
 .fg { margin-bottom: 20px; }
 .fg label { display: block; font-size: 12px; font-weight: 800; color: var(--kg-text-dim); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
@@ -241,7 +254,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         </div>
         <h1 id="page-title-text" style="display:none">Системный монитор</h1>
       </div>
-      <div class="header-right">
+      <div class="header-right" style="display:flex; align-items:center; gap: 15px;">
+        <svg fill="none" stroke="currentColor" stroke-width="2" width="22" height="22" viewBox="0 0 24 24" style="color:var(--kg-blue); cursor:pointer;" onclick="openWidgetSettings()"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
         <div class="user-info hide-mobile">
           <span style="opacity:0.5">Пользователь:</span>
           <strong>{{ session.get('username') }}</strong>
@@ -256,73 +270,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <div class="page active" id="page-dashboard">
   
   <div class="grid" id="sortable-dashboard">
-    <!-- BLOCK 1: ИНТЕРНЕТ (Keenetic Replica) -->
-    <div class="card" id="block-internet">
-      <div class="card-header">
-        <h3 style="margin:0">ИНТЕРНЕТ</h3>
-        <svg fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" viewBox="0 0 24 24" style="color:var(--kg-text-dim);"><path d="M4 8h16M4 16h16"></path></svg>
-      </div>
-      
-      <div class="k-conn-block">
-        <div class="k-conn-left">
-          <div class="k-toggle"></div>
-          <div>
-            <div class="k-conn-title">Sky-Net Server</div>
-            <div class="k-conn-subtitle">Ethernet</div>
-            <div class="k-badge">
-              <div class="dot dot-green" style="width:5px;height:5px;"></div>
-              <span id="uptime-badge">ПОДКЛЮЧЕНО</span>
-            </div>
-          </div>
-        </div>
-        <div class="k-btn-group">
-          <button class="k-icon-btn"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 16l4-4 4 4 4-4"/></svg></button>
-          <button class="k-icon-btn"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h4v4H4zM16 4h4v4h-4zM4 16h4v4H4zM16 16h4v4h-4z"/></svg></button>
-        </div>
-      </div>
-      
-      <div class="chart-container-wrapper">
-        <div class="chart-container">
-          <canvas id="trafficChart"></canvas>
-        </div>
-        <div class="chart-legend">
-          <span id="chart-time-1">--:--:--</span>
-          <div class="legend-center">
-            <div class="legend-item"><div class="dot dot-green"></div>Передача: <span id="leg-tx">0 кбит/с</span></div>
-            <div class="legend-item"><div class="dot dot-blue"></div>Прием: <span id="leg-rx">0 кбит/с</span></div>
-          </div>
-          <span id="chart-time-2">--:--:--</span>
-        </div>
-      </div>
-      
-      <div class="k-grid">
-        <!-- Col 1 -->
-        <div>
-          <div class="k-kv"><span class="k-lbl">Интернет-фильтр</span>
-            <span class="k-val red">Выключен</span>
-            <a href="#" class="k-val-link" style="font-size:13px; margin-top:4px; display:block">Настроить</a>
-          </div>
-        </div>
-        <!-- Col 2 -->
-        <div>
-          <div class="k-kv"><span class="k-lbl">Внешний IP-адрес</span><span class="k-val" id="d-ip">--</span></div>
-          <div class="k-kv"><span class="k-lbl">Шлюз</span><span class="k-val">Авто</span></div>
-          <div class="k-kv"><span class="k-lbl">Маска подсети</span><span class="k-val">255.255.255.0</span></div>
-        </div>
-        <!-- Col 3 -->
-        <div>
-          <div class="k-kv"><span class="k-lbl">MAC-адрес</span><span class="k-val">00:00:00:00:00:00</span></div>
-          <div class="k-kv"><span class="k-lbl">Прием</span><span class="k-val" id="d-down-speed">--</span></div>
-          <div class="k-kv"><span class="k-lbl">Передача</span><span class="k-val" id="d-up-speed">--</span></div>
-        </div>
-        <!-- Col 4 -->
-        <div>
-          <div class="k-kv"><span class="k-lbl">Принято</span><span class="k-val" id="d-down">--</span></div>
-          <div class="k-kv"><span class="k-lbl">Отправлено</span><span class="k-val" id="d-up">--</span></div>
-          <div class="k-kv"><span class="k-lbl">DNS-сервер</span><span class="k-val k-val-link">1.1.1.1</span></div>
-        </div>
-      </div>
-    </div>
+    <!-- Dynamic Interface Blocks -->
+    <div id="dynamic-interfaces-container" style="display:contents"></div>
     
     <!-- BLOCK 2: О СИСТЕМЕ -->
     <div class="card" id="block-system">
@@ -518,6 +467,21 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   </div>
 </div>
 
+<div class="overlay" id="widgetSettingsModal">
+  <div class="modal" style="max-width: 600px;">
+    <div class="modal-header">Расположение плиток</div>
+    <div class="modal-body">
+      <div class="widget-grid" id="widget-grid-container">
+        <!-- Tiles rendered here -->
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content: flex-end;">
+      <button class="btn btn-o" onclick="resetWidgets()">Сброс</button>
+      <button class="btn btn-p" onclick="closeModal('widgetSettingsModal')">Готово</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="qrModal">
   <div class="modal">
     <div class="modal-header">Конфигурация клиента</div>
@@ -559,41 +523,135 @@ document.querySelectorAll('.sidebar nav a').forEach(a=>{
     if(fn)fn()})});
 const initPage='{{page}}';if(initPage){document.querySelectorAll('.sidebar nav a').forEach(a=>{if(a.dataset.page===initPage)a.click()})}
 
-// Dashboard
-let chart;
-let lastNetS=0, lastNetR=0, lastTime=0;
+// Dashboard logic
+let interfaceCharts = {};
+let lastNetS = {};
+let lastNetR = {};
+let lastTime = 0;
+
+function isWidgetHidden(id) {
+  const hidden = localStorage.getItem('hidden_widgets') ? localStorage.getItem('hidden_widgets').split(',') : [];
+  return hidden.includes(id);
+}
+function toggleWidgetSettings(id) {
+  let hidden = localStorage.getItem('hidden_widgets') ? localStorage.getItem('hidden_widgets').split(',') : [];
+  if(hidden.includes(id)) { hidden = hidden.filter(x => x !== id); }
+  else { hidden.push(id); }
+  localStorage.setItem('hidden_widgets', hidden.join(','));
+  openWidgetSettings();
+  loadDashboard();
+}
+function openWidgetSettings() {
+  const cont = document.getElementById('widget-grid-container');
+  cont.innerHTML = '';
+  document.querySelectorAll('.card').forEach(card => {
+    const id = card.id;
+    if(!id) return;
+    const titleObj = card.querySelector('h3');
+    if(!titleObj) return;
+    const title = titleObj.textContent;
+    const hidden = isWidgetHidden(id);
+    cont.innerHTML += `<div class="widget-card">
+      <div class="widget-card-title">${title}</div>
+      <div class="widget-card-toggle" onclick="toggleWidgetSettings('${id}')">
+        <div class="w-tgl ${hidden?'':'on'}"></div>
+        <div class="w-lbl">Показать плитку</div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('widgetSettingsModal').classList.add('show');
+}
+function resetWidgets() {
+  localStorage.removeItem('hidden_widgets');
+  localStorage.removeItem('sort_d1');
+  localStorage.removeItem('sort_d2');
+  location.reload();
+}
+
 async function rebootServer(){ if(confirm('Вы действительно хотите перезагрузить СЕРВЕР? Соединение будет разорвано.')) { await POST('/panel/api/system/reboot',{}); alert('Запрос отправлен. Подождите 1-2 минуты.'); } }
+
 async function loadDashboard(){
-  const st=await API('/server/status');
+  const [st_res, net_res, hist_res] = await Promise.all([
+    API('/server/status'), API('/panel/api/system/network'), API('/panel/api/trafficHistory')
+  ]);
+  const st = st_res; const net = net_res; const hist = hist_res;
+  
   const d_ip=document.getElementById('d-ip'), d_host=document.getElementById('d-host'), d_os=document.getElementById('d-os');
-  if(d_ip) d_ip.textContent = st.public_ip || '--';
   if(d_host) d_host.textContent = st.hostname || 'Sky-Net';
   if(d_os) d_os.textContent = st.os_version || 'Ubuntu';
   
+  const curTime = new Date().toLocaleTimeString('ru-RU');
   const now = Date.now();
-  if(lastTime > 0){
-    const dt = (now - lastTime) / 1000;
-    const ds = ((st.net_sent - lastNetS) * 8 / 1000000 / dt).toFixed(2);
-    const dr = ((st.net_recv - lastNetR) * 8 / 1000000 / dt).toFixed(2);
+  let dt = 1;
+  if(lastTime > 0) dt = (now - lastTime) / 1000;
+  
+  const dynCont = document.getElementById('dynamic-interfaces-container');
+  if(net.success && dynCont) {
+    let html = '';
+    (net.interfaces || []).forEach(i => {
+      // Exclude loopback interfaces
+      if(i.name === 'lo') return;
+      
+      const id = 'block-internet-' + i.name;
+      const isHidden = isWidgetHidden(id);
+      
+      let ds = '0.00', dr = '0.00';
+      const nicStats = st.interfaces ? st.interfaces[i.name] : null;
+      if(nicStats && lastTime > 0) {
+        const prevS = lastNetS[i.name] || 0;
+        const prevR = lastNetR[i.name] || 0;
+        ds = ((nicStats.bytes_sent - prevS) * 8 / 1000000 / dt).toFixed(2);
+        dr = ((nicStats.bytes_recv - prevR) * 8 / 1000000 / dt).toFixed(2);
+      }
+      if(nicStats) {
+        lastNetS[i.name] = nicStats.bytes_sent;
+        lastNetR[i.name] = nicStats.bytes_recv;
+      }
+      
+      const ips = i.addresses.map(a => a.ip).join(', ') || '--';
+      const mac = i.mac || 'Авто';
+      const bs = nicStats ? fmtB(nicStats.bytes_sent) : '--';
+      const br = nicStats ? fmtB(nicStats.bytes_recv) : '--';
+      
+      html += `<div class="card" id="${id}" style="${isHidden?'display:none;':''}">
+        <div class="card-header"><h3 style="margin:0">ИНТЕРНЕТ (${i.name})</h3><svg fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" viewBox="0 0 24 24" style="color:var(--kg-text-dim);"><path d="M4 8h16M4 16h16"></path></svg></div>
+        <div class="k-conn-block"><div class="k-conn-left"><div class="k-toggle on"></div><div><div class="k-conn-title">Sky-Net Interface</div><div class="k-conn-subtitle">${i.name}</div><div class="k-badge"><div class="dot dot-green" style="width:5px;height:5px;"></div><span style="margin-left:5px">${i.is_up?'ПОДКЛЮЧЕНО '+fmtUp(st.uptime||0):'ОТКЛЮЧЕНО'}</span></div></div></div><div class="k-btn-group"><button class="k-icon-btn"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 16l4-4 4 4 4-4"/></svg></button><button class="k-icon-btn"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h4v4H4zM16 4h4v4h-4zM4 16h4v4H4zM16 16h4v4h-4z"/></svg></button></div></div>
+        <div class="chart-container-wrapper"><div class="chart-container"><canvas id="chart-${i.name}"></canvas></div><div class="chart-legend"><span>${curTime}</span><div class="legend-center"><div class="legend-item"><div class="dot dot-green"></div>Передача: <span style="color:#fff">${ds} Мбит/с</span></div><div class="legend-item"><div class="dot dot-blue"></div>Прием: <span style="color:#fff">${dr} Мбит/с</span></div></div><span>${curTime}</span></div></div>
+        <div class="k-grid">
+          <div><div class="k-kv"><span class="k-lbl">Интернет-фильтр</span><span class="k-val red">Выключен</span><a href="#" class="k-val-link" style="font-size:13px; margin-top:4px; display:block">Настроить</a></div></div>
+          <div><div class="k-kv"><span class="k-lbl">IP-адрес</span><span class="k-val">${ips}</span></div><div class="k-kv"><span class="k-lbl">Шлюз</span><span class="k-val">Авто</span></div><div class="k-kv"><span class="k-lbl">Маска подсети</span><span class="k-val">Авто</span></div></div>
+          <div><div class="k-kv"><span class="k-lbl">MAC-адрес</span><span class="k-val">${mac}</span></div><div class="k-kv"><span class="k-lbl">Прием</span><span class="k-val">${dr} Мбит/с</span></div><div class="k-kv"><span class="k-lbl">Передача</span><span class="k-val">${ds} Мбит/с</span></div></div>
+          <div><div class="k-kv"><span class="k-lbl">Принято</span><span class="k-val">${br}</span></div><div class="k-kv"><span class="k-lbl">Отправлено</span><span class="k-val">${bs}</span></div><div class="k-kv"><span class="k-lbl">DNS-сервер</span><span class="k-val k-val-link">1.1.1.1</span></div></div>
+        </div>
+      </div>`;
+    });
+    dynCont.innerHTML = html;
     
-    // Update both places for speeds
-    const el_ups = document.getElementById('d-up-speed'); if(el_ups) el_ups.textContent = ds + ' Мбит/с';
-    const el_dns = document.getElementById('d-down-speed'); if(el_dns) el_dns.textContent = dr + ' Мбит/с';
-    const leg_tx = document.getElementById('leg-tx'); if(leg_tx) leg_tx.textContent = ds + ' Мбит/с';
-    const leg_rx = document.getElementById('leg-rx'); if(leg_rx) leg_rx.textContent = dr + ' Мбит/с';
+    (net.interfaces || []).forEach(i => {
+      if(i.name === 'lo') return;
+      const cCtx = document.getElementById('chart-'+i.name);
+      if(!cCtx) return;
+      if(!interfaceCharts[i.name]){
+         interfaceCharts[i.name] = new Chart(cCtx.getContext('2d'),{type:'line',data:{labels:Array.from({length:60},(_,idx)=>idx),datasets:[{label:'Tx',data:hist.up,borderColor:'#2fb45a',fill:true,backgroundColor:'rgba(47,180,90,0.1)',tension:.4,pointRadius:0},{label:'Rx',data:hist.down,borderColor:'#00a8e8',fill:true,backgroundColor:'rgba(0,168,232,0.1)',tension:.4,pointRadius:0}]},options:{maintainAspectRatio:false,animation:false,scales:{x:{display:false},y:{display:false,min:0}},plugins:{legend:{display:false}}}});
+      } else {
+         interfaceCharts[i.name].data.datasets[0].data = hist.up; 
+         interfaceCharts[i.name].data.datasets[1].data = hist.down;
+         interfaceCharts[i.name].update();
+      }
+    });
   }
-  lastNetS = st.net_sent; lastNetR = st.net_recv; lastTime = now;
+  
+  lastTime = now;
 
-  const b = document.getElementById('uptime-badge'); 
-  if(b) b.textContent = 'ПОДКЛЮЧЕНО ' + fmtUp(st.uptime||0);
+  const blockSys = document.getElementById('block-system');
+  if(blockSys) blockSys.style.display = isWidgetHidden('block-system') ? 'none' : '';
+  const blockCli = document.getElementById('block-clients');
+  if(blockCli) blockCli.style.display = isWidgetHidden('block-clients') ? 'none' : '';
 
   const cv = document.getElementById('cpu-val'); if(cv) cv.textContent=st.cpu+'%';
   const rv = document.getElementById('ram-val'); if(rv) rv.textContent=Math.round(st.mem_percent)+'%';
   const dv = document.getElementById('disk-val'); if(dv) dv.textContent=Math.round(st.disk_percent||0)+'%';
   const uv = document.getElementById('uptime-val'); if(uv) uv.textContent=fmtUp(st.uptime||0);
-  
-  const curTime = new Date().toLocaleTimeString('ru-RU');
-  const t2 = document.getElementById('chart-time-2'); if(t2) t2.textContent = curTime;
   
   const ib=await API('/panel/api/inbounds/list');
   if(ib.success){
@@ -603,34 +661,13 @@ async function loadDashboard(){
       (i.clients||[]).forEach(c=>{
         tu+=c.up||0; td+=c.down||0;
         if(clt){
-          const now = Math.floor(Date.now()/1000);
-          const isActive = (now - (c.last_online||0)) < 180; // 3 minutes
-          clt.innerHTML += `<tr>
-            <td><b>${c.username}</b></td>
-            <td><span class="badge badge-proto" style="font-size:10px">${PL[i.protocol]}</span></td>
-            <td>${fmtB(c.up)} / ${fmtB(c.down)}</td>
-            <td><span class="badge ${isActive?'badge-on':'badge-off'}">${isActive?'Активен':'Оффлайн'}</span></td>
-          </tr>`;
+          const nowS = Math.floor(Date.now()/1000);
+          const isActive = (nowS - (c.last_online||0)) < 180;
+          clt.innerHTML += `<tr><td><b>${c.username}</b></td><td><span class="badge badge-proto" style="font-size:10px">${PL[i.protocol]}</span></td><td>${fmtB(c.up)} / ${fmtB(c.down)}</td><td><span class="badge ${isActive?'badge-on':'badge-off'}">${isActive?'Активен':'Оффлайн'}</span></td></tr>`;
         }
       })
     });
-    document.getElementById('d-up').textContent=fmtB(tu); document.getElementById('d-down').textContent=fmtB(td);
   }
-  
-  const hist=await API('/panel/api/trafficHistory');
-  if(!chart){
-    const ctx = document.getElementById('trafficChart').getContext('2d');
-    chart=new Chart(ctx,{type:'line',data:{labels:Array.from({length:60},(_,i)=>i),
-    datasets:[{label:'Загрузка',data:hist.up,borderColor:'#00a8e8',fill:true,backgroundColor:'rgba(0,168,232,0.1)',tension:.4,pointRadius:0},
-              {label:'Отдача',data:hist.down,borderColor:'#2fb45a',fill:true,backgroundColor:'rgba(47,180,90,0.1)',tension:.4,pointRadius:0}]},
-    options:{maintainAspectRatio:false,scales:{x:{display:false},y:{display:false}},plugins:{legend:{display:false}},animation:false}});
-  }else{chart.data.datasets[0].data=hist.up;chart.data.datasets[1].data=hist.down;chart.update()}
-  
-  const net=await API('/panel/api/system/network');
-  const nc=document.getElementById('net-ifaces');nc.innerHTML='';
-  if(net.success)(net.interfaces||[]).forEach(i=>{
-    const ips=i.addresses.map(a=>a.ip).join(', ')||'Нет IP';
-    nc.innerHTML+=`<div class="stat-item"><span class="stat-label"><b>${i.name}</b> (${ips})</span><span class="badge ${i.is_up?'badge-on':'badge-off'}">${i.is_up?'ПОДКЛЮЧЕНО':'ОТКЛЮЧЕНО'}</span></div>`})
 }
 
 const PL={'amneziawg_v1':'AmneziaWG v1','amneziawg_v2':'AmneziaWG v2','openvpn_xor':'OpenVPN XOR'};
