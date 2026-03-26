@@ -551,7 +551,7 @@ function openWidgetSettings() {
     if(!titleObj) return;
     const title = titleObj.textContent;
     const hidden = isWidgetHidden(id);
-    cont.innerHTML += `<div class="widget-card">
+    cont.innerHTML += `<div class="widget-card" data-id="${id}" style="cursor:grab">
       <div class="widget-card-title">${title}</div>
       <div class="widget-card-toggle" onclick="toggleWidgetSettings('${id}')">
         <div class="w-tgl ${hidden?'':'on'}"></div>
@@ -559,6 +559,27 @@ function openWidgetSettings() {
       </div>
     </div>`;
   });
+  
+  if(!window.widgetSortable) {
+    if(typeof Sortable !== 'undefined') {
+      window.widgetSortable = new Sortable(cont, {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        onEnd: function() {
+          const order = Array.from(cont.children).map(c => c.dataset.id).join('|');
+          localStorage.setItem('sort_d1', order);
+          const parent = document.getElementById('sortable-dashboard');
+          if(parent) {
+            order.split('|').forEach(ordId => {
+              const el = document.getElementById(ordId);
+              if(el && el.parentElement === parent) parent.appendChild(el); 
+            });
+          }
+        }
+      });
+    }
+  }
+  
   document.getElementById('widgetSettingsModal').classList.add('show');
 }
 function resetWidgets() {
