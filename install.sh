@@ -44,13 +44,26 @@ apt-get install -y python3 python3-pip python3-flask python3-flask-cors python3-
   sqlite3 curl git ufw fail2ban certbot
 
 # Install VPN Dependencies
-echo -e "${BLUE}Installing VPN protocols (AmneziaWG, OpenVPN)...${NC}"
+echo -e "${BLUE}Installing VPN protocols (AmneziaWG, OpenVPN, Docker)...${NC}"
 # Use non-interactive for PPA
 DEBIAN_FRONTEND=noninteractive add-apt-repository ppa:amnezia/ppa -y || true
 apt-get update
 # AmneziaWG-tools is usually needed for awg-quick
-apt-get install -y amneziawg amneziawg-tools wireguard-tools || echo "AmneziaWG installation from PPA failed, will try on-demand"
+apt-get install -y amneziawg amneziawg-tools wireguard-tools || echo "AmneziaWG installation from PPA failed"
 apt-get install -y openvpn easy-rsa
+
+# Install Docker (needed for OpenVPN XOR)
+if ! [ -x "$(command -v docker)" ]; then
+  echo -e "${BLUE}Docker not found. Installing Docker...${NC}"
+  curl -fsSL https://get.docker.com -o get-docker.sh
+  sh get-docker.sh
+fi
+
+# Enable IP Forwarding persistently
+echo -e "${BLUE}Enabling IP Forwarding...${NC}"
+sysctl -w net.ipv4.ip_forward=1
+sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+grep -q "net.ipv4.ip_forward=1" /etc/sysctl.conf || echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
 
 # Setup Sky-Net Directory and Source Code
 INSTALL_DIR="/opt/sky-net"
