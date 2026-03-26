@@ -131,6 +131,8 @@ push "redirect-gateway def1 bypass-dhcp"
 push "dhcp-option DNS 1.1.1.1"
 push "dhcp-option DNS 8.8.8.8"
 keepalive 10 120
+topology subnet
+data-ciphers {cipher}:AES-256-GCM:AES-128-GCM
 cipher {cipher}
 auth SHA256
 explicit-exit-notify 1
@@ -254,6 +256,7 @@ mssfix 1350
             "--restart", "unless-stopped",
             "--network", "host",
             "--cap-add", "NET_ADMIN",
+            "--device", "/dev/net/tun",
             "-v", f"{self.CONFIG_DIR}:/etc/openvpn",
             "-v", "/var/log/openvpn:/var/log/openvpn",
             "lawtancool/docker-openvpn-xor",
