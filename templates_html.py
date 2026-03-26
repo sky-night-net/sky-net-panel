@@ -68,37 +68,61 @@ MAIN_HTML = r"""<!DOCTYPE html>
 body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg); color: var(--kg-text); min-height: 100vh; line-height: 1.5; overflow-x: hidden; }
 
 /* Sidebar */
-.sidebar { width: 260px; background: var(--kg-sidebar); border-right: 1px solid var(--kg-border); display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 100; backdrop-filter: blur(20px); transition: transform 0.3s ease; }
-.sidebar .logo { padding: 35px 30px; color: var(--kg-blue); font-weight: 900; font-size: 22px; text-transform: uppercase; letter-spacing: 2px; }
-.sidebar nav { flex: 1; padding: 10px 0; overflow-y: auto; }
-.sidebar nav a { display: flex; align-items: center; gap: 15px; padding: 14px 30px; color: var(--kg-text-dim); text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.2s; border-left: 3px solid transparent; }
-.sidebar nav a:hover { color: #fff; background: rgba(255,255,255,0.03); }
-.sidebar nav a.active { color: #fff; border-left-color: var(--kg-blue); background: rgba(0,168,232,0.1); font-weight: 600; }
-.sidebar nav .section { font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,0.2); padding: 30px 30px 10px; font-weight: 800; letter-spacing: 1.5px; }
+.sidebar { width: 260px; background: var(--kg-sidebar); border-right: 1px solid var(--kg-border); display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 100; backdrop-filter: blur(20px); transition: width 0.3s ease, transform 0.3s ease; overflow-x: hidden; }
+.sidebar.collapsed { width: 70px; }
+.sidebar .logo { padding: 35px 25px; color: var(--kg-blue); font-weight: 900; font-size: 22px; text-transform: uppercase; letter-spacing: 2px; white-space: nowrap; transition: 0.3s; }
+.sidebar.collapsed .logo { opacity: 0; pointer-events: none; }
+.sidebar nav { flex: 1; padding: 10px 0; overflow-y: auto; overflow-x: hidden; }
+.sidebar nav a { display: flex; align-items: center; gap: 15px; padding: 14px 23px; color: var(--kg-text-dim); text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.2s; border-left: 3px solid transparent; white-space: nowrap; }
+.sidebar nav a svg { flex-shrink: 0; }
+.sidebar nav a:hover { color: var(--kg-blue); }
+.sidebar nav a.active { color: var(--kg-blue); background: rgba(0, 168, 232, 0.05); }
+.sidebar.collapsed nav a span { opacity: 0; pointer-events: none; transition: 0.2s; }
+.sidebar nav .section { font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,0.2); padding: 30px 25px 10px; font-weight: 800; letter-spacing: 1.5px; white-space: nowrap; transition: 0.3s; }
+.sidebar.collapsed nav .section { opacity: 0; pointer-events: none; height: 0; padding-top: 20px; padding-bottom: 0; }
 
 /* Mobile Overlay */
 @media (max-width: 768px) {
-  .sidebar { transform: translateX(-100%); }
+  .sidebar { width: 260px; transform: translateX(-100%); }
+  .sidebar.collapsed { width: 260px; transform: translateX(-100%); }
   .sidebar.show { transform: translateX(0); box-shadow: 20px 0 60px rgba(0,0,0,0.5); }
   .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 95; backdrop-filter: blur(4px); }
   .sidebar-overlay.show { display: block; }
 }
 
 /* Header */
-.main { margin-left: 260px; flex: 1; display: flex; flex-direction: column; min-width: 0; transition: margin 0.3s; }
-@media (max-width: 768px) { .main { margin-left: 0; } }
+.main { margin-left: 260px; flex: 1; display: flex; flex-direction: column; min-width: 0; transition: margin-left 0.3s ease; }
+.sidebar.collapsed ~ .main { margin-left: 70px; }
+@media (max-width: 768px) { .main { margin-left: 0 !important; } }
 
 .header { height: 60px; background: var(--kg-sidebar); border-bottom: 1px solid var(--kg-border); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; position: sticky; top: 0; z-index: 90; }
+.header-left { display: flex; align-items: center; gap: 20px; }
+.hamburger { cursor: pointer; padding: 10px; color: var(--kg-blue); display: flex; flex-direction: column; justify-content: center; transition: 0.2s; }
+.hamburger:hover { color: #fff; }
+.hamburger div { width: 24px; height: 3px; background: currentColor; margin: 3px 0; border-radius: 2px; }
 .header h1 { font-size: 18px; font-weight: 600; color: #fff; display:none; }
-.header-right { display: flex; align-items: center; gap: 20px; margin-left: auto; }
-.user-info { font-size: 13px; color: var(--kg-text-dim); display: flex; align-items: center; gap: 8px; }
-.user-info strong { color: #fff; }
-.logout-btn { background: rgba(255, 82, 82, 0.1); color: var(--kg-red); text-decoration: none; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 6px; transition: 0.2s; }
-.logout-btn:hover { background: rgba(255, 82, 82, 0.2); }
 
-.hamburger { display: none; cursor: pointer; padding: 10px; color: #fff; margin-right: 15px; }
-@media (max-width: 768px) { .hamburger { display: block; } .header { padding: 0 15px; } }
-.hamburger div { width: 22px; height: 2px; background: currentColor; margin: 4px 0; border-radius: 2px; }
+.header-right { display: flex; align-items: center; gap: 20px; position: relative; }
+.user-info { font-size: 13px; color: var(--kg-text-dim); display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.user-info strong { color: #fff; }
+.sys-menu-btn { cursor: pointer; color: var(--kg-blue); padding: 5px; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+.sys-menu-btn:hover { color: #fff; }
+
+/* System Dropdown Keenetic Style */
+.sys-dropdown { position: absolute; top: 50px; right: 0; width: 320px; background: #1f2532; border: 1px solid var(--kg-border); border-radius: 8px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); display: none; flex-direction: column; z-index: 200; overflow: hidden; }
+.sys-dropdown.show { display: flex; animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+.sd-body { padding: 25px; display: flex; flex-direction: column; gap: 15px; }
+.sd-fg { position: relative; }
+.sd-fg label { position: absolute; top: -8px; left: 10px; background: #1f2532; padding: 0 5px; font-size: 11px; color: var(--kg-text-dim); z-index: 10; font-weight: normal; }
+.sd-select { width: 100%; appearance: none; background: transparent; border: 1px solid var(--kg-border); border-radius: 6px; padding: 12px 15px; color: #fff; font-size: 13px; outline: none; cursor: pointer; transition: 0.2s; }
+.sd-select:focus { border-color: var(--kg-blue); }
+.sd-select option { background: #1f2532; color: #fff; }
+.sd-links { display: flex; flex-direction: column; gap: 14px; margin-top: 5px; }
+.sd-link { color: var(--kg-blue); font-size: 13px; text-decoration: underline; cursor: pointer; text-decoration-color: rgba(47,161,237,0.3); text-underline-offset: 4px; transition: 0.2s; }
+.sd-link:hover { text-decoration-color: var(--kg-blue); }
+.sd-footer { padding: 15px 25px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 10px; }
+.sd-footer .btn { width: 100%; justify-content: center; }
 
 /* Content & Grid */
 .content { padding: 25px max(25px, calc((100% - 1400px)/2)); flex: 1; width: 100%; display: flex; flex-direction: column; gap: 25px; }
@@ -229,41 +253,74 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .log-box { background: #000; color: #0f0; font-family: 'Courier New', monospace; font-size: 12px; padding: 20px; border-radius: 4px; height: 400px; overflow-y: auto; white-space: pre-wrap; }
 </style></head><body>
 
-<div class="sidebar">
+<div class="sidebar" id="sidebar">
   <div class="logo">SKY-NET</div>
   <nav>
-    <div class="section">Статус</div>
-    <a href="#" data-page="dashboard" class="active">Системный монитор</a>
-    <div class="section">Интернет</div>
-    <a href="#" data-page="inbounds">VPN серверы</a>
-    <a href="#" data-page="clients">Подключенные клиенты</a>
-    <div class="section">Сетевые правила</div>
-    <a href="#" data-page="firewall">Межсетевой экран</a>
-    <div class="section">Управление</div>
-    <a href="#" data-page="system">Настройки системы</a>
-    <a href="#" data-page="logs">Журнал событий</a>
-    <a href="#" data-page="settings">Параметры панели</a>
+    <a href="#" data-page="dashboard" class="active">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      <span>Системный монитор</span>
+    </a>
+    <a href="#" data-page="inbounds">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+      <span>VPN серверы</span>
+    </a>
+    <a href="#" data-page="clients">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+      <span>Подключенные клиенты</span>
+    </a>
+    <a href="#" data-page="firewall">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+      <span>Межсетевой экран</span>
+    </a>
+    <a href="#" data-page="system">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      <span>Настройки системы</span>
+    </a>
+    <a href="#" data-page="logs" style="display:none"><span>Журнал событий</span></a>
+    <a href="#" data-page="settings" style="display:none"><span>Параметры панели</span></a>
   </nav>
 </div>
 
 <div class="main">
     <div class="header">
-      <div style="display:flex; align-items:center;">
-        <div class="hamburger" onclick="toggleSidebar()">
+      <div class="header-left">
+        <div class="hamburger" onclick="toggleSidebarCol()">
           <div></div><div></div><div></div>
         </div>
         <h1 id="page-title-text" style="display:none">Системный монитор</h1>
       </div>
-      <div class="header-right" style="display:flex; align-items:center; gap: 15px;">
-        <svg fill="none" stroke="currentColor" stroke-width="2" width="22" height="22" viewBox="0 0 24 24" style="color:var(--kg-blue); cursor:pointer;" onclick="openWidgetSettings()"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-        <div class="user-info hide-mobile">
+      <div class="header-right">
+        <svg fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" viewBox="0 0 24 24" class="sys-menu-btn" onclick="toggleSysMenu()"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <svg fill="none" stroke="currentColor" stroke-width="2" width="22" height="22" viewBox="0 0 24 24" class="sys-menu-btn" onclick="toggleSysMenu()"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <div class="user-info hide-mobile" onclick="toggleSysMenu()">
           <span style="opacity:0.5">Пользователь:</span>
-          <strong>{{ session.get('username') }}</strong>
+          <strong>{{ session.get('username', 'admin') }}</strong>
         </div>
-        <a href="/logout" class="logout-btn">Выход</a>
+        
+        <!-- System Dropdown Menu -->
+        <div class="sys-dropdown" id="sys-menu">
+          <div class="sd-body">
+            <div class="sd-fg">
+              <label>Выберите язык</label>
+              <select class="sd-select"><option>Русский</option><option>English</option></select>
+            </div>
+            <div class="sd-fg">
+              <label>Стиль оформления</label>
+              <select class="sd-select"><option>Темный</option><option>Светлый</option></select>
+            </div>
+            <div class="sd-links">
+              <span class="sd-link" onclick="switchPage('logs'); toggleSysMenu()">Системный журнал</span>
+              <span class="sd-link" onclick="alert('Командная строка: Функция в разработке'); toggleSysMenu()">Командная строка</span>
+            </div>
+          </div>
+          <div class="sd-footer">
+            <button class="btn btn-p" onclick="rebootServer()">Перезагрузка</button>
+            <a href="/logout" class="btn btn-p" style="text-decoration:none">Выйти</a>
+          </div>
+        </div>
       </div>
     </div>
-  <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+  <div class="sidebar-overlay" onclick="toggleSidebarColModal()"></div>
   <div class="content">
 
 <!-- DASHBOARD -->
@@ -325,6 +382,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <div id="net-ifaces" class="card-padd"></div>
     </div>
   </div> <!-- end grid -->
+  
+  <div style="text-align: center; margin-top: 30px; margin-bottom: 20px;">
+    <button class="btn btn-o" onclick="openWidgetSettings()" style="background:transparent; border:none; color:var(--kg-blue); font-size:14px; font-weight:600;">
+      Редактировать системный монитор ⚙️
+    </button>
+  </div>
 </div>
 
 <!-- INBOUNDS -->
@@ -838,10 +901,27 @@ async function loadAllClients(){
     tb.querySelectorAll('tr').forEach(tr=>{tr.style.display=tr.textContent.toLowerCase().includes(q)?'':'none'})}
 }
 
-function toggleSidebar(){
-  document.querySelector('.sidebar').classList.toggle('show');
-  document.querySelector('.sidebar-overlay').classList.toggle('show');
+function toggleSidebarCol(){
+  if(window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.add('show');
+    document.querySelector('.sidebar-overlay').classList.add('show');
+  } else {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+  }
 }
+function toggleSidebarColModal(){
+  document.getElementById('sidebar').classList.remove('show');
+  document.querySelector('.sidebar-overlay').classList.remove('show');
+}
+function toggleSysMenu(){
+  document.getElementById('sys-menu').classList.toggle('show');
+}
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('sys-menu');
+  if(!e.target.closest('.header-right') && menu && menu.classList.contains('show')) {
+    menu.classList.remove('show');
+  }
+});
 function openAddInbound(){document.getElementById('addInboundModal').classList.add('show');updateObfsFields()}
 function openAddClient(id){
   const user = prompt('Введите имя пользователя:');
