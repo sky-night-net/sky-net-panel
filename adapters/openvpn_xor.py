@@ -169,7 +169,7 @@ nobind
 persist-key
 persist-tun
 remote-cert-tls server
-cipher {settings.get('cipher','AES-256-GCM')}
+cipher {settings.get('cipher','AES-256-CBC')}
 auth SHA256
 auth-nocache
 tls-client
@@ -275,6 +275,18 @@ verb 3
             self._run(["systemctl", "stop", f"openvpn@server_{inbound['id']}"], check=False)
             
             self._cleanup_nat(address_full)
+
+            # Remove UFW/iptables rules added during start
+            try:
+                res_ufw = subprocess.run(["which", "ufw"], capture_output=True)
+                if res_ufw.returncode == 0:
+                    subnet = address_full
+                    self._run(["ufw", "route", "delete", "allow", "from", subnet, "to", "any"], check=False)
+                    self._run(["iptables", "-D", "INPUT", "-s", subnet, "-j", "ACCEPT"], check=False)
+                    self._run(["iptables", "-t", "mangle", "-D", "FORWARD", "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-s", subnet, "-j", "TCPMSS", "--set-mss", "1350"], check=False)
+            except Exception as e:
+                self.logger.warning(f"Failed to clean up UFW/iptables for OpenVPN XOR: {e}")
+
         except: pass
         return True
 

@@ -101,10 +101,10 @@ class ProtocolAdapter:
         """Определить внешний сетевой интерфейс (с маршрутом по умолчанию)."""
         try:
             # Query the interface used to reach the internet (Google DNS)
-            res = self._run(["bash", "-c", "ip route get 8.8.8.8 | grep dev | awk '{print $5}'"], check=False)
+            res = self._run(["bash", "-c", "ip route get 8.8.8.8 | grep -oP 'dev \K\S+'"], check=False)
             if not res:
                 # Fallback to general default route
-                res = self._run(["bash", "-c", "ip route | grep default | awk '{print $5}' | head -n1"], check=False)
+                res = self._run(["bash", "-c", "ip route | grep default | grep -oP 'dev \K\S+' | head -n1"], check=False)
             return res.strip() or "eth0"
         except:
             return "eth0"
@@ -147,6 +147,12 @@ class ProtocolAdapter:
         try:
             self._run(["iptables", "-D", "FORWARD", "-s", subnet, "-j", "ACCEPT"], check=False)
             self._run(["iptables", "-t", "nat", "-D", "POSTROUTING", "-s", subnet, "-o", iface, "-j", "MASQUERADE"], check=False)
+            self._run(["iptables", "-D", "INPUT", "-s", subnet, "-j", "ACCEPT"], check=False)
+            
+            # UFW Cleanup
+            res_ufw = subprocess.run(["which", "ufw"], capture_output=True)
+            if res_ufw.returncode == 0:
+                self._run(["ufw", "route", "delete", "allow", "from", subnet, "to", "any"], check=False)
         except Exception as e:
             log.debug(f"[{self.PROTOCOL_NAME}] NAT cleanup error (expected if rules gone): {e}")
 
