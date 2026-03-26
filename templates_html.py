@@ -356,16 +356,75 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <svg fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" viewBox="0 0 24 24" style="color:var(--kg-text-dim);"><path d="M4 8h16M4 16h16"></path></svg>
       </div>
       
-      <div class="k-grid" style="grid-template-columns: 1fr 1fr;">
-        <div class="k-kv"><span class="k-lbl">Имя устройства</span><span class="k-val" id="d-host">--</span></div>
-        <div class="k-kv"><span class="k-lbl">Версия системы</span><span class="k-val" id="d-os">--</span></div>
-        <div class="k-kv"><span class="k-lbl">Время работы</span><span class="k-val" id="uptime-val">--</span></div>
+      <!-- SVG Ring Gauges -->
+      <div style="display:flex; justify-content:space-around; align-items:center; padding:25px 15px 15px; gap:10px;">
+        <!-- CPU Gauge -->
+        <div style="text-align:center;">
+          <div style="position:relative; width:90px; height:90px; margin:0 auto;">
+            <svg viewBox="0 0 36 36" style="width:90px; height:90px; transform:rotate(-90deg);">
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="3"></circle>
+              <circle id="cpu-ring" cx="18" cy="18" r="15.9" fill="none" stroke="var(--kg-blue)" stroke-width="3" stroke-dasharray="0, 100" stroke-linecap="round" style="transition: stroke-dasharray 0.8s ease;"></circle>
+            </svg>
+            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:16px; font-weight:800; color:#fff;" id="cpu-val">0%</div>
+          </div>
+          <div style="font-size:11px; color:var(--kg-text-dim); text-transform:uppercase; font-weight:700; margin-top:8px; letter-spacing:1px;">CPU</div>
+        </div>
+        <!-- RAM Gauge -->
+        <div style="text-align:center;">
+          <div style="position:relative; width:90px; height:90px; margin:0 auto;">
+            <svg viewBox="0 0 36 36" style="width:90px; height:90px; transform:rotate(-90deg);">
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="3"></circle>
+              <circle id="ram-ring" cx="18" cy="18" r="15.9" fill="none" stroke="var(--kg-green)" stroke-width="3" stroke-dasharray="0, 100" stroke-linecap="round" style="transition: stroke-dasharray 0.8s ease;"></circle>
+            </svg>
+            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:16px; font-weight:800; color:#fff;" id="ram-val">0%</div>
+          </div>
+          <div style="font-size:11px; color:var(--kg-text-dim); text-transform:uppercase; font-weight:700; margin-top:8px; letter-spacing:1px;">RAM</div>
+          <div style="font-size:10px; color:var(--kg-text-dim); margin-top:2px;" id="ram-detail"></div>
+        </div>
+        <!-- DISK Gauge -->
+        <div style="text-align:center;">
+          <div style="position:relative; width:90px; height:90px; margin:0 auto;">
+            <svg viewBox="0 0 36 36" style="width:90px; height:90px; transform:rotate(-90deg);">
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="3"></circle>
+              <circle id="disk-ring" cx="18" cy="18" r="15.9" fill="none" stroke="#f59e0b" stroke-width="3" stroke-dasharray="0, 100" stroke-linecap="round" style="transition: stroke-dasharray 0.8s ease;"></circle>
+            </svg>
+            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:16px; font-weight:800; color:#fff;" id="disk-val">0%</div>
+          </div>
+          <div style="font-size:11px; color:var(--kg-text-dim); text-transform:uppercase; font-weight:700; margin-top:8px; letter-spacing:1px;">ДИСК</div>
+          <div style="font-size:10px; color:var(--kg-text-dim); margin-top:2px;" id="disk-detail"></div>
+        </div>
       </div>
-      
-      <div style="padding: 20px 25px; border-top: 1px solid var(--kg-border); display:flex; justify-content:space-around; align-items:center;">
-        <div style="text-align:center"><div style="font-size:18px; font-weight:700; color:var(--kg-blue)" id="cpu-val">0%</div><div class="k-lbl">CPU</div></div>
-        <div style="text-align:center"><div style="font-size:18px; font-weight:700; color:var(--kg-blue)" id="ram-val">0%</div><div class="k-lbl">RAM</div></div>
-        <div style="text-align:center"><div style="font-size:18px; font-weight:700; color:var(--kg-blue)" id="disk-val">0%</div><div class="k-lbl">ДИСК</div></div>
+
+      <!-- System Info Grid -->
+      <div style="border-top:1px solid var(--kg-border); padding:0;">
+        <div class="stat-item">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <svg fill="none" stroke="var(--kg-blue)" stroke-width="2" width="16" height="16" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            <span class="k-lbl" style="margin:0;">Хост</span>
+          </div>
+          <span class="k-val" id="d-host" style="font-family:'JetBrains Mono',monospace;">--</span>
+        </div>
+        <div class="stat-item">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <svg fill="none" stroke="var(--kg-green)" stroke-width="2" width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <span class="k-lbl" style="margin:0;">Аптайм</span>
+          </div>
+          <span class="k-val" id="uptime-val" style="font-family:'JetBrains Mono',monospace; color:var(--kg-green);">--</span>
+        </div>
+        <div class="stat-item">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <svg fill="none" stroke="#f59e0b" stroke-width="2" width="16" height="16" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            <span class="k-lbl" style="margin:0;">Система</span>
+          </div>
+          <span class="k-val" id="d-os" style="font-size:12px;">--</span>
+        </div>
+        <div class="stat-item">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <svg fill="none" stroke="var(--kg-blue)" stroke-width="2" width="16" height="16" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            <span class="k-lbl" style="margin:0;">Load Avg</span>
+          </div>
+          <span class="k-val" id="d-loadavg" style="font-family:'JetBrains Mono',monospace;">--</span>
+        </div>
       </div>
     </div>
     
@@ -1016,10 +1075,26 @@ async function loadDashboard(){
   const blockCli = document.getElementById('block-clients');
   if(blockCli) blockCli.style.display = isWidgetHidden('block-clients') ? 'none' : '';
 
-  const cv = document.getElementById('cpu-val'); if(cv) cv.textContent=st.cpu+'%';
-  const rv = document.getElementById('ram-val'); if(rv) rv.textContent=Math.round(st.mem_percent)+'%';
-  const dv = document.getElementById('disk-val'); if(dv) dv.textContent=Math.round(st.disk_percent||0)+'%';
+  const cpuP = st.cpu||0; const ramP = Math.round(st.mem_percent||0); const diskP = Math.round(st.disk_percent||0);
+  const cv = document.getElementById('cpu-val'); if(cv) cv.textContent=cpuP+'%';
+  const rv = document.getElementById('ram-val'); if(rv) rv.textContent=ramP+'%';
+  const dv = document.getElementById('disk-val'); if(dv) dv.textContent=diskP+'%';
   const uv = document.getElementById('uptime-val'); if(uv) uv.textContent=fmtUp(st.uptime||0);
+  // Animate SVG rings
+  const cr = document.getElementById('cpu-ring'); if(cr) cr.setAttribute('stroke-dasharray', cpuP+', 100');
+  const rr = document.getElementById('ram-ring'); if(rr) rr.setAttribute('stroke-dasharray', ramP+', 100');
+  const dr2 = document.getElementById('disk-ring'); if(dr2) dr2.setAttribute('stroke-dasharray', diskP+', 100');
+  // Color coding: red when high
+  if(cr) cr.setAttribute('stroke', cpuP > 80 ? 'var(--kg-red)' : 'var(--kg-blue)');
+  if(rr) rr.setAttribute('stroke', ramP > 85 ? 'var(--kg-red)' : 'var(--kg-green)');
+  if(dr2) dr2.setAttribute('stroke', diskP > 85 ? 'var(--kg-red)' : '#f59e0b');
+  // Extra details
+  const ramDet = document.getElementById('ram-detail');
+  if(ramDet && st.mem_total) { ramDet.textContent = ((st.mem_used||0)/1073741824).toFixed(1)+'/'+(st.mem_total/1073741824).toFixed(1)+' GB'; }
+  const diskDet = document.getElementById('disk-detail');
+  if(diskDet && st.disk_total) { diskDet.textContent = ((st.disk_used||0)/1073741824).toFixed(0)+'/'+(st.disk_total/1073741824).toFixed(0)+' GB'; }
+  const lavg = document.getElementById('d-loadavg');
+  if(lavg) lavg.textContent = st.load_avg || st.cpu + '% load';
   
   const ib=await API('/panel/api/inbounds/list');
   if(ib.success){

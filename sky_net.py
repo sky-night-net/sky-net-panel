@@ -598,6 +598,7 @@ def api_server_status():
         for nic, st in net_faces.items():
             ifaces_traffic[nic] = {"bytes_sent": st.bytes_sent, "bytes_recv": st.bytes_recv}
         
+        load1, load5, load15 = os.getloadavg()
         return jsonify({
             "cpu": cpu, "mem_percent": mem.percent,
             "mem_used": mem.used, "mem_total": mem.total,
@@ -606,7 +607,8 @@ def api_server_status():
             "interfaces": ifaces_traffic,
             "hostname": platform.node(),
             "os_version": f"{platform.system()} {platform.release()}",
-            "public_ip": public_ip
+            "public_ip": public_ip,
+            "load_avg": f"{load1:.2f}  {load5:.2f}  {load15:.2f}"
         })
     except ImportError:
         return jsonify({"cpu": 0, "mem_percent": 0, "uptime": 0, "public_ip": public_ip, "error": "psutil not installed"})
