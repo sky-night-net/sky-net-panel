@@ -63,6 +63,20 @@ MAIN_HTML = r"""<!DOCTYPE html>
   --kg-green: #37c871;
   --kg-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
+[data-theme="light"] {
+  --kg-bg: #f6f8fa;
+  --kg-sidebar: #ffffff;
+  --kg-card: #ffffff;
+  --kg-border: #d0d7de;
+  --kg-text: #24292f;
+  --kg-text-dim: #57606a;
+}
+[data-theme="light"] .card-header, [data-theme="light"] table, [data-theme="light"] .log-box { background: rgba(0,0,0,0.02); }
+[data-theme="light"] .user-info strong, [data-theme="light"] .header h1, [data-theme="light"] .card-header h3, [data-theme="light"] .k-conn-title, [data-theme="light"] .k-val, [data-theme="light"] .stat-val { color: #24292f; }
+[data-theme="light"] .btn { color: #fff; }
+[data-theme="light"] .sd-body { border-color: var(--kg-border); }
+[data-theme="light"] .sys-dropdown, [data-theme="light"] .sys-dropdown option, [data-theme="light"] .sd-fg label { background: #ffffff; color: #24292f; }
+[data-theme="light"] .sd-select { color: #24292f; }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg); color: var(--kg-text); min-height: 100vh; line-height: 1.5; overflow-x: hidden; }
@@ -258,23 +272,23 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   <nav>
     <a href="#" data-page="dashboard" class="active">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-      <span>Системный монитор</span>
+      <span data-i18n="nav_dash">Системный монитор</span>
     </a>
     <a href="#" data-page="inbounds">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-      <span>VPN серверы</span>
+      <span data-i18n="nav_vpns">VPN серверы</span>
     </a>
     <a href="#" data-page="clients">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
-      <span>Подключенные клиенты</span>
+      <span data-i18n="nav_clients">Подключенные клиенты</span>
     </a>
     <a href="#" data-page="firewall">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-      <span>Межсетевой экран</span>
+      <span data-i18n="nav_fw">Межсетевой экран</span>
     </a>
     <a href="#" data-page="system">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-      <span>Настройки системы</span>
+      <span data-i18n="nav_sys">Настройки системы</span>
     </a>
     <a href="#" data-page="logs" style="display:none"><span>Журнал событий</span></a>
     <a href="#" data-page="settings" style="display:none"><span>Параметры панели</span></a>
@@ -301,21 +315,21 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <div class="sys-dropdown" id="sys-menu">
           <div class="sd-body">
             <div class="sd-fg">
-              <label>Выберите язык</label>
-              <select class="sd-select"><option>Русский</option><option>English</option></select>
+              <label data-i18n="lang_lbl">Выберите язык</label>
+              <select class="sd-select" id="lang-select" onchange="changeLang(this.value)"><option value="ru">Русский</option><option value="en">English</option></select>
             </div>
             <div class="sd-fg">
-              <label>Стиль оформления</label>
-              <select class="sd-select"><option>Темный</option><option>Светлый</option></select>
+              <label data-i18n="theme_lbl">Стиль оформления</label>
+              <select class="sd-select" id="theme-select" onchange="changeTheme(this.value)"><option value="dark">Темный</option><option value="light">Светлый</option></select>
             </div>
             <div class="sd-links">
-              <span class="sd-link" onclick="switchPage('logs'); toggleSysMenu()">Системный журнал</span>
-              <span class="sd-link" onclick="alert('Командная строка: Функция в разработке'); toggleSysMenu()">Командная строка</span>
+              <span class="sd-link" data-i18n="sys_log" onclick="switchPage('logs'); toggleSysMenu()">Системный журнал</span>
+              <span class="sd-link" data-i18n="cli" onclick="switchPage('cli'); toggleSysMenu()">Командная строка</span>
             </div>
           </div>
           <div class="sd-footer">
-            <button class="btn btn-p" onclick="rebootServer()">Перезагрузка</button>
-            <a href="/logout" class="btn btn-p" style="text-decoration:none">Выйти</a>
+            <button class="btn btn-p" data-i18n="reboot" onclick="rebootServer()">Перезагрузка</button>
+            <a href="/logout" class="btn btn-p" style="text-decoration:none" data-i18n="logout">Выйти</a>
           </div>
         </div>
       </div>
@@ -473,13 +487,25 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <!-- LOGS -->
 <div class="page" id="page-logs">
   <div class="card no-blue">
-    <div class="card-header"><h3>ЖУРНАЛ СОБЫТИЙ</h3>
+    <div class="card-header"><h3 data-i18n="sys_log">ЖУРНАЛ СОБЫТИЙ</h3>
       <div style="display:flex;gap:10px">
         <input id="log-unit" placeholder="Юнит (напр. skynet)" style="width:150px">
         <button class="btn btn-p btn-sm" onclick="loadLogs()">Обновить</button>
       </div>
     </div>
     <div class="log-box" id="log-output">Загрузка...</div>
+  </div>
+</div>
+
+<!-- CLI -->
+<div class="page" id="page-cli">
+  <div class="card no-blue">
+    <div class="card-header"><h3 data-i18n="cli_title">КОМАНДНАЯ СТРОКА</h3></div>
+    <div class="log-box" id="cli-output" style="height: 350px;">root@sky-net:~# </div>
+    <div style="display:flex; padding: 20px; border-top: 1px solid var(--kg-border); background: rgba(0,0,0,0.1);">
+      <span style="color:var(--kg-green); font-family:monospace; margin-right: 10px; align-self: center;">$&gt;</span>
+      <input id="cli-input" style="flex:1; background: transparent; border: none; color: inherit; outline: none; font-family: monospace; font-size: 14px;" placeholder="ls -la" onkeypress="if(event.key==='Enter') runCliCommand()">
+    </div>
   </div>
 </div>
 
@@ -570,21 +596,73 @@ function fmtUp(s){const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.
 function fmtDate(ts){if(!ts||ts===0)return'Никогда';return new Date(ts*1000).toLocaleDateString()}
 function closeModal(id){document.getElementById(id).classList.remove('show')}
 
-// Theme
-function toggleTheme(){const t=document.documentElement.getAttribute('data-theme')==='light'?'':'light';
-document.documentElement.setAttribute('data-theme',t);localStorage.setItem('theme',t)}
-(function(){const t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t)})();
+// Locale & Theme
+const I18N = {
+  en: {
+    "nav_dash":"System Monitor", "nav_vpns":"VPN Servers", "nav_clients":"Connected Clients",
+    "nav_fw":"Firewall", "nav_sys":"System Settings", "lang_lbl":"Language",
+    "theme_lbl":"Theme", "sys_log":"System Log", "cli":"Command Line",
+    "reboot":"Reboot", "logout":"Logout", "cli_title":"COMMAND LINE"
+  }
+};
+function changeLang(lang) {
+  localStorage.setItem('lang', lang);
+  if(lang === 'ru') { location.reload(); return; }
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if(I18N[lang] && I18N[lang][key]) el.textContent = I18N[lang][key];
+  });
+}
+function changeTheme(t){
+  document.documentElement.setAttribute('data-theme',t==='light'?'light':'');
+  localStorage.setItem('theme',t);
+}
+(function(){
+  const t=localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme',t==='light'?'light':'');
+  const l=localStorage.getItem('lang') || 'ru';
+  document.addEventListener('DOMContentLoaded', () => {
+    const ts = document.getElementById('theme-select'); if(ts) ts.value = t;
+    const ls = document.getElementById('lang-select'); if(ls) ls.value = l;
+    if(l !== 'ru') changeLang(l);
+  });
+})();
 
 // Nav
+function switchPage(page) {
+  document.querySelectorAll('.sidebar nav a').forEach(a=>{
+    a.classList.remove('active');
+    if(a.dataset.page===page) a.classList.add('active');
+  });
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pg = document.getElementById('page-'+page);
+  if(pg) pg.classList.add('active');
+  const dsetTitle = document.getElementById('page-title-text');
+  if(dsetTitle) {
+     const titleT = document.querySelector(`.sidebar nav a[data-page="${page}"] span`);
+     if (titleT) dsetTitle.textContent = titleT.textContent;
+  }
+  const fn={dashboard:loadDashboard,inbounds:loadInbounds,clients:loadAllClients,
+    firewall:loadFirewall,system:loadSystem,logs:loadLogs,settings:loadSettings}[page];
+  if(fn)fn();
+}
+
 document.querySelectorAll('.sidebar nav a').forEach(a=>{
-  a.addEventListener('click',e=>{e.preventDefault();
-    document.querySelectorAll('.sidebar nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active');
-    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-    document.getElementById('page-'+a.dataset.page).classList.add('active');
-    const fn={dashboard:loadDashboard,inbounds:loadInbounds,clients:loadAllClients,
-      firewall:loadFirewall,system:loadSystem,logs:loadLogs,settings:loadSettings}[a.dataset.page];
-    if(fn)fn()})});
-const initPage='{{page}}';if(initPage){document.querySelectorAll('.sidebar nav a').forEach(a=>{if(a.dataset.page===initPage)a.click()})}
+  a.addEventListener('click',e=>{e.preventDefault(); switchPage(a.dataset.page);})});
+const initPage='{{page}}';if(initPage){switchPage(initPage);}
+
+// CLI
+async function runCliCommand() {
+  const input = document.getElementById('cli-input');
+  const out = document.getElementById('cli-output');
+  const cmd = input.value.trim();
+  if(!cmd) return;
+  out.textContent += `root@sky-net:~# ${cmd}\n`;
+  input.value = '';
+  const r = await POST('/panel/api/system/cmd', {cmd: cmd});
+  if(r.output) out.textContent += r.output + "\n\n";
+  out.scrollTop = out.scrollHeight;
+}
 
 // Dashboard logic
 let interfaceCharts = {};

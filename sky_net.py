@@ -147,6 +147,27 @@ def api_system_issue_ssl():
     except Exception as e:
         return jsonify({"success": False, "msg": str(e)})
 
+@app.route("/panel/api/system/cmd", methods=["POST"])
+@login_required
+def api_system_cmd():
+    """Выполнение команд оболочки через Web CLI."""
+    import subprocess
+    data = request.json
+    cmd = data.get("cmd", "")
+    if not cmd: return jsonify({"success": False, "output": ""})
+    if os.getuid() != 0: return jsonify({"success": False, "output": "Root privileges required for CLI execution."})
+    try:
+        # Run command with timeout and shell=True (as this is an admin panel)
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=15)
+        out = result.stdout
+        if result.stderr:
+            out += "\n" + result.stderr
+        return jsonify({"success": True, "output": out.strip()})
+    except subprocess.TimeoutExpired:
+        return jsonify({"success": False, "output": "Command timed out (15s)."})
+    except Exception as e:
+        return jsonify({"success": False, "output": str(e)})
+
 @app.route("/panel/api/db/backup", methods=["POST"])
 @login_required
 def api_db_backup():
