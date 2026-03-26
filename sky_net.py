@@ -481,6 +481,33 @@ def api_inbound_toggle(ib_id):
             except Exception as e: log.error(f"Toggle error: {e}")
     return jsonify({"success": True, "enable": new_state})
 
+@app.route("/panel/api/inbounds/logs/<int:ib_id>")
+@login_required
+def api_inbound_logs(ib_id):
+    with get_db() as db:
+        ib = db.execute("SELECT * FROM inbounds WHERE id=?", (ib_id,)).fetchone()
+        if not ib: return jsonify({"success": False, "msg": "Inbound not found"}), 404
+        
+        protocol = ib["protocol"]
+        output = ""
+        try:
+            if protocol == "openvpn_xor":
+                # Get Docker logs
+                container_name = f"openvpn_xor_{ib_id}"
+                r = subprocess.run(["docker", "logs", "--tail", "100", container_name], capture_output=True, text=True)
+                output = r.stdout + r.stderr
+            else:
+                # Get Journalctl logs for AmneziaWG (assuming it runs under systemd if it had a unit)
+                # Or we can check if it's running via wg-quick
+                unit = f"awg-quick@{ib['name']}"
+                r = subprocess.run(["journalctl", "-u", unit, "--no-pager", "-n", "100"], capture_output=True, text=True)
+                output = r.stdout + r.stderr
+                
+            if not output: output = "(No logs found)"
+            return jsonify({"success": True, "logs": output})
+        except Exception as e:
+            return jsonify({"success": False, "msg": str(e)})
+
 # ─── API: Clients ────────────────────────────────────────────────────────────
 
 @app.route("/panel/api/inbounds/addClient", methods=["POST"])
