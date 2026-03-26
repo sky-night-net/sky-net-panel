@@ -568,6 +568,15 @@ function resetWidgets() {
   location.reload();
 }
 
+function renameInterface(iface) {
+  const current = localStorage.getItem('iface_name_' + iface) || 'Sky-Net Interface';
+  const newName = prompt('Введите новое имя для ' + iface + ':', current);
+  if (newName !== null) {
+     localStorage.setItem('iface_name_' + iface, newName.trim() || 'Sky-Net Interface');
+     loadDashboard();
+  }
+}
+
 async function rebootServer(){ if(confirm('Вы действительно хотите перезагрузить СЕРВЕР? Соединение будет разорвано.')) { await POST('/panel/api/system/reboot',{}); alert('Запрос отправлен. Подождите 1-2 минуты.'); } }
 
 async function loadDashboard(){
@@ -612,10 +621,11 @@ async function loadDashboard(){
       const mac = i.mac || 'Авто';
       const bs = nicStats ? fmtB(nicStats.bytes_sent) : '--';
       const br = nicStats ? fmtB(nicStats.bytes_recv) : '--';
+      const savedName = localStorage.getItem('iface_name_' + i.name) || 'Sky-Net Interface';
       
       html += `<div class="card" id="${id}" style="${isHidden?'display:none;':''}">
         <div class="card-header"><h3 style="margin:0">ИНТЕРНЕТ (${i.name})</h3><svg fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" viewBox="0 0 24 24" style="color:var(--kg-text-dim);"><path d="M4 8h16M4 16h16"></path></svg></div>
-        <div class="k-conn-block"><div class="k-conn-left"><div class="k-toggle on"></div><div><div class="k-conn-title">Sky-Net Interface</div><div class="k-conn-subtitle">${i.name}</div><div class="k-badge"><div class="dot dot-green" style="width:5px;height:5px;"></div><span style="margin-left:5px">${i.is_up?'ПОДКЛЮЧЕНО '+fmtUp(st.uptime||0):'ОТКЛЮЧЕНО'}</span></div></div></div><div class="k-btn-group"><button class="k-icon-btn"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 16l4-4 4 4 4-4"/></svg></button><button class="k-icon-btn"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h4v4H4zM16 4h4v4h-4zM4 16h4v4H4zM16 16h4v4h-4z"/></svg></button></div></div>
+        <div class="k-conn-block"><div class="k-conn-left"><div class="k-toggle on"></div><div><div class="k-conn-title" onclick="renameInterface('${i.name}')" style="cursor:pointer" title="Нажмите, чтобы переименовать">${savedName}</div><div class="k-conn-subtitle">${i.name}</div><div class="k-badge"><div class="dot dot-green" style="width:5px;height:5px;"></div><span style="margin-left:5px">${i.is_up?'ПОДКЛЮЧЕНО '+fmtUp(st.uptime||0):'ОТКЛЮЧЕНО'}</span></div></div></div><div class="k-btn-group"><button class="k-icon-btn"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 16l4-4 4 4 4-4"/></svg></button><button class="k-icon-btn"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h4v4H4zM16 4h4v4h-4zM4 16h4v4H4zM16 16h4v4h-4z"/></svg></button></div></div>
         <div class="chart-container-wrapper"><div class="chart-container"><canvas id="chart-${i.name}"></canvas></div><div class="chart-legend"><span>${curTime}</span><div class="legend-center"><div class="legend-item"><div class="dot dot-green"></div>Передача: <span style="color:#fff">${ds} Мбит/с</span></div><div class="legend-item"><div class="dot dot-blue"></div>Прием: <span style="color:#fff">${dr} Мбит/с</span></div></div><span>${curTime}</span></div></div>
         <div class="k-grid">
           <div><div class="k-kv"><span class="k-lbl">Интернет-фильтр</span><span class="k-val red">Выключен</span><a href="#" class="k-val-link" style="font-size:13px; margin-top:4px; display:block">Настроить</a></div></div>
