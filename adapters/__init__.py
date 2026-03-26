@@ -130,6 +130,11 @@ class ProtocolAdapter:
             if res.returncode != 0:
                 self._run(["iptables", "-t", "nat", "-A", "POSTROUTING", "-s", subnet, "-o", iface, "-j", "MASQUERADE"], check=False)
             
+            # UFW Route Allowance (if UFW exists)
+            res_ufw = subprocess.run(["which", "ufw"], capture_output=True)
+            if res_ufw.returncode == 0:
+                self._run(["ufw", "route", "allow", "from", subnet, "to", "any"], check=False)
+
             # TCP MSS Clamping to avoid MTU issues (common in VPNs)
             self._run(["iptables", "-t", "mangle", "-I", "FORWARD", "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--clamp-mss-to-pmtu"], check=False)
         except Exception as e:

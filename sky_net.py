@@ -464,10 +464,19 @@ def api_inbound_toggle(ib_id):
         if ib:
             try:
                 adapter = AdapterFactory.get(ib["protocol"])
+                port = ib.get("port")
+                proto = "udp" if "wg" in ib["protocol"] or "openvpn" in ib["protocol"] else "tcp"
+                
                 if new_state:
+                    # Auto-allow port in UFW
+                    subprocess.run(["ufw", "allow", f"{port}/{proto}"], capture_output=True)
+                    
                     ib_dict = enrich_inbound_with_clients(db, dict(ib))
                     adapter.start(ib_dict)
                 else:
+                    # Auto-delete port in UFW (optional, but cleaner)
+                    subprocess.run(["ufw", "delete", "allow", f"{port}/{proto}"], capture_output=True)
+                    
                     adapter.stop(dict(ib))
             except Exception as e: log.error(f"Toggle error: {e}")
     return jsonify({"success": True, "enable": new_state})
