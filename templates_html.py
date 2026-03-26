@@ -159,8 +159,10 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
 /* Dashboard Keenetic Styles */
 .k-conn-block { padding: 20px 25px 0 25px; display: flex; align-items: flex-start; justify-content: space-between; }
 .k-conn-left { display: flex; gap: 15px; }
-.k-toggle { width: 34px; height: 20px; background: var(--kg-blue); border-radius: 10px; position: relative; cursor: pointer; margin-top: 2px; }
-.k-toggle::after { content: ''; position: absolute; width: 16px; height: 16px; background: #fff; border-radius: 50%; top: 2px; right: 2px; }
+.k-toggle { width: 34px; height: 20px; background: var(--kg-border); border-radius: 10px; position: relative; transition: 0.22s; cursor: pointer; }
+.k-toggle::after { content: ''; position: absolute; width: 14px; height: 14px; background: var(--kg-text-dim); border-radius: 50%; top: 3px; left: 3px; transition: 0.22s; }
+.k-toggle.on { background: var(--kg-blue); }
+.k-toggle.on::after { background: #fff; transform: translateX(14px); }
 .k-conn-title { font-size: 15px; font-weight: 500; color: #fff; line-height: 1.2; margin-bottom: 2px; }
 .k-conn-subtitle { font-size: 13px; color: var(--kg-text-dim); margin-bottom: 10px; }
 .k-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; text-transform: uppercase; background: rgba(255,255,255,0.05); color: var(--kg-green); border: 1px solid rgba(255,255,255,0.05); }
@@ -437,20 +439,11 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <svg fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" viewBox="0 0 24 24" style="color:var(--kg-text-dim); margin-right:4px;"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
         <h3>АКТИВНЫЕ СЕССИИ И ТРАФИК</h3>
       </div>
-      <div class="table-container" style="padding: 0 25px 25px 25px;">
-        <table>
-          <thead>
-            <tr>
-              <th>Пользователь</th>
-              <th>Протокол</th>
-              <th>Трафик (↑/↓)</th>
-              <th>Статус</th>
-            </tr>
-          </thead>
-          <tbody id="dash-clients-table">
-            <!-- Active clients will be rendered here -->
-          </tbody>
-        </table>
+      <div id="dash-clients-list" style="padding: 0 0 10px 0;">
+        <!-- Active clients will be rendered here as stat-items -->
+        <div style="padding:40px 25px; text-align:center; color:var(--kg-text-dim); font-size:13px;">
+          Нет активных сессий
+        </div>
       </div>
     </div>
 
@@ -1099,17 +1092,40 @@ async function loadDashboard(){
   const ib=await API('/panel/api/inbounds/list');
   if(ib.success){
     let tu=0,td=0;
-    const clt=document.getElementById('dash-clients-table'); if(clt) clt.innerHTML='';
+    const clt=document.getElementById('dash-clients-list'); if(clt) clt.innerHTML='';
+    let totalC = 0;
     ib.obj.forEach(i=>{
       (i.clients||[]).forEach(c=>{
+        totalC++;
         tu+=c.up||0; td+=c.down||0;
         if(clt){
           const nowS = Math.floor(Date.now()/1000);
-          const isActive = (nowS - (c.last_online||0)) < 180;
-          clt.innerHTML += `<tr><td><b>${c.username}</b></td><td><span class="badge badge-proto" style="font-size:10px">${PL[i.protocol]}</span></td><td>${fmtB(c.up)} / ${fmtB(c.down)}</td><td><span class="badge ${isActive?'badge-on':'badge-off'}">${isActive?'Активен':'Оффлайн'}</span></td></tr>`;
+          const isActive = (nowS - (c.last_online||0)) < 240;
+          clt.innerHTML += `
+            <div class="stat-item" style="padding: 12px 25px;">
+              <div style="display:flex; align-items:center; gap:15px; flex:1;">
+                <div style="background:rgba(255,255,255,0.05); width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--kg-blue);">
+                  <svg fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </div>
+                <div>
+                  <div style="font-size:14px; font-weight:700; color:#fff; line-height:1.2;">${c.username}</div>
+                  <div style="font-size:11px; color:var(--kg-text-dim);">${PL[i.protocol]}</div>
+                </div>
+              </div>
+              <div style="text-align:right; margin-right:20px;">
+                <div style="font-size:12px; font-weight:600; color:#fff;">↑ ${fmtB(c.up)} / ↓ ${fmtB(c.down)}</div>
+                <div style="font-size:10px; color:var(--kg-text-dim);">Трафик (Всего)</div>
+              </div>
+              <div>
+                <span class="badge ${isActive?'badge-on':'badge-off'}" style="min-width:80px; text-align:center; font-weight:700;">${isActive?'АКТИВЕН':'ОФФЛАЙН'}</span>
+              </div>
+            </div>`;
         }
       })
     });
+    if(totalC === 0 && clt) {
+      clt.innerHTML = `<div style="padding:40px 25px; text-align:center; color:var(--kg-text-dim); font-size:13px;">Нет активных сессий</div>`;
+    }
   }
 }
 
