@@ -129,6 +129,7 @@ server {network} {netmask}
 ifconfig-pool-persist ipp.txt
 push "redirect-gateway def1 bypass-dhcp"
 push "dhcp-option DNS 1.1.1.1"
+push "dhcp-option DNS 8.8.8.8"
 keepalive 10 120
 cipher {cipher}
 auth SHA256
@@ -138,6 +139,7 @@ persist-key
 persist-tun
 status {self.STATUS_LOG} 10
 verb 3
+mssfix 1350
 {"scramble obfuscate " + scramble_password if scramble_password else ""}
 """
 
@@ -179,6 +181,7 @@ explicit-exit-notify
 ignore-unknown-option block-outside-dns
 setenv opt block-outside-dns
 verb 3
+mssfix 1350
 {"scramble obfuscate " + scramble_password if scramble_password else ""}
 {bypass}
 <ca>
@@ -251,15 +254,18 @@ verb 3
             "--restart", "unless-stopped",
             "--network", "host",
             "--cap-add", "NET_ADMIN",
-            "--device", "/dev/net/tun",
             "-v", f"{self.CONFIG_DIR}:/etc/openvpn",
             "-v", "/var/log/openvpn:/var/log/openvpn",
             "lawtancool/docker-openvpn-xor",
-            "openvpn", "--config", f"/etc/openvpn/server_{inbound['id']}.conf"
+            "openvpn", "--config", f"/etc/openvpn/server_{inbound['id']}.conf",
+            "--dev", "tun_skynet" # Explicit device name to avoid conflicts
         ]
         
         self._run(cmd)
         self._setup_nat(address_full)
+        
+        # Apply MSS clamping on the host too for good measure
+        self._run(["iptables", "-t", "mangle", "-I", "FORWARD", "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-s", address_full, "-j", "TCPMSS", "--set-mss", "1350"], check=False)
         
         return True
 
@@ -270,9 +276,7 @@ verb 3
             address_full = settings.get("address", "10.9.0.0/24")
             
             self._run(["docker", "stop", container_name], check=False)
-            self._run(["docker", "rm", container_name], check=False)
-            # Cleanup native if it was running
-            self._run(["systemctl", "stop", f"openvpn@server_{inbound['id']}"], check=False)
+            self._run(["docker", "rm", "-f", container_name], check=False)
             
             self._cleanup_nat(address_full)
 
