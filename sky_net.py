@@ -179,11 +179,17 @@ def api_start_ttyd():
     if in_use: return jsonify({"success": True, "port": 7681})
     try:
         res = subprocess.run(["which", "ttyd"], capture_output=True, text=True)
-        if not res.stdout.strip():
-            subprocess.run(["apt-get", "update"], check=True)
-            subprocess.run(["apt-get", "install", "-y", "ttyd"], check=True)
-        # Auth disabled for local port mapping, but we proxy it securely
-        subprocess.Popen(["ttyd", "-p", "7681", "-W", "bash"])
+        ttyd_path = res.stdout.strip()
+        if not ttyd_path:
+            import urllib.request
+            ttyd_path = "/usr/local/bin/ttyd"
+            try:
+                urllib.request.urlretrieve("https://github.com/tsl0922/ttyd/releases/download/1.7.3/ttyd.x86_64", ttyd_path)
+                os.chmod(ttyd_path, 0o755)
+            except Exception as dl_err:
+                return jsonify({"success": False, "msg": f"Failed to download ttyd: {dl_err}"})
+                
+        subprocess.Popen([ttyd_path, "-p", "7681", "-W", "bash"])
         return jsonify({"success": True, "port": 7681})
     except Exception as e:
         return jsonify({"success": False, "msg": str(e)})

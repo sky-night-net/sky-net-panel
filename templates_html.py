@@ -460,13 +460,23 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   
   <div class="card">
     <div class="card-header"><h3>ДОБАВИТЬ ПРАВИЛО</h3></div>
-    <div class="card-padd">
-      <div class="form-grid">
-        <div class="fg"><label>Порт</label><input id="fw-port" placeholder="например, 22"></div>
-        <div class="fg"><label>Протокол</label><select id="fw-proto"><option value="">Любой</option><option value="tcp">TCP</option><option value="udp">UDP</option></select></div>
-        <div class="fg"><label>Действие</label><select id="fw-action"><option value="allow">Разрешить</option><option value="deny">Запретить</option></select></div>
-        <div class="fg"><label>Источник IP (опционально)</label><input id="fw-from" placeholder="any"></div>
-      </div>
+    <div class="stat-item">
+      <div style="flex:1"><div class="stat-label">Порт</div><div style="font-size:12px; color:var(--kg-text-dim);">например: 22, 80, 443</div></div>
+      <div style="width:250px"><input id="fw-port" style="width:100%" placeholder="22"></div>
+    </div>
+    <div class="stat-item">
+      <div style="flex:1"><div class="stat-label">Протокол</div><div style="font-size:12px; color:var(--kg-text-dim);">TCP, UDP или Любой</div></div>
+      <div style="width:250px"><select id="fw-proto" class="sd-select" style="background:var(--kg-bg); border-color:var(--kg-border);"><option value="">Любой</option><option value="tcp">TCP</option><option value="udp">UDP</option></select></div>
+    </div>
+    <div class="stat-item">
+      <div style="flex:1"><div class="stat-label">Действие</div><div style="font-size:12px; color:var(--kg-text-dim);">Разрешить или Запретить трафик</div></div>
+      <div style="width:250px"><select id="fw-action" class="sd-select" style="background:var(--kg-bg); border-color:var(--kg-border);"><option value="allow">Разрешить</option><option value="deny">Запретить</option></select></div>
+    </div>
+    <div class="stat-item">
+      <div style="flex:1"><div class="stat-label">Источник IP</div><div style="font-size:12px; color:var(--kg-text-dim);">Опционально (по умолчанию Любой)</div></div>
+      <div style="width:250px"><input id="fw-from" style="width:100%" placeholder="any"></div>
+    </div>
+    <div style="padding:15px 25px; display:flex; justify-content:flex-end;">
       <button class="btn btn-p" onclick="fwAddRule()">Добавить правило</button>
     </div>
   </div>
@@ -476,36 +486,30 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <div class="page" id="page-system">
   <div class="card no-blue">
     <div class="card-header"><h3>УПРАВЛЕНИЕ СИСТЕМОЙ</h3></div>
+    
     <div class="stat-item">
-      <span class="stat-label">Сервис Sky-Net</span>
-      <button class="btn btn-o btn-sm" onclick="setupService()">Настроить Автозапуск</button>
+      <div style="flex:1"><div class="stat-label">ИМЯ УСТРОЙСТВА</div><div style="font-size:12px; color:var(--kg-text-dim);">Сетевое имя для идентификации</div></div>
+      <div style="display:flex; gap:10px; width:300px;"><input id="sys-hostname" style="flex:1" placeholder="avg"><button class="btn btn-o btn-sm" onclick="saveHostname()">Сохранить</button></div>
     </div>
+    
     <div class="stat-item">
-      <span class="stat-label">Защита Fail2Ban</span>
-      <button class="btn btn-o btn-sm" onclick="installFail2Ban()">Установить защиту</button>
+      <div style="flex:1"><div class="stat-label">ЧАСОВОЙ ПОЯС</div><div style="font-size:12px; color:var(--kg-text-dim);">Системное время сервера</div></div>
+      <div style="display:flex; gap:10px; width:300px;"><input id="sys-tz" style="flex:1" placeholder="Etc/UTC"><button class="btn btn-o btn-sm" onclick="saveTimezone()">Сохранить</button></div>
     </div>
+
     <div class="stat-item">
-      <span class="stat-label">SSL Сертификат</span>
-      <div style="display:flex; gap:10px; width: 100%; max-width: 300px;">
-        <input id="ssl-domain" placeholder="vpn.example.com" style="flex:1;">
-        <button class="btn btn-o btn-sm" onclick="issueSSL()">Выпустить</button>
-      </div>
+      <div style="flex:1"><div class="stat-label">SSL Сертификат</div><div style="font-size:12px; color:var(--kg-text-dim);">Выпуск бесплатного сертификата Let's Encrypt</div></div>
+      <div style="display:flex; gap:10px; width:300px;"><input id="ssl-domain" style="flex:1" placeholder="vpn.example.com"><button class="btn btn-o btn-sm" onclick="issueSSL()">Выпустить</button></div>
     </div>
-  </div>
-  <div class="form-grid">
-    <div class="card">
-      <div class="card-header"><h3>ИМЯ УСТРОЙСТВА</h3></div>
-      <div class="card-padd">
-        <div class="fg"><input id="sys-hostname"></div>
-        <button class="btn btn-p btn-sm" onclick="saveHostname()">Сохранить</button>
-      </div>
+
+    <div class="stat-item">
+      <div style="flex:1"><div class="stat-label">Сервис Sky-Net</div><div style="font-size:12px; color:var(--kg-text-dim);">Добавление демона в автозапуск systemd</div></div>
+      <div style="width:300px; text-align:right;"><button class="btn btn-o btn-sm" onclick="setupService()">Настроить Автозапуск</button></div>
     </div>
-    <div class="card">
-      <div class="card-header"><h3>ЧАСОВОЙ ПОЯС</h3></div>
-      <div class="card-padd">
-        <div class="fg"><input id="sys-tz"></div>
-        <button class="btn btn-p btn-sm" onclick="saveTimezone()">Сохранить</button>
-      </div>
+
+    <div class="stat-item">
+      <div style="flex:1"><div class="stat-label">Защита Fail2Ban</div><div style="font-size:12px; color:var(--kg-text-dim);">Защита SSH от подбора паролей</div></div>
+      <div style="width:300px; text-align:right;"><button class="btn btn-o btn-sm" onclick="installFail2Ban()">Установить защиту</button></div>
     </div>
   </div>
 </div>
@@ -531,11 +535,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <!-- CLI -->
 <div class="page" id="page-cli">
   <div class="card no-blue">
-    <div class="card-header"><h3 data-i18n="cli_title">КОМАНДНАЯ СТРОКА</h3></div>
-    <div class="log-box" id="cli-output" style="height: 350px;">root@sky-net:~# </div>
-    <div style="display:flex; padding: 20px; border-top: 1px solid var(--kg-border); background: rgba(0,0,0,0.1);">
-      <span style="color:var(--kg-green); font-family:monospace; margin-right: 10px; align-self: center;">$&gt;</span>
-      <input id="cli-input" style="flex:1; background: transparent; border: none; color: inherit; outline: none; font-family: monospace; font-size: 14px;" placeholder="ps aux" onkeypress="if(event.key==='Enter') runCliCommand()">
+    <div class="card-header">
+      <h3 data-i18n="cli_title">КОМАНДНАЯ СТРОКА</h3>
+      <button class="btn btn-p btn-sm" id="btn-ttyd" onclick="startWebSSH()">Запустить Web SSH</button>
+    </div>
+    <div id="cli-container" style="height: 500px; padding: 20px;">
+      <div style="color:var(--kg-text-dim); text-align:center; padding-top: 100px;">Нажмите кнопку сверху, чтобы запустить интерактивную SSH сессию</div>
     </div>
   </div>
 </div>
@@ -737,17 +742,20 @@ function downloadLogs() {
   window.open(`/panel/api/system/logs/download?unit=${u}`, '_blank');
 }
 
-async function runCliCommand() {
-  const input = document.getElementById('cli-input');
-  const out = document.getElementById('cli-output');
-  const cmd = input.value.trim();
-  if(!cmd) return;
-  out.textContent += `root@sky-net:~# ${cmd}\n`;
-  input.value = '';
-  const r = await POST('/panel/api/system/cmd', {cmd: cmd});
-  if(r.output) out.textContent += r.output + "\n\n";
-  out.scrollTop = out.scrollHeight;
+async function startWebSSH() {
+  const btn = document.getElementById('btn-ttyd');
+  if(btn) btn.textContent = localStorage.getItem('lang')==='en'?'Starting...':'Запуск...';
+  const r = await POST('/panel/api/system/start_ttyd', {});
+  if(r.success) {
+     const p = r.port;
+     document.getElementById('cli-container').innerHTML = `<iframe src="http://${location.hostname}:${p}" style="width:100%;height:100%;border:none;border-radius:8px"></iframe>`;
+     if(btn) btn.style.display = 'none';
+  } else {
+     alert('Error starting ttyd: ' + r.msg);
+     if(btn) btn.textContent = 'Запустить Web SSH';
+  }
 }
+async function runCliCommand() {}
 
 // Dashboard logic
 let interfaceCharts = {};
