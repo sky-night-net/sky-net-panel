@@ -136,11 +136,22 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
 .btn-o { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--kg-border); }
 .btn-o:hover { background: rgba(255,255,255,0.1); border-color: var(--kg-blue); }
 .btn-s { background: var(--kg-green); color: #fff; }
+.btn-d { background: rgba(244, 63, 94, 0.1); color: var(--kg-red); border: 1px solid rgba(244, 63, 94, 0.2); }
+.btn-d:hover { background: rgba(244, 63, 94, 0.2); }
+.btn-sm { padding: 8px 14px; font-size: 12px; }
 
 .fr { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 @media (max-width: 600px) { .fr, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+
+/* Tables */
+.table-container { width: 100%; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th { text-align: left; padding: 12px 15px; color: var(--kg-text-dim); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--kg-border); }
+td { padding: 15px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.02); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
 
 .hide-mobile { display: none; }
 @media (min-width: 769px) { .hide-mobile { display: flex; } }
@@ -242,9 +253,9 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
         <h3>БЫСТРОЕ УПРАВЛЕНИЕ</h3>
       </div>
       <div class="grid-3">
-        <button class="btn btn-o" onclick="rebootServer()">Перезагрузить ОС</button>
-        <button class="btn btn-o" onclick="POST('/panel/api/system/setupService',{}).then(()=>alert('Сервис перезапущен'))">Рестарт Панели</button>
-        <button class="btn btn-o" onclick="loadDashboard()">Обновить статус</button>
+        <button class="btn btn-o" style="width:100%;justify-content:center;" onclick="rebootServer()">Перезагрузить ОС</button>
+        <button class="btn btn-o" style="width:100%;justify-content:center;" onclick="POST('/panel/api/system/setupService',{}).then(()=>alert('Сервис перезапущен'))">Рестарт Панели</button>
+        <button class="btn btn-o" style="width:100%;justify-content:center;" onclick="loadDashboard()">Обновить статус</button>
       </div>
     </div>
   </div>
@@ -252,13 +263,13 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
   <div class="card">
     <div class="card-header"><h3>АКТИВНЫЕ СЕССИИ И ТРАФИК</h3></div>
     <div class="table-container">
-      <table style="width: 100%; border-collapse: collapse;">
+      <table>
         <thead>
-          <tr style="text-align: left; color: var(--kg-text-dim); font-size: 12px; border-bottom: 1px solid var(--kg-border);">
-            <th style="padding: 10px 5px;">Пользователь</th>
+          <tr>
+            <th>Пользователь</th>
             <th style="padding: 10px 5px;">Протокол</th>
             <th style="padding: 10px 5px;">Трафик (↑/↓)</th>
-            <th style="padding: 10px 5px;">Статус</th>
+            <th>Статус</th>
           </tr>
         </thead>
         <tbody id="dash-clients-table">
@@ -287,8 +298,9 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
 <!-- CLIENTS -->
 <div class="page" id="page-clients">
   <div class="card no-blue">
-    <div class="card-header"><h3>ПОДКЛЮЧЕННЫЕ КЛИЕНТЫ</h3>
-      <input id="clientSearch" placeholder="Поиск клиентов..." style="width: 250px; margin-left: 20px">
+    <div class="card-header" style="justify-content: space-between;">
+      <h3>ПОДКЛЮЧЕННЫЕ КЛИЕНТЫ</h3>
+      <div class="fg" style="margin:0"><input id="clientSearch" placeholder="Поиск клиентов..." style="width: 250px;"></div>
     </div>
     <div class="table-container">
       <table>
@@ -312,7 +324,8 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
 <!-- FIREWALL -->
 <div class="page" id="page-firewall">
   <div class="card">
-    <div class="card-header"><h3>МЕЖСЕТЕВОЙ ЭКРАН (UFW)</h3>
+    <div class="card-header" style="justify-content: space-between;">
+      <h3>МЕЖСЕТЕВОЙ ЭКРАН (UFW)</h3>
       <div style="display:flex; gap:10px; align-items:center">
         <span id="fw-status" class="badge">--</span>
         <button class="btn btn-o btn-sm" onclick="fwToggle(true)">Включить</button>
@@ -343,7 +356,7 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
     <div class="stat-item"><span class="stat-label">Сервис Sky-Net</span><button class="btn btn-o btn-sm" onclick="setupService()">Настроить Автозапуск</button></div>
     <div class="stat-item"><span class="stat-label">Защита Fail2Ban</span><button class="btn btn-o btn-sm" onclick="installFail2Ban()">Установить защиту</button></div>
     <div class="stat-item"><span class="stat-label">SSL Сертификат</span>
-      <div style="display:flex;gap:10px"><input id="ssl-domain" placeholder="vpn.example.com" style="width:150px"><button class="btn btn-o btn-sm" onclick="issueSSL()">Выпустить</button></div>
+      <div style="display:flex;gap:10px"><div class="fg" style="margin:0"><input id="ssl-domain" placeholder="vpn.example.com" style="width:200px"></div><button class="btn btn-o btn-sm" onclick="issueSSL()">Выпустить</button></div>
     </div>
   </div>
   <div class="fr">
@@ -489,11 +502,11 @@ async function loadDashboard(){
         if(clt){
           const now = Math.floor(Date.now()/1000);
           const isActive = (now - (c.last_online||0)) < 180; // 3 minutes
-          clt.innerHTML += `<tr style="border-bottom: 1px solid var(--kg-border); font-size: 13px;">
-            <td style="padding: 10px 5px;"><b>${c.username}</b></td>
-            <td style="padding: 10px 5px;"><span class="badge badge-proto" style="font-size:10px">${PL[i.protocol]}</span></td>
-            <td style="padding: 10px 5px;">${fmtB(c.up)} / ${fmtB(c.down)}</td>
-            <td style="padding: 10px 5px;"><span class="badge ${isActive?'badge-on':'badge-off'}">${isActive?'Активен':'Оффлайн'}</span></td>
+          clt.innerHTML += `<tr>
+            <td><b>${c.username}</b></td>
+            <td><span class="badge badge-proto" style="font-size:10px">${PL[i.protocol]}</span></td>
+            <td>${fmtB(c.up)} / ${fmtB(c.down)}</td>
+            <td><span class="badge ${isActive?'badge-on':'badge-off'}">${isActive?'Активен':'Оффлайн'}</span></td>
           </tr>`;
         }
       })
