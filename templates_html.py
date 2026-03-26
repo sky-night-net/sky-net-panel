@@ -106,25 +106,34 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
 .card { grid-column: span 6; background: var(--kg-card); border: 1px solid var(--kg-border); border-radius: 8px; box-shadow: var(--kg-shadow); overflow: hidden; position: relative; transition: box-shadow 0.2s; }
 @media (max-width: 1100px) { .card { grid-column: span 12; } }
 
-.card-header { display: flex; align-items: center; gap: 10px; padding: 18px 25px; border-bottom: 1px solid var(--kg-border); cursor: grab; background: rgba(0,0,0,0.1); }
-.card-header:active { cursor: grabbing; }
-.card-header h3 { font-size: 11px; font-weight: 700; color: var(--kg-text-dim); text-transform: uppercase; letter-spacing: 1px; }
+.card-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 25px; border-bottom: 1px solid var(--kg-border); cursor: grab; background: rgba(0,0,0,0.1); }
+.card-title-group { display: flex; align-items: center; gap: 10px; }
+.card-header h3 { font-size: 13px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
 
 .sortable-ghost { opacity: 0.3; transform: scale(0.98); }
 
 .card-padd { padding: 25px; }
 
 /* Dashboard Keenetic Styles */
-.k-conn-block { padding: 20px 25px; }
-.k-conn-title { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
-.k-conn-subtitle { font-size: 12px; color: var(--kg-text-dim); display: flex; align-items: center; gap: 10px; }
-.k-badge { display: inline-block; padding: 3px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; background: rgba(55,200,113,0.1); color: var(--kg-green); }
+.k-conn-block { padding: 20px 25px 0 25px; display: flex; align-items: flex-start; justify-content: space-between; }
+.k-conn-left { display: flex; gap: 15px; }
+.k-toggle { width: 34px; height: 20px; background: var(--kg-blue); border-radius: 10px; position: relative; cursor: pointer; margin-top: 2px; }
+.k-toggle::after { content: ''; position: absolute; width: 16px; height: 16px; background: #fff; border-radius: 50%; top: 2px; right: 2px; }
+.k-conn-title { font-size: 15px; font-weight: 500; color: #fff; line-height: 1.2; margin-bottom: 2px; }
+.k-conn-subtitle { font-size: 13px; color: var(--kg-text-dim); margin-bottom: 10px; }
+.k-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; text-transform: uppercase; background: rgba(255,255,255,0.05); color: var(--kg-green); border: 1px solid rgba(255,255,255,0.05); }
 
-.k-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px 25px; }
+.k-btn-group { display: flex; flex-direction: column; gap: 8px; }
+.k-icon-btn { width: 32px; height: 32px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--kg-text-dim); background: transparent; cursor: pointer; transition: 0.2s; }
+.k-icon-btn:hover { border-color: var(--kg-blue); color: var(--kg-blue); }
+
+.k-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding: 20px 25px 25px 25px; }
+@media(max-width: 900px) { .k-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; } }
 @media(max-width: 600px) { .k-grid { grid-template-columns: 1fr; } }
-.k-kv { display: flex; flex-direction: column; gap: 2px; }
-.k-lbl { font-size: 11px; color: var(--kg-text-dim); }
-.k-val { font-size: 13px; color: #fff; font-weight: 500; }
+.k-kv { display: flex; flex-direction: column; gap: 4px; margin-bottom: 15px; }
+.k-lbl { font-size: 13px; color: var(--kg-text-dim); }
+.k-val { font-size: 14px; color: #fff; font-weight: 400; }
+.k-val.red { color: var(--kg-red); }
 .k-val-link { color: var(--kg-blue); cursor: pointer; text-decoration: none; }
 
 /* Stats */
@@ -138,7 +147,14 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
 .circle-val { font-size: 26px; font-weight: 800; color: var(--kg-blue); }
 .circle-label { font-size: 11px; color: var(--kg-text-dim); text-transform: uppercase; font-weight: 800; margin-top: 5px; letter-spacing: 1px; }
 
-.chart-container { height: 160px; width: 100%; border-bottom: 1px solid var(--kg-border); position: relative; }
+.chart-container-wrapper { padding: 15px 25px 0 25px; }
+.chart-container { height: 160px; width: 100%; border-bottom: 1px solid var(--kg-border); border-top: 1px dotted rgba(255,255,255,0.1); position: relative; margin-top: 10px; }
+.chart-legend { display: flex; align-items: center; justify-content: space-between; padding: 10px 0 0 0; font-size: 11px; color: var(--kg-text-dim); }
+.legend-center { display: flex; gap: 15px; }
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.dot { width: 6px; height: 6px; border-radius: 50%; }
+.dot-green { background: var(--kg-green); }
+.dot-blue { background: var(--kg-blue); }
 
 /* Forms & Buttons */
 .fg { margin-bottom: 20px; }
@@ -243,37 +259,79 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <!-- BLOCK 1: ИНТЕРНЕТ (Keenetic Replica) -->
     <div class="card" id="block-internet">
       <div class="card-header">
-        <svg fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" viewBox="0 0 24 24" style="color:var(--kg-text-dim); margin-right:4px;"><path d="M21 12A9 9 0 013 12m18 0A9 9 0 003 12m18 0c0-4.97-4.03-9-9-9s-9 4.03-9 9 9 9 9-4.03 9-9.m-9-9v18m6-9H6"></path></svg>
-        <h3>ИНТЕРНЕТ</h3>
+        <h3 style="margin:0">ИНТЕРНЕТ</h3>
+        <svg fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" viewBox="0 0 24 24" style="color:var(--kg-text-dim);"><path d="M4 8h16M4 16h16"></path></svg>
       </div>
       
       <div class="k-conn-block">
-        <div class="k-conn-title">Sky-Net Public Server</div>
-        <div class="k-conn-subtitle">Ethernet Connection <span class="k-badge">ПОДКЛЮЧЕНО</span></div>
+        <div class="k-conn-left">
+          <div class="k-toggle"></div>
+          <div>
+            <div class="k-conn-title">Sky-Net Server</div>
+            <div class="k-conn-subtitle">Ethernet</div>
+            <div class="k-badge">
+              <div class="dot dot-green" style="width:5px;height:5px;"></div>
+              <span id="uptime-badge">ПОДКЛЮЧЕНО</span>
+            </div>
+          </div>
+        </div>
+        <div class="k-btn-group">
+          <button class="k-icon-btn"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 16l4-4 4 4 4-4"/></svg></button>
+          <button class="k-icon-btn"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h4v4H4zM16 4h4v4h-4zM4 16h4v4H4zM16 16h4v4h-4z"/></svg></button>
+        </div>
       </div>
       
-      <div class="chart-container">
-        <canvas id="trafficChart"></canvas>
+      <div class="chart-container-wrapper">
+        <div class="chart-container">
+          <canvas id="trafficChart"></canvas>
+        </div>
+        <div class="chart-legend">
+          <span id="chart-time-1">--:--:--</span>
+          <div class="legend-center">
+            <div class="legend-item"><div class="dot dot-green"></div>Передача: <span id="leg-tx">0 кбит/с</span></div>
+            <div class="legend-item"><div class="dot dot-blue"></div>Прием: <span id="leg-rx">0 кбит/с</span></div>
+          </div>
+          <span id="chart-time-2">--:--:--</span>
+        </div>
       </div>
       
       <div class="k-grid">
-        <div class="k-kv"><span class="k-lbl">IP-адрес</span><span class="k-val k-val-link" id="d-ip">--</span></div>
-        <div class="k-kv"><span class="k-lbl">MAC-адрес</span><span class="k-val">Авто (Server)</span></div>
-        <div class="k-kv"><span class="k-lbl">Скорость приема</span><span class="k-val" id="d-down-speed">--</span></div>
-        <div class="k-kv"><span class="k-lbl">Скорость отдачи</span><span class="k-val" id="d-up-speed">--</span></div>
-        <div class="k-kv"><span class="k-lbl">Всего принято</span><span class="k-val" id="d-down">--</span></div>
-        <div class="k-kv"><span class="k-lbl">Всего отправлено</span><span class="k-val" id="d-up">--</span></div>
+        <!-- Col 1 -->
+        <div>
+          <div class="k-kv"><span class="k-lbl">Интернет-фильтр</span>
+            <span class="k-val red">Выключен</span>
+            <a href="#" class="k-val-link" style="font-size:13px; margin-top:4px; display:block">Настроить</a>
+          </div>
+        </div>
+        <!-- Col 2 -->
+        <div>
+          <div class="k-kv"><span class="k-lbl">Внешний IP-адрес</span><span class="k-val" id="d-ip">--</span></div>
+          <div class="k-kv"><span class="k-lbl">Шлюз</span><span class="k-val">Авто</span></div>
+          <div class="k-kv"><span class="k-lbl">Маска подсети</span><span class="k-val">255.255.255.0</span></div>
+        </div>
+        <!-- Col 3 -->
+        <div>
+          <div class="k-kv"><span class="k-lbl">MAC-адрес</span><span class="k-val">00:00:00:00:00:00</span></div>
+          <div class="k-kv"><span class="k-lbl">Прием</span><span class="k-val" id="d-down-speed">--</span></div>
+          <div class="k-kv"><span class="k-lbl">Передача</span><span class="k-val" id="d-up-speed">--</span></div>
+        </div>
+        <!-- Col 4 -->
+        <div>
+          <div class="k-kv"><span class="k-lbl">Принято</span><span class="k-val" id="d-down">--</span></div>
+          <div class="k-kv"><span class="k-lbl">Отправлено</span><span class="k-val" id="d-up">--</span></div>
+          <div class="k-kv"><span class="k-lbl">DNS-сервер</span><span class="k-val k-val-link">1.1.1.1</span></div>
+        </div>
       </div>
     </div>
     
     <!-- BLOCK 2: О СИСТЕМЕ -->
     <div class="card" id="block-system">
       <div class="card-header">
-        <svg fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" viewBox="0 0 24 24" style="color:var(--kg-text-dim); margin-right:4px;"><path d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path></svg>
-        <h3>О СИСТЕМЕ</h3>
+        <h3 style="margin:0">О СИСТЕМЕ</h3>
+        <svg fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" viewBox="0 0 24 24" style="color:var(--kg-text-dim);"><path d="M4 8h16M4 16h16"></path></svg>
       </div>
       
-      <div class="k-grid">
+      <div class="k-grid" style="grid-template-columns: 1fr 1fr;">
         <div class="k-kv"><span class="k-lbl">Имя устройства</span><span class="k-val" id="d-host">--</span></div>
         <div class="k-kv"><span class="k-lbl">Версия системы</span><span class="k-val" id="d-os">--</span></div>
         <div class="k-kv"><span class="k-lbl">Время работы</span><span class="k-val" id="uptime-val">--</span></div>
@@ -517,15 +575,25 @@ async function loadDashboard(){
     const dt = (now - lastTime) / 1000;
     const ds = ((st.net_sent - lastNetS) * 8 / 1000000 / dt).toFixed(2);
     const dr = ((st.net_recv - lastNetR) * 8 / 1000000 / dt).toFixed(2);
-    document.getElementById('d-up-speed').textContent = ds + ' Mbit/s';
-    document.getElementById('d-down-speed').textContent = dr + ' Mbit/s';
+    
+    // Update both places for speeds
+    const el_ups = document.getElementById('d-up-speed'); if(el_ups) el_ups.textContent = ds + ' Мбит/с';
+    const el_dns = document.getElementById('d-down-speed'); if(el_dns) el_dns.textContent = dr + ' Мбит/с';
+    const leg_tx = document.getElementById('leg-tx'); if(leg_tx) leg_tx.textContent = ds + ' Мбит/с';
+    const leg_rx = document.getElementById('leg-rx'); if(leg_rx) leg_rx.textContent = dr + ' Мбит/с';
   }
   lastNetS = st.net_sent; lastNetR = st.net_recv; lastTime = now;
 
-  document.getElementById('cpu-val').textContent=st.cpu+'%';
-  document.getElementById('ram-val').textContent=Math.round(st.mem_percent)+'%';
-  document.getElementById('disk-val').textContent=Math.round(st.disk_percent||0)+'%';
-  document.getElementById('uptime-val').textContent=fmtUp(st.uptime||0);
+  const b = document.getElementById('uptime-badge'); 
+  if(b) b.textContent = 'ПОДКЛЮЧЕНО ' + fmtUp(st.uptime||0);
+
+  const cv = document.getElementById('cpu-val'); if(cv) cv.textContent=st.cpu+'%';
+  const rv = document.getElementById('ram-val'); if(rv) rv.textContent=Math.round(st.mem_percent)+'%';
+  const dv = document.getElementById('disk-val'); if(dv) dv.textContent=Math.round(st.disk_percent||0)+'%';
+  const uv = document.getElementById('uptime-val'); if(uv) uv.textContent=fmtUp(st.uptime||0);
+  
+  const curTime = new Date().toLocaleTimeString('ru-RU');
+  const t2 = document.getElementById('chart-time-2'); if(t2) t2.textContent = curTime;
   
   const ib=await API('/panel/api/inbounds/list');
   if(ib.success){
