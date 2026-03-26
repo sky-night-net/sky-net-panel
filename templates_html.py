@@ -127,7 +127,7 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
 .k-icon-btn { width: 32px; height: 32px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--kg-text-dim); background: transparent; cursor: pointer; transition: 0.2s; }
 .k-icon-btn:hover { border-color: var(--kg-blue); color: var(--kg-blue); }
 
-.k-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding: 20px 25px 25px 25px; }
+.k-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 20px 25px 25px 25px; }
 @media(max-width: 900px) { .k-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; } }
 @media(max-width: 600px) { .k-grid { grid-template-columns: 1fr; } }
 .k-kv { display: flex; flex-direction: column; gap: 4px; margin-bottom: 15px; }
@@ -577,7 +577,22 @@ function renameInterface(iface) {
   }
 }
 
+function toggleIfaceView(iface, viewType) {
+  const key = 'hide_' + viewType + '_' + iface;
+  if(localStorage.getItem(key)) localStorage.removeItem(key);
+  else localStorage.setItem(key, '1');
+  const d = document.getElementById(viewType + '-wrap-' + iface);
+  if(d) d.style.display = localStorage.getItem(key) ? 'none' : '';
+  const btn = document.getElementById('btn-' + viewType + '-' + iface);
+  if(btn) {
+     if(localStorage.getItem(key)) { btn.style.color=''; btn.style.background=''; }
+     else { btn.style.color='var(--kg-blue)'; btn.style.background='rgba(47,161,237,0.1)'; }
+  }
+}
+
 async function rebootServer(){ if(confirm('Вы действительно хотите перезагрузить СЕРВЕР? Соединение будет разорвано.')) { await POST('/panel/api/system/reboot',{}); alert('Запрос отправлен. Подождите 1-2 минуты.'); } }
+
+let interfaceHistory = {};
 
 async function loadDashboard(){
   const [st_res, net_res, hist_res] = await Promise.all([
@@ -594,9 +609,8 @@ async function loadDashboard(){
   let dt = 1;
   if(lastTime > 0) dt = (now - lastTime) / 1000;
   
-  const dynCont = document.getElementById('dynamic-interfaces-container');
+  const dynCont = document.getElementById('sortable-dashboard');
   if(net.success && dynCont) {
-    let html = '';
     (net.interfaces || []).forEach(i => {
       // Exclude loopback interfaces
       if(i.name === 'lo') return;
@@ -622,34 +636,115 @@ async function loadDashboard(){
       const bs = nicStats ? fmtB(nicStats.bytes_sent) : '--';
       const br = nicStats ? fmtB(nicStats.bytes_recv) : '--';
       const savedName = localStorage.getItem('iface_name_' + i.name) || 'Sky-Net Interface';
+      const hideChart = localStorage.getItem('hide_chart_' + i.name) ? 'none' : '';
+      const hideGrid = localStorage.getItem('hide_grid_' + i.name) ? 'none' : '';
+      const chartBtnStyle = hideChart ? '' : 'color:var(--kg-blue); background:rgba(47,161,237,0.1);';
+      const gridBtnStyle = hideGrid ? '' : 'color:var(--kg-blue); background:rgba(47,161,237,0.1);';
       
-      html += `<div class="card" id="${id}" style="${isHidden?'display:none;':''}">
-        <div class="card-header"><h3 style="margin:0">ИНТЕРНЕТ (${i.name})</h3><svg fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" viewBox="0 0 24 24" style="color:var(--kg-text-dim);"><path d="M4 8h16M4 16h16"></path></svg></div>
-        <div class="k-conn-block"><div class="k-conn-left"><div class="k-toggle on"></div><div><div class="k-conn-title" onclick="renameInterface('${i.name}')" style="cursor:pointer" title="Нажмите, чтобы переименовать">${savedName}</div><div class="k-conn-subtitle">${i.name}</div><div class="k-badge"><div class="dot dot-green" style="width:5px;height:5px;"></div><span style="margin-left:5px">${i.is_up?'ПОДКЛЮЧЕНО '+fmtUp(st.uptime||0):'ОТКЛЮЧЕНО'}</span></div></div></div><div class="k-btn-group"><button class="k-icon-btn"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 16l4-4 4 4 4-4"/></svg></button><button class="k-icon-btn"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h4v4H4zM16 4h4v4h-4zM4 16h4v4H4zM16 16h4v4h-4z"/></svg></button></div></div>
-        <div class="chart-container-wrapper"><div class="chart-container"><canvas id="chart-${i.name}"></canvas></div><div class="chart-legend"><span>${curTime}</span><div class="legend-center"><div class="legend-item"><div class="dot dot-green"></div>Передача: <span style="color:#fff">${ds} Мбит/с</span></div><div class="legend-item"><div class="dot dot-blue"></div>Прием: <span style="color:#fff">${dr} Мбит/с</span></div></div><span>${curTime}</span></div></div>
-        <div class="k-grid">
-          <div><div class="k-kv"><span class="k-lbl">Интернет-фильтр</span><span class="k-val red">Выключен</span><a href="#" class="k-val-link" style="font-size:13px; margin-top:4px; display:block">Настроить</a></div></div>
-          <div><div class="k-kv"><span class="k-lbl">IP-адрес</span><span class="k-val">${ips}</span></div><div class="k-kv"><span class="k-lbl">Шлюз</span><span class="k-val">Авто</span></div><div class="k-kv"><span class="k-lbl">Маска подсети</span><span class="k-val">Авто</span></div></div>
-          <div><div class="k-kv"><span class="k-lbl">MAC-адрес</span><span class="k-val">${mac}</span></div><div class="k-kv"><span class="k-lbl">Прием</span><span class="k-val">${dr} Мбит/с</span></div><div class="k-kv"><span class="k-lbl">Передача</span><span class="k-val">${ds} Мбит/с</span></div></div>
-          <div><div class="k-kv"><span class="k-lbl">Принято</span><span class="k-val">${br}</span></div><div class="k-kv"><span class="k-lbl">Отправлено</span><span class="k-val">${bs}</span></div><div class="k-kv"><span class="k-lbl">DNS-сервер</span><span class="k-val k-val-link">1.1.1.1</span></div></div>
-        </div>
-      </div>`;
-    });
-    dynCont.innerHTML = html;
-    
-    (net.interfaces || []).forEach(i => {
-      if(i.name === 'lo') return;
-      const cCtx = document.getElementById('chart-'+i.name);
-      if(!cCtx) return;
-      if(!interfaceCharts[i.name]){
-         interfaceCharts[i.name] = new Chart(cCtx.getContext('2d'),{type:'line',data:{labels:Array.from({length:60},(_,idx)=>idx),datasets:[{label:'Tx',data:hist.up,borderColor:'#2fb45a',fill:true,backgroundColor:'rgba(47,180,90,0.1)',tension:.4,pointRadius:0},{label:'Rx',data:hist.down,borderColor:'#00a8e8',fill:true,backgroundColor:'rgba(0,168,232,0.1)',tension:.4,pointRadius:0}]},options:{maintainAspectRatio:false,animation:false,scales:{x:{display:false},y:{display:false,min:0}},plugins:{legend:{display:false}}}});
+      let cardEl = document.getElementById(id);
+      if(!cardEl) {
+        const html = `<div class="card" id="${id}" style="${isHidden?'display:none;':''}">
+          <div class="card-header" style="cursor:grab">
+            <h3 style="margin:0; text-transform:uppercase;">ИНТЕРНЕТ (${i.name})</h3>
+            <svg fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" viewBox="0 0 24 24" style="color:var(--kg-text-dim);"><path d="M4 8h16M4 16h16"></path></svg>
+          </div>
+          <div class="k-conn-block">
+            <div class="k-conn-left">
+              <div class="k-toggle ${i.is_up?'on':''}" id="tgl-${i.name}"></div>
+              <div>
+                <div class="k-conn-title" onclick="renameInterface('${i.name}')" style="cursor:pointer; border-bottom:1px dashed rgba(255,255,255,0.3); display:inline-block; padding-bottom:1px;" title="Нажмите, чтобы переименовать" id="title-${i.name}">${savedName}</div>
+                <div class="k-conn-subtitle">${i.name}</div>
+                <div class="k-badge">
+                  <div class="dot ${i.is_up?'dot-green':'dot-blue'}" style="width:5px;height:5px;" id="updot-${i.name}"></div>
+                  <span style="margin-left:5px" id="upbadge-${i.name}">${i.is_up?'ПОДКЛЮЧЕНО '+fmtUp(st.uptime||0):'ОТКЛЮЧЕНО'}</span>
+                </div>
+              </div>
+            </div>
+            <div class="k-btn-group">
+              <button class="k-icon-btn" id="btn-chart-${i.name}" style="transition:0.2s; ${chartBtnStyle}" onclick="toggleIfaceView('${i.name}', 'chart')" title="Показать/скрыть график"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 16l4-4 4 4 4-4"/></svg></button>
+              <button class="k-icon-btn" id="btn-grid-${i.name}" style="transition:0.2s; ${gridBtnStyle}" onclick="toggleIfaceView('${i.name}', 'grid')" title="Показать/скрыть детали"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h4v4H4zM16 4h4v4h-4zM4 16h4v4H4zM16 16h4v4h-4z"/></svg></button>
+            </div>
+          </div>
+          <div class="chart-container-wrapper" id="chart-wrap-${i.name}" style="display:${hideChart}">
+            <div class="chart-container"><canvas id="chart-${i.name}"></canvas></div>
+            <div class="chart-legend">
+              <span id="ct1-${i.name}">${curTime}</span>
+              <div class="legend-center">
+                <div class="legend-item"><div class="dot dot-green"></div>Передача: <span style="color:#fff" id="tx-${i.name}">${ds} Мбит/с</span></div>
+                <div class="legend-item"><div class="dot dot-blue"></div>Прием: <span style="color:#fff" id="rx-${i.name}">${dr} Мбит/с</span></div>
+              </div>
+              <span id="ct2-${i.name}">${curTime}</span>
+            </div>
+          </div>
+          <div class="k-grid" id="grid-wrap-${i.name}" style="display:${hideGrid}">
+            <div>
+              <div class="k-kv"><span class="k-lbl">IP-адрес</span><span class="k-val" id="ip-${i.name}" style="word-break:break-all">${ips}</span></div>
+              <div class="k-kv"><span class="k-lbl">Шлюз</span><span class="k-val">Авто</span></div>
+              <div class="k-kv"><span class="k-lbl">Маска подсети</span><span class="k-val">Авто</span></div>
+            </div>
+            <div>
+              <div class="k-kv"><span class="k-lbl">MAC-адрес</span><span class="k-val" id="mac-${i.name}">${mac}</span></div>
+              <div class="k-kv"><span class="k-lbl">Прием</span><span class="k-val" id="drv-${i.name}">${dr} Мбит/с</span></div>
+              <div class="k-kv"><span class="k-lbl">Передача</span><span class="k-val" id="dsv-${i.name}">${ds} Мбит/с</span></div>
+            </div>
+            <div>
+              <div class="k-kv"><span class="k-lbl">Принято</span><span class="k-val" id="brv-${i.name}">${br}</span></div>
+              <div class="k-kv"><span class="k-lbl">Отправлено</span><span class="k-val" id="bsv-${i.name}">${bs}</span></div>
+              <div class="k-kv"><span class="k-lbl">DNS-сервер</span><span class="k-val k-val-link">1.1.1.1</span></div>
+            </div>
+          </div>
+        </div>`;
+        const sysBlock = document.getElementById('block-system');
+        if(sysBlock) sysBlock.insertAdjacentHTML('beforebegin', html);
+        else dynCont.insertAdjacentHTML('afterbegin', html);
+        interfaceHistory[i.name] = { up: Array(60).fill(0), down: Array(60).fill(0) };
       } else {
-         interfaceCharts[i.name].data.datasets[0].data = hist.up; 
-         interfaceCharts[i.name].data.datasets[1].data = hist.down;
-         interfaceCharts[i.name].update();
+        cardEl.style.display = isHidden ? 'none' : '';
+        const titleEl = document.getElementById('title-'+i.name); if(titleEl) titleEl.textContent = savedName;
+        const upEl = document.getElementById('upbadge-'+i.name); if(upEl) upEl.textContent = i.is_up?'ПОДКЛЮЧЕНО '+fmtUp(st.uptime||0):'ОТКЛЮЧЕНО';
+        const tglEl = document.getElementById('tgl-'+i.name); if(tglEl) { if(i.is_up) tglEl.classList.add('on'); else tglEl.classList.remove('on'); }
+        const dotEl = document.getElementById('updot-'+i.name); if(dotEl) { if(i.is_up) { dotEl.classList.add('dot-green'); dotEl.classList.remove('dot-blue'); } else { dotEl.classList.add('dot-blue'); dotEl.classList.remove('dot-green'); } }
+        const ct1 = document.getElementById('ct1-'+i.name); if(ct1) ct1.textContent = curTime;
+        const ct2 = document.getElementById('ct2-'+i.name); if(ct2) ct2.textContent = curTime;
+        const txEl = document.getElementById('tx-'+i.name); if(txEl) txEl.textContent = ds + ' Мбит/с';
+        const rxEl = document.getElementById('rx-'+i.name); if(rxEl) rxEl.textContent = dr + ' Мбит/с';
+        const ipEl = document.getElementById('ip-'+i.name); if(ipEl) ipEl.textContent = ips;
+        const macEl = document.getElementById('mac-'+i.name); if(macEl) macEl.textContent = mac;
+        const dsv = document.getElementById('dsv-'+i.name); if(dsv) dsv.textContent = ds + ' Мбит/с';
+        const drv = document.getElementById('drv-'+i.name); if(drv) drv.textContent = dr + ' Мбит/с';
+        const brv = document.getElementById('brv-'+i.name); if(brv) brv.textContent = br;
+        const bsv = document.getElementById('bsv-'+i.name); if(bsv) bsv.textContent = bs;
+      }
+      
+      const cCtx = document.getElementById('chart-'+i.name);
+      if(cCtx) {
+        if(!interfaceHistory[i.name]) interfaceHistory[i.name] = { up: Array(60).fill(0), down: Array(60).fill(0) };
+        const h = interfaceHistory[i.name];
+        h.up.push(Math.max(0, parseFloat(ds))); h.up.shift();
+        h.down.push(Math.max(0, parseFloat(dr))); h.down.shift();
+        
+        if(!interfaceCharts[i.name]){
+           interfaceCharts[i.name] = new Chart(cCtx.getContext('2d'),{type:'line',data:{labels:Array.from({length:60},(_,idx)=>idx),datasets:[{label:'Tx',data:h.up,borderColor:'#2fb45a',fill:true,backgroundColor:'rgba(47,180,90,0.1)',tension:.4,pointRadius:0},{label:'Rx',data:h.down,borderColor:'#00a8e8',fill:true,backgroundColor:'rgba(0,168,232,0.1)',tension:.4,pointRadius:0}]},options:{maintainAspectRatio:false,animation:false,scales:{x:{display:false},y:{display:false,min:0,suggestedMax:1}},plugins:{legend:{display:false}}}});
+        } else {
+           interfaceCharts[i.name].data.datasets[0].data = h.up; 
+           interfaceCharts[i.name].data.datasets[1].data = h.down;
+           interfaceCharts[i.name].update();
+        }
       }
     });
+
+    if(dynCont && !dynCont.dataset.sorted) {
+      const order = localStorage.getItem('sort_d1');
+      if(order) {
+        order.split('|').forEach(ordId => {
+          const el = document.getElementById(ordId);
+          if(el && el.parentElement === dynCont) dynCont.appendChild(el); 
+        });
+      }
+      dynCont.dataset.sorted = "true";
+    }
   }
+
   
   lastTime = now;
 
