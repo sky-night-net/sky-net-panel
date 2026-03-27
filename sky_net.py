@@ -1503,6 +1503,14 @@ def api_set_ssl():
 
 # ─── API: System Updates (GitHub) ──────────────────────────────────────────
 
+@app.route("/panel/api/system/restart", methods=["POST"])
+@login_required
+def api_restart_panel():
+    def _restart():
+        import time; time.sleep(1); subprocess.Popen(["systemctl", "restart", "skynet"])
+    threading.Thread(target=_restart, daemon=True).start()
+    return jsonify({"success": True, "msg": "Панель перезапускается... Страница обновится через 3 сек."})
+
 @app.route("/panel/api/system/update/check", methods=["GET"])
 @login_required
 def api_system_update_check():

@@ -532,9 +532,16 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <div class="stat-item">
           <div style="display:flex; align-items:center; gap:10px;">
             <svg fill="none" stroke="#f59e0b" stroke-width="2" width="16" height="16" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-            <span class="k-lbl" style="margin:0;">HTTPS SSL</span>
+            <span class="k-lbl" style="margin:0;">HTTPS Порт</span>
           </div>
-          <span class="k-val" id="d-https" style="font-size:12px; font-weight:700; color:var(--kg-green);">--</span>
+          <span class="k-val" id="d-https-port" style="font-size:12px; font-weight:700;">4467</span>
+        </div>
+        <div class="stat-item">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <svg fill="none" stroke="#10b981" stroke-width="2" width="16" height="16" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            <span class="k-lbl" style="margin:0;">SSL Статус</span>
+          </div>
+          <span class="k-val" id="d-ssl-status" style="font-size:12px; font-weight:700; color:var(--kg-green);">Проверка...</span>
         </div>
       </div>
     </div>
@@ -869,13 +876,21 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         </div>
       </div>
       <p style="font-size:11px; color:var(--kg-text-dim); margin:0 0 15px;">Self-Signed: браузер предупредит — это нормально. Let's Encrypt: бесплатный доверенный сертификат, требует домен.</p>
-      <button class="btn btn-p" onclick="applySSL()">Применить настройки SSL</button>
-      <div id="ssl-status-box" style="margin-top:20px; padding:15px; background:rgba(0,0,0,0.2); border-radius:8px; display:none;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:12px; color:var(--kg-text-dim);">Текущий статус:</span>
-          <span id="ssl-badge" class="badge">--</span>
+      <div id="ssl-status-box" style="margin-top:20px; padding:15px; background:rgba(0,0,0,0.2); border-radius:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <span style="font-size:12px; color:var(--kg-text-dim);">Текущий режим:</span>
+          <span id="ssl-badge" class="badge">Загрузка...</span>
         </div>
-        <div id="ssl-info" style="font-size:11px; color:var(--kg-text-dim); margin-top:8px;"></div>
+        <div id="ssl-details" style="font-size:12px; line-height:1.5;">
+          <div style="color:var(--kg-text-dim); margin-bottom:4px;">SSL сертификат: <span id="ssl-cert-state" style="color:white;">--</span></div>
+          <div id="ssl-restart-warn" style="display:none; color:#f59e0b; font-weight:600; margin-top:10px;">⚠️ Требуется перезапуск панели для активации HTTPS (порт 4467)</div>
+          <div id="ssl-active-info" style="display:none; color:var(--kg-green); font-weight:600; margin-top:10px;">✅ HTTPS активен на порту 4467. Используйте https://[IP-или-Домен]:4467</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:15px;">
+        <button class="btn btn-p" style="flex:1;" onclick="applySSL()">Применить настройки SSL</button>
+        <button class="btn btn-o" style="flex:0.5; border-color:#f59e0b; color:#f59e0b;" onclick="restartPanel()">Перезапуск</button>
+      </div>
       </div>
     </div>
   </div>
@@ -2250,8 +2265,20 @@ async function applySSL(){
   const mode=document.getElementById('ssl-mode').value;
   const domain=document.getElementById('ssl-domain').value.trim();
   if(mode==='letsencrypt'&&!domain)return alert('Укажите домен для Let\'s Encrypt');
+  // Small hint: Let's Encrypt doesn't work with bare IPs
+  if(mode==='letsencrypt' && /^(\d{1,3}\.){3}\d{1,3}$/.test(domain)){
+      return alert('Let\'s Encrypt требует домен (например: sky-net.io). Для IP-адреса используйте "Self-Signed".');
+  }
   const r=await POST('/panel/api/system/set-ssl',{mode,domain});
   alert(r.msg);
+  checkSSLStatus();
+}
+
+async function restartPanel(){
+  if(!confirm('Перезапустить панель управления?')) return;
+  const r=await POST('/panel/api/system/restart',{});
+  alert(r.msg);
+  setTimeout(()=>window.location.reload(), 3000);
 }
 
 // Telegram
@@ -2271,18 +2298,35 @@ async function issueSSL(){const d=document.getElementById('ssl-domain').value;if
 
 async function checkSSLStatus(){
   const r=await API('/panel/api/system/ssl-status');
-  const box=document.getElementById('ssl-status-box');
-  const badge=document.getElementById('ssl-badge');
-  const info=document.getElementById('ssl-info');
-  if(box && badge && info){
-    box.style.display='block';
-    badge.textContent=r.active ? 'АКТИВЕН' : 'НЕАКТИВЕН';
-    badge.className='badge '+(r.active?'badge-on':'badge-off');
-    let msg = `Режим: ${r.mode}`;
-    if(r.domain) msg += ` | Домен: ${r.domain}`;
-    if(r.active) msg += `<br><span style="color:var(--kg-green)">Панель работает через HTTPS. Используйте https://${r.domain || window.location.hostname}:${window.location.port}</span>`;
-    else msg += `<br><span style="color:var(--kg-red)">Панель работает через HTTP.</span>`;
-    info.innerHTML=msg;
+  const dSslStatus = document.getElementById('d-ssl-status');
+  const badge = document.getElementById('ssl-badge');
+  const certState = document.getElementById('ssl-cert-state');
+  const restartWarn = document.getElementById('ssl-restart-warn');
+  const activeInfo = document.getElementById('ssl-active-info');
+  
+  if(badge) {
+      badge.textContent = r.mode === 'off' ? 'ОТКЛЮЧЕН' : r.mode.toUpperCase();
+      badge.className = 'badge ' + (r.mode === 'off' ? 'badge-off' : 'badge-on');
+  }
+  
+  if(dSslStatus) {
+      dSslStatus.textContent = r.active ? 'АКТИВЕН' : (r.mode==='off'?'ВЫКЛЮЧЕН':'ОЖИДАНИЕ');
+      dSslStatus.style.color = r.active ? 'var(--kg-green)' : (r.mode==='off'?'var(--kg-text-dim)':'#f59e0b');
+  }
+  
+  if(certState) certState.textContent = r.cert_path ? 'Файл сертификата найден' : 'Файлы не найдены';
+  
+  if(restartWarn && activeInfo) {
+      if (r.mode !== 'off' && !r.active) {
+          restartWarn.style.display = 'block';
+          activeInfo.style.display = 'none';
+      } else if (r.active) {
+          restartWarn.style.display = 'none';
+          activeInfo.style.display = 'block';
+      } else {
+          restartWarn.style.display = 'none';
+          activeInfo.style.display = 'none';
+      }
   }
 }
 
