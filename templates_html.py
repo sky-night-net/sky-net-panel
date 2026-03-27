@@ -1092,7 +1092,7 @@ let interfaceHistory = {};
 
 async function loadDashboard(){
   const [st_res, net_res, hist_res] = await Promise.all([
-    API('/server/status'), API('/panel/api/system/network'), API('/panel/api/trafficHistory')
+    API('/panel/api/server/status'), API('/panel/api/system/network'), API('/panel/api/trafficHistory')
   ]);
   const st = st_res; const net = net_res; const hist = hist_res;
   

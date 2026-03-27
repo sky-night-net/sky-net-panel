@@ -622,7 +622,7 @@ def api_client_config(client_id):
 
 # ─── API: Server Status ─────────────────────────────────────────────────────
 
-@app.route("/server/status")
+@app.route("/panel/api/server/status")
 @login_required
 def api_server_status():
     import platform
