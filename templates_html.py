@@ -634,16 +634,17 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <div class="table-responsive" style="background:var(--kg-bg-card); border-radius:8px;">
       <table class="k-table fw-table" style="width:100%; text-align:left; font-size:13px;">
         <thead>
-          <tr style="border-bottom:1px solid var(--kg-border); color:var(--kg-text-dim);">
-            <th style="padding:12px; font-weight:500;">Включено</th>
-            <th style="padding:12px; font-weight:500;">Приоритет</th>
+          <tr style="border-bottom:1px solid var(--kg-border); color:var(--kg-text-dim); font-size:12px;">
+            <th style="padding:12px; font-weight:500; width:40px;"></th>
+            <th style="padding:12px; font-weight:500; width:60px;">Приор.</th>
             <th style="padding:12px; font-weight:500;">Действие</th>
             <th style="padding:12px; font-weight:500;">Протокол</th>
-            <th style="padding:12px; font-weight:500;">Адрес источника</th>
-            <th style="padding:12px; font-weight:500;">Порт источника</th>
-            <th style="padding:12px; font-weight:500;">Адрес назначения</th>
-            <th style="padding:12px; font-weight:500;">Порт назначения</th>
-            <th style="padding:12px; font-weight:500;">Имя</th>
+            <th style="padding:12px; font-weight:500;">Интерфейс</th>
+            <th style="padding:12px; font-weight:500;">Источник</th>
+            <th style="padding:12px; font-weight:500;">Порт ист.</th>
+            <th style="padding:12px; font-weight:500;">Назначение</th>
+            <th style="padding:12px; font-weight:500;">Порт назн.</th>
+            <th style="padding:12px; font-weight:500;">Имя / Комментарий</th>
             <th style="padding:12px; width:40px;"></th>
           </tr>
         </thead>
@@ -678,25 +679,35 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <select id="fw-m-action">
           <option value="allow">Разрешить</option>
           <option value="deny">Запретить</option>
+          <option value="reject">Отбросить</option>
         </select>
       </div>
       
-      <div class="kn-field"><label>IP-адрес источника</label>
-        <select id="fw-m-srcip">
+      <div class="kn-field" id="kn-srcip-box">
+        <label>IP-адрес источника</label>
+        <select id="fw-m-srcip-sel" onchange="fwOnCustomChange(this, 'fw-m-srcip-val')">
           <option value="any">Любой</option>
+          <option value="custom">Указать IP или подсеть...</option>
         </select>
+        <input id="fw-m-srcip-val" style="display:none; margin-top:5px; border-top:1px dashed var(--kg-border);" placeholder="например: 10.8.0.0/24">
       </div>
       
-      <div class="kn-field"><label>IP-адрес назначения</label>
-        <select id="fw-m-dstip">
+      <div class="kn-field" id="kn-dstip-box">
+        <label>IP-адрес назначения</label>
+        <select id="fw-m-dstip-sel" onchange="fwOnCustomChange(this, 'fw-m-dstip-val')">
           <option value="any">Любой</option>
+          <option value="custom">Указать IP или подсеть...</option>
         </select>
+        <input id="fw-m-dstip-val" style="display:none; margin-top:5px; border-top:1px dashed var(--kg-border);" placeholder="например: 1.1.1.1">
       </div>
       
-      <div class="kn-field"><label>Номер порта источника</label>
-        <select id="fw-m-srcport">
+      <div class="kn-field" id="kn-srcport-box">
+        <label>Номер порта источника</label>
+        <select id="fw-m-srcport-sel" onchange="fwOnCustomChange(this, 'fw-m-srcport-val')">
           <option value="any">Любой</option>
+          <option value="custom">Указать порт или диапазон...</option>
         </select>
+        <input id="fw-m-srcport-val" style="display:none; margin-top:5px; border-top:1px dashed var(--kg-border);" placeholder="например: 80 или 3000:4000">
       </div>
       
       <div class="kn-field"><label>Протокол</label>
@@ -708,10 +719,13 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         </select>
       </div>
       
-      <div class="kn-field"><label>Номер порта назначения</label>
-        <select id="fw-m-dstport">
+      <div class="kn-field" id="kn-dstport-box">
+        <label>Номер порта назначения</label>
+        <select id="fw-m-dstport-sel" onchange="fwOnCustomChange(this, 'fw-m-dstport-val')">
           <option value="any">Любой</option>
+          <option value="custom">Указать порт или диапазон...</option>
         </select>
+        <input id="fw-m-dstport-val" style="display:none; margin-top:5px; border-top:1px dashed var(--kg-border);" placeholder="например: 443 или 8000:9000">
       </div>
       
       <div class="kn-field"><label>Интерфейс</label>
@@ -720,9 +734,9 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       
       <div class="kn-field"><label>Переместить в</label>
         <select id="fw-m-prio">
-          <option value="100">Конец (текущая позиция)</option>
           <option value="10">Начало списка</option>
           <option value="50">Середина списка</option>
+          <option value="100" selected>Конец (текущая позиция)</option>
         </select>
       </div>
       
@@ -1921,8 +1935,9 @@ function renderFwRules() {
     tr.innerHTML = `
       <td style="padding:12px;"><input type="checkbox" ${rule.enabled?'checked':''} onchange="fwFastToggle(${rule.id}, this.checked)"></td>
       <td style="padding:12px;">${rule.priority}</td>
-      <td style="padding:12px;"><span class="badge ${rule.action==='allow'?'badge-on':'badge-off'}">${rule.action==='allow'?'Разрешить':'Запретить'}</span></td>
+      <td style="padding:12px;"><span class="badge ${rule.action==='allow'?'badge-on':(rule.action==='deny'?'badge-off':'badge-warn')}">${rule.action==='allow'?'Разрешить':(rule.action==='deny'?'Запретить':'Отбросить')}</span></td>
       <td style="padding:12px;">${rule.protocol.toUpperCase()}</td>
+      <td style="padding:12px; color:var(--kg-text-dim);">${rule.interface==='any'?'Любой':rule.interface}</td>
       <td style="padding:12px;">${rule.src_ip}</td>
       <td style="padding:12px;">${rule.src_port}</td>
       <td style="padding:12px;">${rule.dst_ip}</td>
@@ -1948,70 +1963,96 @@ async function fwFastToggle(id, enabled) {
   await POST('/panel/api/firewall/save', data);
 }
 
-function fwSetSelect(id, val) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  // If value doesn't exist as option, add it
-  let found = false;
-  for (let o of el.options) { if (o.value === String(val)) { found = true; break; } }
-  if (!found && val && val !== 'any') {
-    const opt = document.createElement('option');
-    opt.value = val;
-    opt.text = val;
-    el.add(opt);
+function fwOnCustomChange(sel, inputId) {
+  const inp = document.getElementById(inputId);
+  if(sel.value === 'custom') {
+    inp.style.display = 'block';
+    inp.focus();
+  } else {
+    inp.style.display = 'none';
+    inp.value = '';
   }
-  el.value = val;
+}
+
+function fwSetSelect(id, val, inputId) {
+  const sel = document.getElementById(id);
+  const inp = document.getElementById(inputId);
+  if (!sel) return;
+  
+  if (val === 'any') {
+    sel.value = 'any';
+    if(inp) { inp.style.display = 'none'; inp.value = ''; }
+  } else {
+    sel.value = 'custom';
+    if(inp) {
+      inp.style.display = 'block';
+      inp.value = val;
+    }
+  }
 }
 
 function fwOpenModal(id = null) {
   const m = document.getElementById('modal-fw');
   m.style.display = 'flex';
   
-  // Reset custom options in selects
-  ['fw-m-srcip','fw-m-dstip','fw-m-srcport','fw-m-dstport'].forEach(selId => {
-    const s = document.getElementById(selId);
-    if(s) { s.innerHTML = '<option value="any">Любой</option>'; }
+  // Clear interfaces list and re-populate
+  const ifaceSel = document.getElementById('fw-m-iface');
+  ifaceSel.innerHTML = '<option value="any">Любой</option>';
+  fwInterfacesData.forEach(iface => {
+    const opt = document.createElement('option');
+    opt.value = iface;
+    opt.text = iface;
+    ifaceSel.add(opt);
   });
-  
+
   if(id) {
     const r = fwRulesData.find(x => x.id === id);
     document.getElementById('fw-m-id').value = r.id;
     document.getElementById('fw-m-enabled').checked = !!r.enabled;
     document.getElementById('fw-m-name').value = r.comment;
     document.getElementById('fw-m-action').value = r.action;
-    fwSetSelect('fw-m-iface', r.interface);
-    fwSetSelect('fw-m-srcip', r.src_ip);
-    fwSetSelect('fw-m-dstip', r.dst_ip);
-    fwSetSelect('fw-m-srcport', r.src_port);
-    fwSetSelect('fw-m-dstport', r.dst_port);
+    document.getElementById('fw-m-iface').value = r.interface;
+    
+    fwSetSelect('fw-m-srcip-sel', r.src_ip, 'fw-m-srcip-val');
+    fwSetSelect('fw-m-dstip-sel', r.dst_ip, 'fw-m-dstip-val');
+    fwSetSelect('fw-m-srcport-sel', r.src_port, 'fw-m-srcport-val');
+    fwSetSelect('fw-m-dstport-sel', r.dst_port, 'fw-m-dstport-val');
+    
     document.getElementById('fw-m-proto').value = r.protocol;
-    fwSetSelect('fw-m-prio', String(r.priority));
+    document.getElementById('fw-m-prio').value = String(r.priority);
   } else {
     document.getElementById('fw-m-id').value = '';
     document.getElementById('fw-m-enabled').checked = true;
     document.getElementById('fw-m-name').value = '';
     document.getElementById('fw-m-action').value = 'allow';
     document.getElementById('fw-m-iface').value = currentFwIface === 'any' ? 'any' : currentFwIface;
-    document.getElementById('fw-m-srcip').value = 'any';
-    document.getElementById('fw-m-dstip').value = 'any';
-    document.getElementById('fw-m-srcport').value = 'any';
-    document.getElementById('fw-m-dstport').value = 'any';
+    
+    fwSetSelect('fw-m-srcip-sel', 'any', 'fw-m-srcip-val');
+    fwSetSelect('fw-m-dstip-sel', 'any', 'fw-m-dstip-val');
+    fwSetSelect('fw-m-srcport-sel', 'any', 'fw-m-srcport-val');
+    fwSetSelect('fw-m-dstport-sel', 'any', 'fw-m-dstport-val');
+    
     document.getElementById('fw-m-proto').value = 'tcp';
     document.getElementById('fw-m-prio').value = '100';
   }
 }
 
 async function fwSaveModal() {
+  const getVal = (selId, inpId) => {
+    const sel = document.getElementById(selId);
+    return sel.value === 'custom' ? document.getElementById(inpId).value : 'any';
+  };
+
   const data = {
     id: document.getElementById('fw-m-id').value || null,
     enabled: document.getElementById('fw-m-enabled').checked ? 1 : 0,
     comment: document.getElementById('fw-m-name').value,
     action: document.getElementById('fw-m-action').value,
     interface: document.getElementById('fw-m-iface').value,
-    src_ip: document.getElementById('fw-m-srcip').value,
-    dst_ip: document.getElementById('fw-m-dstip').value,
-    src_port: document.getElementById('fw-m-srcport').value,
-    dst_port: document.getElementById('fw-m-dstport').value,
+    src_ip: getVal('fw-m-srcip-sel', 'fw-m-srcip-val'),
+    dst_ip: getVal('fw-m-dstip-sel', 'fw-m-dstip-val'),
+    src_port: getVal('fw-m-srcport-sel', 'fw-m-srcport-val'),
+    dst_port: getVal('fw-m-dstport-sel', 'fw-m-dstport-val'),
     protocol: document.getElementById('fw-m-proto').value,
     priority: parseInt(document.getElementById('fw-m-prio').value)
   };

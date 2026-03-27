@@ -905,31 +905,42 @@ def api_firewall_get():
 
 def _apply_firewall_rules():
     import subprocess
-    # First, reset UFW to default deny to clear all rules
     try:
+        # Reset UFW to clear all rules before re-applying from DB
         subprocess.run(["ufw", "--force", "reset"], capture_output=True)
         subprocess.run(["ufw", "default", "deny", "incoming"], capture_output=True)
         subprocess.run(["ufw", "default", "allow", "outgoing"], capture_output=True)
+        subprocess.run(["ufw", "default", "allow", "forwarded"], capture_output=True)
         
         with get_db() as db:
             rules = db.execute("SELECT * FROM firewall_rules WHERE enabled=1 ORDER BY priority ASC").fetchall()
             
         for rule in rules:
-            cmd = ["ufw", rule["action"]] # allow or deny
+            action = rule["action"].lower()
+            if action not in ["allow", "deny", "reject"]: action = "allow"
+            
+            # Detect if it's a routing (FWD) rule based on comment or missing dst_ip
+            # In our sync, we mark FWD rules in the comment
+            is_route = "FWD" in (rule["comment"] or "")
+            
+            cmd = ["ufw"]
+            if is_route: cmd.append("route")
+            cmd.append(action)
+            
             if rule["interface"] and rule["interface"] != "any":
-                cmd += ["in", "on", rule["interface"]]
+                if is_route:
+                    cmd += ["on", rule["interface"]]
+                else:
+                    cmd += ["in", "on", rule["interface"]]
+            
             if rule["protocol"] and rule["protocol"] != "any":
                 cmd += ["proto", rule["protocol"]]
-            if rule["src_ip"] and rule["src_ip"] != "any":
-                cmd += ["from", rule["src_ip"]]
-            else:
-                cmd += ["from", "any"]
+                
+            cmd += ["from", rule["src_ip"] if rule["src_ip"] else "any"]
             if rule["src_port"] and rule["src_port"] != "any":
                 cmd += ["port", str(rule["src_port"])]
-            if rule["dst_ip"] and rule["dst_ip"] != "any":
-                cmd += ["to", rule["dst_ip"]]
-            else:
-                cmd += ["to", "any"]
+                
+            cmd += ["to", rule["dst_ip"] if rule["dst_ip"] else "any"]
             if rule["dst_port"] and rule["dst_port"] != "any":
                 cmd += ["port", str(rule["dst_port"])]
             
@@ -970,24 +981,25 @@ def api_firewall_save():
     dst_ip = data.get("dst_ip", "any")
     dst_port = data.get("dst_port", "any")
     interface = data.get("interface", "any")
+    schedule = data.get("schedule", "always")
     comment = data.get("comment", "")
     
     with get_db() as db:
         if rid:
             db.execute("""
                 UPDATE firewall_rules 
-                SET enabled=?, priority=?, action=?, protocol=?, src_ip=?, src_port=?, dst_ip=?, dst_port=?, interface=?, comment=?
+                SET enabled=?, priority=?, action=?, protocol=?, src_ip=?, src_port=?, dst_ip=?, dst_port=?, interface=?, schedule=?, comment=?
                 WHERE id=?
-            """, (enabled, priority, action, proto, src_ip, src_port, dst_ip, dst_port, interface, comment, rid))
+            """, (enabled, priority, action, proto, src_ip, src_port, dst_ip, dst_port, interface, schedule, comment, rid))
         else:
             db.execute("""
-                INSERT INTO firewall_rules (enabled, priority, action, protocol, src_ip, src_port, dst_ip, dst_port, interface, comment)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (enabled, priority, action, proto, src_ip, src_port, dst_ip, dst_port, interface, comment))
+                INSERT INTO firewall_rules (enabled, priority, action, protocol, src_ip, src_port, dst_ip, dst_port, interface, schedule, comment)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (enabled, priority, action, proto, src_ip, src_port, dst_ip, dst_port, interface, schedule, comment))
         db.commit()
     
     _apply_firewall_rules()
-    return jsonify({"success": True, "msg": "Правило сохранено"})
+    return jsonify({"success": True, "msg": "Правило сохранено и применено"})
 
 @app.route("/panel/api/firewall/delete", methods=["POST"])
 @login_required
@@ -999,7 +1011,6 @@ def api_firewall_delete():
     with get_db() as db:
         db.execute("DELETE FROM firewall_rules WHERE id=?", (rid,))
         db.commit()
-        
     _apply_firewall_rules()
     return jsonify({"success": True, "msg": "Правило удалено"})
 
@@ -1011,83 +1022,69 @@ def api_firewall_sync():
     try:
         r = subprocess.run(["ufw", "status"], capture_output=True, text=True)
         if r.returncode != 0:
-            return jsonify({"success": False, "msg": "UFW не доступен или ошибка выполнения"})
+            return jsonify({"success": False, "msg": "UFW не доступен"})
             
         lines = r.stdout.splitlines()
         imported = []
         
         for line in lines:
             line = line.strip()
-            if not line or line.startswith('To') or line.startswith('--') or line.startswith('Status') or line.startswith('Logging') or line.startswith('Default') or line.startswith('New'):
+            if not line or any(line.startswith(x) for x in ['To', '--', 'Status', 'Logging', 'Default', 'New']):
                 continue
             
-            # Skip (v6) lines - they duplicate v4 rules
-            if '(v6)' in line:
-                continue
+            if '(v6)' in line: continue
             
-            # Parse: "22/tcp                     ALLOW IN    Anywhere"
-            # Parse: "Anywhere                   ALLOW FWD   10.8.0.0/24"
-            m = re.match(r'^(\S+(?:\s*\(v6\))?)\s+(ALLOW|DENY)\s+(IN|FWD|OUT)\s+(.*)', line, re.IGNORECASE)
-            if not m:
-                continue
+            # Regex to capture target, action, direction, source
+            # Handles "22/tcp on eth0   ALLOW IN   Anywhere"
+            m = re.match(r'^(.+?)\s+(ALLOW|DENY|REJECT)\s+(IN|FWD|OUT)\s+(.*)', line, re.IGNORECASE)
+            if not m: continue
             
-            target = m.group(1).strip()
+            target_raw = m.group(1).strip()
             action = m.group(2).lower()
             direction = m.group(3).upper()
-            source = m.group(4).strip()
+            source_raw = m.group(4).strip()
             
-            dst_port = "any"
-            proto = "any"
-            src_ip = "any"
-            dst_ip = "any"
+            dst_port, proto, src_ip, dst_ip, iface = "any", "any", "any", "any", "any"
             
+            # Detect interface "on [iface]" in target or source
+            if " on " in target_raw:
+                target_raw, iface = target_raw.split(" on ", 1)
+            elif " on " in source_raw:
+                source_raw, iface = source_raw.split(" on ", 1)
+            
+            target_raw, source_raw = target_raw.strip(), source_raw.strip()
+
             if direction == "IN":
-                # target is destination (e.g. "22/tcp", "Anywhere")
-                if "/" in target:
-                    parts = target.split("/")
-                    dst_port = parts[0]
-                    proto = parts[1]
-                elif target.lower() != "anywhere":
-                    dst_port = target
-                
-                if source.lower() != "anywhere" and source:
-                    src_ip = source
-                    
+                if "/" in target_raw:
+                    dst_port, proto = target_raw.split("/", 1)
+                elif target_raw.lower() != "anywhere":
+                    dst_port = target_raw
+                if source_raw.lower() != "anywhere": src_ip = source_raw
             elif direction == "FWD":
-                # target is destination, source is from
-                if target.lower() != "anywhere":
-                    dst_ip = target
-                if source.lower() != "anywhere" and source:
-                    src_ip = source
+                if target_raw.lower() != "anywhere": dst_ip = target_raw
+                if source_raw.lower() != "anywhere": src_ip = source_raw
             
-            comment = f"{dst_port}/{proto}" if dst_port != "any" else direction
-            if direction == "FWD":
-                comment = f"FWD: {src_ip} → {dst_ip}"
+            comment = f"Imported {direction}"
+            if direction == "FWD": comment = f"FWD: {src_ip} -> {dst_ip}"
+            elif dst_port != "any": comment = f"Port: {dst_port}/{proto}"
             
             imported.append({
-                "action": action,
-                "proto": proto,
-                "src_ip": src_ip,
-                "src_port": "any",
-                "dst_ip": dst_ip,
-                "dst_port": dst_port,
-                "comment": comment,
-                "direction": direction
+                "action": action, "proto": proto, "src_ip": src_ip, "src_port": "any",
+                "dst_ip": dst_ip, "dst_port": dst_port, "iface": iface, "comment": comment
             })
-        
-        # Clear old rules and insert fresh
+            
         with get_db() as db:
             db.execute("DELETE FROM firewall_rules")
             for i, rule in enumerate(imported):
                 db.execute("""
-                    INSERT INTO firewall_rules (enabled, priority, action, protocol, src_ip, src_port, dst_ip, dst_port, interface, comment)
-                    VALUES (1, ?, ?, ?, ?, ?, ?, ?, 'any', ?)
-                """, ((i+1)*10, rule["action"], rule["proto"], rule["src_ip"], rule["src_port"], rule["dst_ip"], rule["dst_port"], rule["comment"]))
+                    INSERT INTO firewall_rules (enabled, priority, action, protocol, src_ip, src_port, dst_ip, dst_port, interface, schedule, comment)
+                    VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, 'always', ?)
+                """, ((i+1)*10, rule["action"], rule["proto"], rule["src_ip"], rule["src_port"], rule["dst_ip"], rule["dst_port"], rule["iface"], rule["comment"]))
             db.commit()
-        
-        return jsonify({"success": True, "msg": f"Импортировано {len(imported)} правил из системы"})
+            
+        return jsonify({"success": True, "msg": f"Импортировано {len(imported)} правил"})
     except Exception as e:
-        log.error(f"Firewall sync failed: {e}")
+        log.error(f"Sync failed: {e}")
         return jsonify({"success": False, "msg": str(e)})
 
 
