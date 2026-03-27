@@ -618,8 +618,6 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <span id="fw-status-badge" class="badge" style="margin-top:10px;display:inline-block;">--</span>
         <button class="btn btn-o btn-sm" onclick="fwToggle(true)" style="margin-left:10px;">Включить UFW</button>
         <button class="btn btn-d btn-sm" onclick="fwToggle(false)">Выключить UFW</button>
-        <button class="btn btn-p btn-sm" onclick="fwApply()" style="margin-left:10px; background:var(--kg-green);">Применить в систему</button>
-        <button class="btn btn-o btn-sm" onclick="fwSync()" style="margin-left:10px; border-color:var(--kg-blue); color:var(--kg-blue);">Импорт из системы</button>
       </p>
     </div>
     
@@ -1892,6 +1890,8 @@ let fwRulesData = [];
 let fwInterfacesData = [];
 
 async function loadFirewall() {
+  // Auto-sync with system on load
+  await POST('/panel/api/firewall/sync', {});
   const r = await API('/panel/api/firewall');
   if(!r.success) return;
   
@@ -1987,7 +1987,11 @@ async function fwFastToggle(id, enabled) {
   const rule = fwRulesData.find(x => x.id === id);
   if(!rule) return;
   const data = {...rule, enabled: enabled ? 1 : 0};
-  await POST('/panel/api/firewall/save', data);
+  const r = await POST('/panel/api/firewall/save', data);
+  if(r.success) {
+      // Auto-apply on toggle
+      await POST('/panel/api/firewall/apply', {});
+  }
 }
 
 function fwOnCustomChange(sel, inputId) {
@@ -2086,6 +2090,8 @@ async function fwSaveModal() {
   const r = await POST('/panel/api/firewall/save', data);
   if(r.success) {
     document.getElementById('modal-fw').style.display = 'none';
+    // Automatically apply to system
+    await POST('/panel/api/firewall/apply', {}); 
     loadFirewall();
   }
 }
@@ -2093,7 +2099,10 @@ async function fwSaveModal() {
 async function fwDelete(id) {
   if(!confirm('Удалить правило?')) return;
   const r = await POST('/panel/api/firewall/delete', {id});
-  if(r.success) loadFirewall();
+  if(r.success) {
+      await POST('/panel/api/firewall/apply', {});
+      loadFirewall();
+  }
 }
 
 async function fwApply() {
