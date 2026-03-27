@@ -670,8 +670,12 @@ def api_server_status():
             "public_ip": public_ip,
             "load_avg": f"{load1:.2f}  {load5:.2f}  {load15:.2f}"
         })
-    except ImportError:
-        return jsonify({"cpu": 0, "mem_percent": 0, "uptime": 0, "public_ip": public_ip, "error": "psutil not installed"})
+    except Exception as e:
+        log.error(f"Error in api_server_status: {e}")
+        return jsonify({
+            "cpu": 0, "mem_percent": 0, "disk_percent": 0,
+            "uptime": 0, "public_ip": public_ip, "error": str(e)
+        })
 
 # ─── API: Settings ───────────────────────────────────────────────────────────
 

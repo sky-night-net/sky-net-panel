@@ -1091,10 +1091,10 @@ async function rebootServer(){ if(confirm('Вы действительно хо�
 let interfaceHistory = {};
 
 async function loadDashboard(){
-  const [st_res, net_res, hist_res] = await Promise.all([
-    API('/panel/api/server/status'), API('/panel/api/system/network'), API('/panel/api/trafficHistory')
-  ]);
-  const st = st_res; const net = net_res; const hist = hist_res;
+  let st={}, net=[], hist={up:[],down:[]};
+  try { st = await API('/panel/api/server/status'); } catch(e) { console.error("Status API fail", e); }
+  try { net = await API('/panel/api/system/network') || []; } catch(e) { console.error("Network API fail", e); }
+  try { hist = await API('/panel/api/trafficHistory') || {up:[],down:[]}; } catch(e) { console.error("Traffic API fail", e); }
   
   const d_ip=document.getElementById('d-ip'), d_host=document.getElementById('d-host'), d_os=document.getElementById('d-os');
   if(d_host) d_host.textContent = st.hostname || 'Sky-Net';
