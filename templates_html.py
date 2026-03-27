@@ -228,6 +228,54 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
   background: rgba(255,255,255,0.02);
 }
 
+/* Keenetic-style floating label fields */
+.kn-field {
+  position: relative;
+  margin-bottom: 16px;
+  border: 1px solid var(--kg-border);
+  border-radius: 4px;
+  background: transparent;
+}
+.kn-field label {
+  position: absolute;
+  top: -9px;
+  left: 12px;
+  background: var(--kg-bg-card);
+  padding: 0 6px;
+  font-size: 11px;
+  color: var(--kg-text-dim);
+  pointer-events: none;
+  text-transform: none;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.kn-field input,
+.kn-field select {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #fff;
+  padding: 14px 14px 10px;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.kn-field select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+.kn-field:focus-within {
+  border-color: var(--kg-blue);
+}
+.kn-field:focus-within label {
+  color: var(--kg-blue);
+}
+
 .dot { width: 6px; height: 6px; border-radius: 50%; }
 .dot-green { background: var(--kg-green); }
 .dot-blue { background: var(--kg-blue); }
@@ -624,29 +672,65 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <span style="color:white; font-size:14px;">Включить правило</span>
       </label>
       
-      <div class="fg" style="margin-bottom:15px;"><label>Имя</label><input id="fw-m-name" placeholder="Например: Блокировка ICMP"></div>
+      <div class="kn-field"><label>Имя</label><input id="fw-m-name" placeholder="Например: Блокировка ICMP"></div>
       
-      <div class="fg" style="margin-bottom:15px;"><label>Действие</label>
+      <div class="kn-field"><label>Действие</label>
         <select id="fw-m-action">
           <option value="allow">Разрешить</option>
           <option value="deny">Запретить</option>
         </select>
       </div>
       
-      <div class="fg" style="margin-bottom:15px;"><label>Интерфейс</label>
+      <div class="kn-field"><label>IP-адрес источника</label>
+        <select id="fw-m-srcip">
+          <option value="any">Любой</option>
+        </select>
+      </div>
+      
+      <div class="kn-field"><label>IP-адрес назначения</label>
+        <select id="fw-m-dstip">
+          <option value="any">Любой</option>
+        </select>
+      </div>
+      
+      <div class="kn-field"><label>Номер порта источника</label>
+        <select id="fw-m-srcport">
+          <option value="any">Любой</option>
+        </select>
+      </div>
+      
+      <div class="kn-field"><label>Протокол</label>
+        <select id="fw-m-proto">
+          <option value="tcp">TCP</option>
+          <option value="udp">UDP</option>
+          <option value="any">Любой</option>
+          <option value="icmp">ICMP</option>
+        </select>
+      </div>
+      
+      <div class="kn-field"><label>Номер порта назначения</label>
+        <select id="fw-m-dstport">
+          <option value="any">Любой</option>
+        </select>
+      </div>
+      
+      <div class="kn-field"><label>Интерфейс</label>
         <select id="fw-m-iface"></select>
       </div>
       
-      <div class="fg" style="margin-bottom:15px;"><label>IP-адрес источника</label><input id="fw-m-srcip" placeholder="any или IP/CIDR (например: 10.8.0.0/24)"></div>
-      <div class="fg" style="margin-bottom:15px;"><label>IP-адрес назначения</label><input id="fw-m-dstip" placeholder="any или IP/CIDR (например: 1.1.1.1)"></div>
-      <div class="fg" style="margin-bottom:15px;"><label>Номер порта источника</label><input id="fw-m-srcport" placeholder="any или порт (например: 80)"></div>
-      <div class="fg" style="margin-bottom:15px;"><label>Протокол</label>
-        <select id="fw-m-proto">
-          <option value="any">Любой</option><option value="tcp">TCP</option><option value="udp">UDP</option><option value="icmp">ICMP</option>
+      <div class="kn-field"><label>Переместить в</label>
+        <select id="fw-m-prio">
+          <option value="100">Конец (текущая позиция)</option>
+          <option value="10">Начало списка</option>
+          <option value="50">Середина списка</option>
         </select>
       </div>
-      <div class="fg" style="margin-bottom:15px;"><label>Номер порта назначения</label><input id="fw-m-dstport" placeholder="any или порт (например: 443)"></div>
-      <div class="fg"><label>Приоритет (меньше = выше в списке)</label><input type="number" id="fw-m-prio" value="100"></div>
+      
+      <div class="kn-field"><label>Расписание работы</label>
+        <select id="fw-m-schedule">
+          <option value="always">Работает постоянно</option>
+        </select>
+      </div>
     </div>
     <div style="padding:24px; border-top:1px solid var(--kg-border); display:flex; gap:15px;">
       <button class="btn btn-p" style="flex:1" onclick="fwSaveModal()">Сохранить</button>
@@ -654,6 +738,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     </div>
   </div>
 </div>
+
 
 <!-- SYSTEM -->
 <div class="page" id="page-system">
@@ -1863,9 +1948,30 @@ async function fwFastToggle(id, enabled) {
   await POST('/panel/api/firewall/save', data);
 }
 
+function fwSetSelect(id, val) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  // If value doesn't exist as option, add it
+  let found = false;
+  for (let o of el.options) { if (o.value === String(val)) { found = true; break; } }
+  if (!found && val && val !== 'any') {
+    const opt = document.createElement('option');
+    opt.value = val;
+    opt.text = val;
+    el.add(opt);
+  }
+  el.value = val;
+}
+
 function fwOpenModal(id = null) {
   const m = document.getElementById('modal-fw');
   m.style.display = 'flex';
+  
+  // Reset custom options in selects
+  ['fw-m-srcip','fw-m-dstip','fw-m-srcport','fw-m-dstport'].forEach(selId => {
+    const s = document.getElementById(selId);
+    if(s) { s.innerHTML = '<option value="any">Любой</option>'; }
+  });
   
   if(id) {
     const r = fwRulesData.find(x => x.id === id);
@@ -1873,13 +1979,13 @@ function fwOpenModal(id = null) {
     document.getElementById('fw-m-enabled').checked = !!r.enabled;
     document.getElementById('fw-m-name').value = r.comment;
     document.getElementById('fw-m-action').value = r.action;
-    document.getElementById('fw-m-iface').value = r.interface;
-    document.getElementById('fw-m-srcip').value = r.src_ip;
-    document.getElementById('fw-m-dstip').value = r.dst_ip;
-    document.getElementById('fw-m-srcport').value = r.src_port;
-    document.getElementById('fw-m-dstport').value = r.dst_port;
+    fwSetSelect('fw-m-iface', r.interface);
+    fwSetSelect('fw-m-srcip', r.src_ip);
+    fwSetSelect('fw-m-dstip', r.dst_ip);
+    fwSetSelect('fw-m-srcport', r.src_port);
+    fwSetSelect('fw-m-dstport', r.dst_port);
     document.getElementById('fw-m-proto').value = r.protocol;
-    document.getElementById('fw-m-prio').value = r.priority;
+    fwSetSelect('fw-m-prio', String(r.priority));
   } else {
     document.getElementById('fw-m-id').value = '';
     document.getElementById('fw-m-enabled').checked = true;
@@ -1890,8 +1996,8 @@ function fwOpenModal(id = null) {
     document.getElementById('fw-m-dstip').value = 'any';
     document.getElementById('fw-m-srcport').value = 'any';
     document.getElementById('fw-m-dstport').value = 'any';
-    document.getElementById('fw-m-proto').value = 'any';
-    document.getElementById('fw-m-prio').value = 100;
+    document.getElementById('fw-m-proto').value = 'tcp';
+    document.getElementById('fw-m-prio').value = '100';
   }
 }
 
