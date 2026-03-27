@@ -195,9 +195,39 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
 
 .chart-container-wrapper { padding: 15px 25px 0 25px; }
 .chart-container { height: 160px; width: 100%; border-bottom: 1px solid var(--kg-border); border-top: 1px dotted rgba(255,255,255,0.1); position: relative; margin-top: 10px; }
-.chart-legend { display: flex; align-items: center; justify-content: space-between; padding: 10px 0 0 0; font-size: 11px; color: var(--kg-text-dim); }
-.legend-center { display: flex; gap: 15px; }
 .legend-item { display: flex; align-items: center; gap: 5px; }
+
+/* Firewall Tabs */
+.fw-tab {
+  padding: 10px 0;
+  color: var(--kg-text-dim);
+  font-size: 13px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: 0.2s;
+  white-space: nowrap;
+}
+.fw-tab.active {
+  color: var(--kg-blue);
+  border-bottom-color: var(--kg-blue);
+  font-weight: 500;
+}
+.fw-tab:hover {
+  color: #fff;
+}
+.fw-table th {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--kg-border);
+}
+.fw-table td {
+  padding: 12px;
+  vertical-align: middle;
+}
+.k-table tr:hover {
+  background: rgba(255,255,255,0.02);
+}
+
 .dot { width: 6px; height: 6px; border-radius: 50%; }
 .dot-green { background: var(--kg-green); }
 .dot-blue { background: var(--kg-blue); }
@@ -527,30 +557,98 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
 <!-- FIREWALL -->
 <div class="page" id="page-firewall">
-  <div class="card">
-    <div class="card-header" style="justify-content: space-between;">
-      <h3>МЕЖСЕТЕВОЙ ЭКРАН (UFW)</h3>
-      <div style="display:flex; gap:10px; align-items:center">
-        <span id="fw-status" class="badge">--</span>
-        <button class="btn btn-o btn-sm" onclick="fwToggle(true)">Включить</button>
-        <button class="btn btn-d btn-sm" onclick="fwToggle(false)">Выключить</button>
+  <div class="card" style="background:transparent; padding:0; border:none; box-shadow:none;">
+    <div style="margin-bottom:20px;">
+      <h2 style="margin:0 0 10px; font-size:22px; font-weight:600; color:white;">Межсетевой экран</h2>
+      <p style="margin:0; font-size:13px; color:var(--kg-text-dim); line-height:1.5;">
+        Чтобы добавить правило межсетевого экрана, выберите из списка интерфейс, на котором будет отслеживаться входящий трафик, и нажмите <b>Добавить правило</b>.<br>
+        Правила применяются в том порядке, в каком они расположены в списке (по Приоритету).<br>
+        <span id="fw-status-badge" class="badge" style="margin-top:10px;display:inline-block;">--</span>
+        <button class="btn btn-o btn-sm" onclick="fwToggle(true)" style="margin-left:10px;">Включить UFW</button>
+        <button class="btn btn-d btn-sm" onclick="fwToggle(false)">Выключить UFW</button>
+        <button class="btn btn-p btn-sm" onclick="fwApply()" style="margin-left:10px; background:var(--kg-green);">Применить правила</button>
+      </p>
+    </div>
+    
+    <div id="fw-tabs-container" style="display:flex; gap:20px; border-bottom:1px solid var(--kg-border); margin-bottom:20px; overflow-x:auto;">
+      <!-- Tabs injected by JS -->
+    </div>
+    
+    <div style="margin-bottom:20px;">
+      <button class="btn btn-o" onclick="fwOpenModal()" style="display:flex; align-items:center; gap:6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Добавить правило
+      </button>
+    </div>
+    
+    <div class="table-responsive" style="background:var(--kg-bg-card); border-radius:8px;">
+      <table class="k-table fw-table" style="width:100%; text-align:left; font-size:13px;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--kg-border); color:var(--kg-text-dim);">
+            <th style="padding:12px; font-weight:500;">Включено</th>
+            <th style="padding:12px; font-weight:500;">Приоритет</th>
+            <th style="padding:12px; font-weight:500;">Действие</th>
+            <th style="padding:12px; font-weight:500;">Протокол</th>
+            <th style="padding:12px; font-weight:500;">Адрес источника</th>
+            <th style="padding:12px; font-weight:500;">Порт источника</th>
+            <th style="padding:12px; font-weight:500;">Адрес назначения</th>
+            <th style="padding:12px; font-weight:500;">Порт назначения</th>
+            <th style="padding:12px; font-weight:500;">Имя</th>
+            <th style="padding:12px; width:40px;"></th>
+          </tr>
+        </thead>
+        <tbody id="fw-rules-body_2"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- FIREWALL MODAL -->
+<div class="modal" id="modal-fw" style="display:none; position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center;">
+  <div class="card" style="width:500px; max-width:90%; padding:0; background:var(--kg-bg-card); border:1px solid var(--kg-border);">
+    <div style="padding:24px; border-bottom:1px solid var(--kg-border); display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="margin:0; font-size:20px; color:white;">Правило межсетевого экрана</h3>
+      <div style="cursor:pointer; color:var(--kg-text-dim);" onclick="document.getElementById('modal-fw').style.display='none'">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </div>
     </div>
-    <div id="fw-rules"></div>
-  </div>
-  
-  <div class="card">
-    <div class="card-header"><h3>ДОБАВИТЬ ПРАВИЛО</h3></div>
-    <div style="padding:25px;">
-      <div class="fr">
-        <div class="fg"><label>Порт</label><input id="fw-port" placeholder="22"></div>
-        <div class="fg"><label>Протокол</label><select id="fw-proto"><option value="">Любой</option><option value="tcp">TCP</option><option value="udp">UDP</option></select></div>
+    <div style="padding:24px; max-height:65vh; overflow-y:auto;">
+      <p style="margin:0 0 20px 0; color:var(--kg-text-dim); font-size:13px; line-height:1.5;">Выберите действие, которое нужно выполнить для входящих пакетов, и укажите условия, при которых это действие должно быть выполнено.</p>
+      
+      <input type="hidden" id="fw-m-id">
+      
+      <label style="display:flex; align-items:center; gap:10px; margin-bottom:20px; cursor:pointer;">
+        <input type="checkbox" id="fw-m-enabled" checked style="width:16px;height:16px; accent-color:var(--kg-blue);">
+        <span style="color:white; font-size:14px;">Включить правило</span>
+      </label>
+      
+      <div class="fg" style="margin-bottom:15px;"><label>Имя</label><input id="fw-m-name" placeholder="Например: Блокировка ICMP"></div>
+      
+      <div class="fg" style="margin-bottom:15px;"><label>Действие</label>
+        <select id="fw-m-action">
+          <option value="allow">Разрешить</option>
+          <option value="deny">Запретить</option>
+        </select>
       </div>
-      <div class="fr">
-        <div class="fg"><label>Действие</label><select id="fw-action"><option value="allow">Разрешить</option><option value="deny">Запретить</option></select></div>
-        <div class="fg"><label>Источник IP</label><input id="fw-from" placeholder="any"></div>
+      
+      <div class="fg" style="margin-bottom:15px;"><label>Интерфейс</label>
+        <select id="fw-m-iface"></select>
       </div>
-      <button class="btn btn-p" onclick="fwAddRule()">Добавить правило</button>
+      
+      <div class="fg" style="margin-bottom:15px;"><label>IP-адрес источника</label><input id="fw-m-srcip" placeholder="any или IP/CIDR (например: 10.8.0.0/24)"></div>
+      <div class="fg" style="margin-bottom:15px;"><label>IP-адрес назначения</label><input id="fw-m-dstip" placeholder="any или IP/CIDR (например: 1.1.1.1)"></div>
+      <div class="fg" style="margin-bottom:15px;"><label>Номер порта источника</label><input id="fw-m-srcport" placeholder="any или порт (например: 80)"></div>
+      <div class="fg" style="margin-bottom:15px;"><label>Протокол</label>
+        <select id="fw-m-proto">
+          <option value="any">Любой</option><option value="tcp">TCP</option><option value="udp">UDP</option><option value="icmp">ICMP</option>
+        </select>
+      </div>
+      <div class="fg" style="margin-bottom:15px;"><label>Номер порта назначения</label><input id="fw-m-dstport" placeholder="any или порт (например: 443)"></div>
+      <div class="fg"><label>Приоритет (меньше = выше в списке)</label><input type="number" id="fw-m-prio" value="100"></div>
+    </div>
+    <div style="padding:24px; border-top:1px solid var(--kg-border); display:flex; gap:15px;">
+      <button class="btn btn-p" style="flex:1" onclick="fwSaveModal()">Сохранить</button>
+      <button class="btn" style="flex:1; background:transparent; border:1px solid var(--kg-border); color:white;" onclick="document.getElementById('modal-fw').style.display='none'">Отменить</button>
     </div>
   </div>
 </div>
@@ -1674,15 +1772,156 @@ async function showQR(cid, username, proto){
 function copyConfig(){const t=document.getElementById('qrConfigText');t.select();document.execCommand('copy')}
 async function deleteClient(id){if(!confirm('Удалить клиента?'))return;await POST(`/panel/api/inbounds/delClient/${id}`,{});loadAllClients()}
 
-async function loadFirewall(){const r=await API('/panel/api/firewall/status');
-  document.getElementById('fw-status').textContent=r.active?'ВКЛЮЧЕН':'ВЫКЛЮЧЕН';
-  document.getElementById('fw-status').className='badge '+(r.active?'badge-on':'badge-off');
-  const c=document.getElementById('fw-rules');c.innerHTML='';
-  (r.rules||[]).forEach((rule,i)=>{c.innerHTML+=`<div class="stat-item"><span>${rule}</span><button class="btn btn-d btn-sm" onclick="fwDel(${i+1})">Удалить</button></div>`})}
+let currentFwIface = 'any';
+let fwRulesData = [];
 
-async function fwToggle(en){await POST('/panel/api/firewall/toggle',{enable:en});loadFirewall()}
-async function fwAddRule(){await POST('/panel/api/firewall/addRule',{port:document.getElementById('fw-port').value,proto:document.getElementById('fw-proto').value,action:document.getElementById('fw-action').value,from_ip:document.getElementById('fw-from').value||'any'});loadFirewall()}
-async function fwDel(n){if(!confirm('Удалить правило #'+n+'?'))return;await POST('/panel/api/firewall/delRule',{rule_num:n});loadFirewall()}
+async function loadFirewall() {
+  const r = await API('/panel/api/firewall');
+  if(!r.success) return;
+  
+  const b = document.getElementById('fw-status-badge');
+  if(b) {
+    b.textContent = r.active ? 'UFW: АКТИВЕН' : 'UFW: НЕАКТИВЕН';
+    b.className = 'badge ' + (r.active ? 'badge-on' : 'badge-off');
+  }
+  
+  const tc = document.getElementById('fw-tabs-container');
+  if(tc) {
+    tc.innerHTML = `<div class="fw-tab ${currentFwIface==='any'?'active':''}" onclick="fwSwitchTab('any')">Все правила</div>`;
+    (r.interfaces || []).sort().forEach(iface => {
+      tc.innerHTML += `<div class="fw-tab ${currentFwIface===iface?'active':''}" onclick="fwSwitchTab('${iface}')">${iface}</div>`;
+    });
+  }
+  
+  const ms = document.getElementById('fw-m-iface');
+  if(ms) {
+    ms.innerHTML = '<option value="any">Любой</option>';
+    (r.interfaces || []).sort().forEach(iface => {
+      ms.innerHTML += `<option value="${iface}">${iface}</option>`;
+    });
+  }
+
+  fwRulesData = r.rules || [];
+  renderFwRules();
+}
+
+function fwSwitchTab(iface) {
+  currentFwIface = iface;
+  loadFirewall();
+}
+
+function renderFwRules() {
+  const tbody = document.getElementById('fw-rules-body_2');
+  if(!tbody) return;
+  tbody.innerHTML = '';
+  
+  const filtered = currentFwIface === 'any' ? fwRulesData : fwRulesData.filter(x => x.interface === currentFwIface);
+  
+  filtered.forEach(rule => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--kg-border)';
+    tr.innerHTML = `
+      <td style="padding:12px;"><input type="checkbox" ${rule.enabled?'checked':''} onchange="fwFastToggle(${rule.id}, this.checked)"></td>
+      <td style="padding:12px;">${rule.priority}</td>
+      <td style="padding:12px;"><span class="badge ${rule.action==='allow'?'badge-on':'badge-off'}">${rule.action==='allow'?'Разрешить':'Запретить'}</span></td>
+      <td style="padding:12px;">${rule.protocol.toUpperCase()}</td>
+      <td style="padding:12px;">${rule.src_ip}</td>
+      <td style="padding:12px;">${rule.src_port}</td>
+      <td style="padding:12px;">${rule.dst_ip}</td>
+      <td style="padding:12px;">${rule.dst_port}</td>
+      <td style="padding:12px; color:var(--kg-text-dim); font-size:12px;">${rule.comment || '--'}</td>
+      <td style="padding:12px; text-align:right; white-space:nowrap;">
+         <button class="btn btn-o btn-sm" onclick="fwOpenModal(${rule.id})">⚙️</button>
+         <button class="btn btn-d btn-sm" onclick="fwDelete(${rule.id})">🗑️</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function fwFastToggle(id, enabled) {
+  const rule = fwRulesData.find(x => x.id === id);
+  if(!rule) return;
+  const data = {...rule, enabled: enabled ? 1 : 0};
+  await POST('/panel/api/firewall/save', data);
+}
+
+function fwOpenModal(id = null) {
+  const m = document.getElementById('modal-fw');
+  m.style.display = 'flex';
+  
+  if(id) {
+    const r = fwRulesData.find(x => x.id === id);
+    document.getElementById('fw-m-id').value = r.id;
+    document.getElementById('fw-m-enabled').checked = !!r.enabled;
+    document.getElementById('fw-m-name').value = r.comment;
+    document.getElementById('fw-m-action').value = r.action;
+    document.getElementById('fw-m-iface').value = r.interface;
+    document.getElementById('fw-m-srcip').value = r.src_ip;
+    document.getElementById('fw-m-dstip').value = r.dst_ip;
+    document.getElementById('fw-m-srcport').value = r.src_port;
+    document.getElementById('fw-m-dstport').value = r.dst_port;
+    document.getElementById('fw-m-proto').value = r.protocol;
+    document.getElementById('fw-m-prio').value = r.priority;
+  } else {
+    document.getElementById('fw-m-id').value = '';
+    document.getElementById('fw-m-enabled').checked = true;
+    document.getElementById('fw-m-name').value = '';
+    document.getElementById('fw-m-action').value = 'allow';
+    document.getElementById('fw-m-iface').value = currentFwIface === 'any' ? 'any' : currentFwIface;
+    document.getElementById('fw-m-srcip').value = 'any';
+    document.getElementById('fw-m-dstip').value = 'any';
+    document.getElementById('fw-m-srcport').value = 'any';
+    document.getElementById('fw-m-dstport').value = 'any';
+    document.getElementById('fw-m-proto').value = 'any';
+    document.getElementById('fw-m-prio').value = 100;
+  }
+}
+
+async function fwSaveModal() {
+  const data = {
+    id: document.getElementById('fw-m-id').value || null,
+    enabled: document.getElementById('fw-m-enabled').checked ? 1 : 0,
+    comment: document.getElementById('fw-m-name').value,
+    action: document.getElementById('fw-m-action').value,
+    interface: document.getElementById('fw-m-iface').value,
+    src_ip: document.getElementById('fw-m-srcip').value,
+    dst_ip: document.getElementById('fw-m-dstip').value,
+    src_port: document.getElementById('fw-m-srcport').value,
+    dst_port: document.getElementById('fw-m-dstport').value,
+    protocol: document.getElementById('fw-m-proto').value,
+    priority: parseInt(document.getElementById('fw-m-prio').value)
+  };
+  const r = await POST('/panel/api/firewall/save', data);
+  if(r.success) {
+    document.getElementById('modal-fw').style.display = 'none';
+    loadFirewall();
+  }
+}
+
+async function fwDelete(id) {
+  if(!confirm('Удалить правило?')) return;
+  const r = await POST('/panel/api/firewall/delete', {id});
+  if(r.success) loadFirewall();
+}
+
+async function fwApply() {
+  if(!confirm('Применить все настройки в систему? Все текущие правила UFW будут сброшены и переписаны из базы.')) return;
+  const r = await POST('/panel/api/firewall/apply', {});
+  alert(r.msg);
+  loadFirewall();
+}
+
+async function fwToggle(en) {
+  await POST('/panel/api/firewall/toggle', {enable: en});
+  loadFirewall();
+}
+
+async function saveNTP() {
+  const s = document.getElementById('sys-ntp').value;
+  const r = await POST('/panel/api/system/ntp', {servers: s});
+  alert(r.msg);
+}
 
 async function checkUpdate() {
   const info = document.getElementById('update-info');
@@ -1726,11 +1965,13 @@ async function loadSystem(){
   const tz=await API('/panel/api/system/timezone');
   const sel=document.getElementById('sys-tz');
   if(sel && tz.timezone){
-    // Try to select matching option, else add it
     let found=false;
     for(let o of sel.options){if(o.value===tz.timezone){o.selected=true;found=true;break;}}
     if(!found){const opt=document.createElement('option');opt.value=tz.timezone;opt.text=tz.timezone;opt.selected=true;sel.add(opt);}
   }
+  const ntp=await API('/panel/api/system/ntp');
+  if(ntp && ntp.servers) document.getElementById('sys-ntp').value = ntp.servers;
+  
   const st=await API('/panel/api/server/status');
   if(st && st.panel_port){
     const http_input = document.getElementById('new-panel-port');

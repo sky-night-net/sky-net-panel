@@ -316,6 +316,19 @@ def init_db():
                 key TEXT UNIQUE NOT NULL,
                 value TEXT DEFAULT ''
             );
+            CREATE TABLE IF NOT EXISTS firewall_rules (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                enabled INTEGER DEFAULT 1,
+                priority INTEGER DEFAULT 100,
+                action TEXT NOT NULL,
+                protocol TEXT DEFAULT 'any',
+                src_ip TEXT DEFAULT 'any',
+                src_port TEXT DEFAULT 'any',
+                dst_ip TEXT DEFAULT 'any',
+                dst_port TEXT DEFAULT 'any',
+                interface TEXT DEFAULT 'any',
+                comment TEXT DEFAULT ''
+            );
             CREATE TABLE IF NOT EXISTS traffic_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 ts INTEGER,
@@ -336,10 +349,21 @@ def init_db():
             "web_base_path": "",
             "session_timeout": "3600",
             "fail2ban_enabled": "false",
-            "server_ip": detect_ip
+            "server_ip": detect_ip,
+            "ntp_servers": "pool.ntp.org"
         }
         for k, v in defaults.items():
             db.execute("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)", (k, v))
+            
+        # Seed failsafe firewall rules if empty
+        fw_count = db.execute("SELECT COUNT(id) FROM firewall_rules").fetchone()[0]
+        if fw_count == 0:
+            safe_rules = [
+                (1, 10, 'allow', 'tcp', 'any', 'any', 'any', '22', 'any', 'SSH Failsafe'),
+                (1, 20, 'allow', 'tcp', 'any', 'any', 'any', str(PORT), 'any', 'Panel HTTP Failsafe')
+            ]
+            db.executemany("INSERT INTO firewall_rules (enabled, priority, action, protocol, src_ip, src_port, dst_ip, dst_port, interface, comment) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", safe_rules)
+            db.commit()
         
         # Override with env var if present
         env_ip = os.getenv("SKYNET_EXT_IP")
@@ -850,21 +874,34 @@ def api_system_restore():
         return jsonify({"success": False, "msg": str(e)}), 500
 
 
-# ─── API: Firewall (UFW) ────────────────────────────────────────────────────
+# ─── API: Firewall (UFW & SQLite) ──────────────────────────────────────────
 
-@app.route("/panel/api/firewall/status")
+@app.route("/panel/api/firewall")
 @login_required
-def api_firewall_status():
+def api_firewall_get():
     import subprocess
-    r = subprocess.run(["ufw", "status", "numbered"], capture_output=True, text=True)
-    lines = r.stdout.strip().split("\n") if r.returncode == 0 else []
-    active = any("Status: active" in l for l in lines)
-    rules = []
-    for l in lines:
-        l = l.strip()
-        if l.startswith("["):
-            rules.append(l)
-    return jsonify({"success": True, "active": active, "rules": rules, "raw": r.stdout})
+    import psutil
+    
+    # Get global UFW status
+    try:
+        r = subprocess.run(["ufw", "status"], capture_output=True, text=True)
+        active = "Status: active" in r.stdout
+    except FileNotFoundError:
+        active = False
+
+    # Get clean interfaces
+    ifaces = [name for name in psutil.net_if_addrs().keys() if name != 'lo']
+    
+    # Get all rules ordered by priority
+    with get_db() as db:
+        rules = db.execute("SELECT * FROM firewall_rules ORDER BY priority ASC").fetchall()
+        
+    return jsonify({
+        "success": True,
+        "active": active,
+        "interfaces": ifaces,
+        "rules": [dict(r) for r in rules]
+    })
 
 @app.route("/panel/api/firewall/toggle", methods=["POST"])
 @login_required
@@ -875,33 +912,93 @@ def api_firewall_toggle():
     r = subprocess.run(["ufw", "--force", action], capture_output=True, text=True)
     return jsonify({"success": r.returncode == 0, "output": r.stdout + r.stderr})
 
-@app.route("/panel/api/firewall/addRule", methods=["POST"])
+@app.route("/panel/api/firewall/apply", methods=["POST"])
 @login_required
-def api_firewall_add_rule():
+def api_firewall_apply():
     import subprocess
-    data = request.get_json(silent=True) or {}
-    port = data.get("port", "")
-    proto = data.get("proto", "")
-    action = data.get("action", "allow")
-    from_ip = data.get("from_ip", "any")
-    cmd = ["ufw", action]
-    if from_ip and from_ip != "any":
-        cmd += ["from", from_ip]
-    cmd += ["to", "any", "port", str(port)]
-    if proto:
-        cmd += ["proto", proto]
-    r = subprocess.run(cmd, capture_output=True, text=True)
-    return jsonify({"success": r.returncode == 0, "output": r.stdout + r.stderr})
+    # First, reset UFW to default deny to clear all rules
+    subprocess.run(["ufw", "--force", "reset"])
+    subprocess.run(["ufw", "default", "deny", "incoming"])
+    subprocess.run(["ufw", "default", "allow", "outgoing"])
+    
+    with get_db() as db:
+        rules = db.execute("SELECT * FROM firewall_rules WHERE enabled=1 ORDER BY priority ASC").fetchall()
+        
+    for rule in rules:
+        cmd = ["ufw", rule["action"]] # allow or deny
+        if rule["interface"] and rule["interface"] != "any":
+            cmd += ["in", "on", rule["interface"]]
+            
+        if rule["protocol"] and rule["protocol"] != "any":
+            cmd += ["proto", rule["protocol"]]
+            
+        if rule["src_ip"] and rule["src_ip"] != "any":
+            cmd += ["from", rule["src_ip"]]
+        else:
+            cmd += ["from", "any"]
+            
+        if rule["src_port"] and rule["src_port"] != "any":
+            cmd += ["port", str(rule["src_port"])]
+            
+        if rule["dst_ip"] and rule["dst_ip"] != "any":
+            cmd += ["to", rule["dst_ip"]]
+        else:
+            cmd += ["to", "any"]
+            
+        if rule["dst_port"] and rule["dst_port"] != "any":
+            cmd += ["port", str(rule["dst_port"])]
+            
+        # Add the UFW rule
+        subprocess.run(cmd)
 
-@app.route("/panel/api/firewall/delRule", methods=["POST"])
+    # Re-enable UFW
+    subprocess.run(["ufw", "--force", "enable"])
+    
+    return jsonify({"success": True, "msg": "Правила успешно применены!"})
+
+@app.route("/panel/api/firewall/save", methods=["POST"])
 @login_required
-def api_firewall_del_rule():
-    import subprocess
+def api_firewall_save():
     data = request.get_json(silent=True) or {}
-    rule_num = data.get("rule_num", "")
-    r = subprocess.run(["ufw", "--force", "delete", str(rule_num)],
-                       capture_output=True, text=True)
-    return jsonify({"success": r.returncode == 0, "output": r.stdout + r.stderr})
+    rid = data.get("id", None)
+    enabled = int(data.get("enabled", 1))
+    priority = int(data.get("priority", 100))
+    action = data.get("action", "allow")
+    proto = data.get("protocol", "any")
+    src_ip = data.get("src_ip", "any")
+    src_port = data.get("src_port", "any")
+    dst_ip = data.get("dst_ip", "any")
+    dst_port = data.get("dst_port", "any")
+    interface = data.get("interface", "any")
+    comment = data.get("comment", "")
+    
+    with get_db() as db:
+        if rid:
+            db.execute("""
+                UPDATE firewall_rules 
+                SET enabled=?, priority=?, action=?, protocol=?, src_ip=?, src_port=?, dst_ip=?, dst_port=?, interface=?, comment=?
+                WHERE id=?
+            """, (enabled, priority, action, proto, src_ip, src_port, dst_ip, dst_port, interface, comment, rid))
+        else:
+            db.execute("""
+                INSERT INTO firewall_rules (enabled, priority, action, protocol, src_ip, src_port, dst_ip, dst_port, interface, comment)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (enabled, priority, action, proto, src_ip, src_port, dst_ip, dst_port, interface, comment))
+        db.commit()
+    return jsonify({"success": True, "msg": "Правило сохранено"})
+
+@app.route("/panel/api/firewall/delete", methods=["POST"])
+@login_required
+def api_firewall_delete():
+    data = request.get_json(silent=True) or {}
+    rid = data.get("id")
+    if not rid: return jsonify({"success": False, "msg": "ID не указан"})
+    
+    with get_db() as db:
+        db.execute("DELETE FROM firewall_rules WHERE id=?", (rid,))
+        db.commit()
+    return jsonify({"success": True, "msg": "Правило удалено"})
+
 
 # ─── API: Network & System ──────────────────────────────────────────────────
 
@@ -1012,6 +1109,40 @@ def api_system_timezone():
     r = subprocess.run(["timedatectl", "show", "--property=Timezone", "--value"],
                        capture_output=True, text=True)
     return jsonify({"success": True, "timezone": r.stdout.strip()})
+
+@app.route("/panel/api/system/ntp", methods=["GET", "POST"])
+@login_required
+def api_system_ntp():
+    import subprocess
+    if request.method == "POST":
+        data = request.get_json(silent=True) or {}
+        servers = data.get("servers", "").strip()
+        with get_db() as db:
+            db.execute("UPDATE settings SET value=? WHERE key='ntp_servers'", (servers,))
+            db.commit()
+            
+        # Update systemd-timesyncd
+        conf_path = "/etc/systemd/timesyncd.conf"
+        try:
+            if os.path.exists(conf_path):
+                with open(conf_path, "r") as f:
+                    lines = f.readlines()
+                with open(conf_path, "w") as f:
+                    for line in lines:
+                        if line.startswith("NTP=") or line.startswith("#NTP="):
+                            f.write(f"NTP={servers}\n")
+                        else:
+                            f.write(line)
+            subprocess.run(["systemctl", "restart", "systemd-timesyncd"], capture_output=True)
+            return jsonify({"success": True, "msg": "NTP серверы обновлены"})
+        except Exception as e:
+            return jsonify({"success": False, "msg": str(e)})
+
+    # GET response
+    with get_db() as db:
+        row = db.execute("SELECT value FROM settings WHERE key='ntp_servers'").fetchone()
+    return jsonify({"success": True, "servers": row["value"] if row else ""})
+
 
 # ─── API: System Time (Live Clock) ──────────────────────────────────────────
 
