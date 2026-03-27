@@ -854,12 +854,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   </div>
 </div>
 
-<div id="debug-error-bar" style="display:none; position:fixed; top:0; left:0; width:100%; z-index:999999; background:red; color:white; padding:20px; font-weight:bold; font-size:18px;"></div>
+<div id="debug-error-bar" style="display:none; position:fixed; bottom:20px; right:20px; z-index:999999; background:rgba(244, 63, 94, 0.9); backdrop-filter:blur(10px); color:white; padding:15px 25px; border-radius:12px; font-weight:600; font-size:14px; box-shadow:0 10px 25px rgba(244,63,94,0.3); border:1px solid rgba(255,255,255,0.1); max-width:400px; word-wrap:break-word;"></div>
 <script>
 window.onerror = function(msg, url, lineNo, columnNo, error) {
   const bar = document.getElementById('debug-error-bar');
   if(bar) {
-    bar.textContent = 'FATAL UI ERROR: ' + msg + ' at line ' + lineNo;
+    bar.innerHTML = '⚠️ <b>UI Crash Detected:</b><br>' + msg + '<br><small style="opacity:0.8">Line: ' + lineNo + '</small>';
     bar.style.display = 'block';
   }
   return false;
@@ -867,8 +867,9 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
 window.addEventListener('unhandledrejection', function(event) {
   const bar = document.getElementById('debug-error-bar');
   if(bar) {
-    bar.textContent = 'UNHANDLED PROMISE: ' + (event.reason ? event.reason.message || event.reason : 'Unknown');
+    bar.innerHTML = '⚠️ <b>API/Promise Error:</b><br>' + (event.reason ? event.reason.message || event.reason : 'Unknown error');
     bar.style.display = 'block';
+    setTimeout(() => { bar.style.display = 'none'; }, 8000);
   }
 });
 const API = async (p) => {
