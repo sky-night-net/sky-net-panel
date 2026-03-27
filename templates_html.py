@@ -1930,8 +1930,18 @@ function renderFwRules() {
   if(!tbody) return;
   tbody.innerHTML = '';
   
-  const filtered = currentFwIface === 'any' ? fwRulesData : fwRulesData.filter(x => x.interface === currentFwIface || x.interface === 'any');
+  const filtered = currentFwIface === 'any' ? fwRulesData : fwRulesData.filter(x => x.interface === currentFwIface);
   
+  if (filtered.length === 0) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="11" style="padding:40px; text-align:center; color:var(--kg-text-dim); font-size:14px;">
+      <div style="margin-bottom:10px;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.3"><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"></path><path d="M12 8V12"></path><path d="M12 16H12.01"></path></svg></div>
+      Нет правил для интерфейса ${currentFwIface==='any'?'Любой':currentFwIface}
+    </td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+
   filtered.forEach(rule => {
     const tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid var(--kg-border)';
