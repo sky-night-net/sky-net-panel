@@ -914,6 +914,32 @@ const API = async (p) => {
     return {success:false, error: e.message};
   }
 };
+const POST = async (p, body={}) => {
+  console.log("SKY-NET POST CALL:", p, body);
+  try {
+    const r = await fetch(p, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      credentials: 'include'
+    });
+    if(r.status === 401) { console.warn("401 Unauthorized for " + p); window.location.href = '/login'; return {success:false}; }
+    if(!r.ok) { 
+      const err = "API POST failed: " + p + " Status: " + r.status;
+      console.error(err);
+      notifyError(err);
+      return {success:false, status: r.status}; 
+    }
+    const data = await r.json();
+    console.log("SKY-NET POST SUCCESS:", p, data);
+    return data;
+  } catch(e) {
+    const err = "API POST Exception: " + p + " error: " + e.message;
+    console.error(err);
+    notifyError(err);
+    return {success:false, error: e.message};
+  }
+};
 function notifyError(msg) {
   const bar = document.getElementById('debug-error-bar');
   if(bar) {
