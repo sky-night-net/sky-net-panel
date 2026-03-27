@@ -856,34 +856,48 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
 <script>
 const API = async (p) => {
+  console.log("SKY-NET API CALL:", p);
   try {
-    const r = await fetch(p);
-    if(r.status === 401) { window.location.href = '/login'; return {success:false}; }
-    if(!r.ok) return {success:false, status: r.status};
-    return await r.json();
+    const r = await fetch(p, { credentials: 'include' });
+    if(r.status === 401) { console.warn("401 Unauthorized for " + p); window.location.href = '/login'; return {success:false}; }
+    if(!r.ok) { console.error("API Fetch failed: " + p, r.status); return {success:false, status: r.status}; }
+    const data = await r.json();
+    console.log("SKY-NET API SUCCESS:", p, data);
+    return data;
   } catch(e) {
-    console.error("API Error: " + p, e);
+    console.error("API Exception: " + p, e);
     return {success:false, error: e.message};
   }
 };
 const POST = async (p, b) => {
+  console.log("SKY-NET POST CALL:", p, b);
   try {
     const r = await fetch(p, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(b)
+      body: JSON.stringify(b),
+      credentials: 'include'
     });
     if(r.status === 401) { window.location.href = '/login'; return {success:false}; }
-    return await r.json();
+    const data = await r.json();
+    console.log("SKY-NET POST SUCCESS:", p, data);
+    return data;
   } catch(e) {
-    console.error("POST Error: " + p, e);
+    console.error("POST Exception: " + p, e);
     return {success:false, error: e.message};
   }
 };
+console.log("SKY-NET FRONTEND LOADED V3.0");
 function fmtB(b){if(!b||b===0)return'0 B';const k=1024,s=['B','KB','MB','GB','TB'];const i=Math.floor(Math.log(b)/Math.log(k));return(b/Math.pow(k,i)).toFixed(1)+' '+s[i]}
 function fmtUp(s){const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);return d+'d '+h+'h '+m+'m'}
 function fmtDate(ts){if(!ts||ts===0)return'Никогда';return new Date(ts*1000).toLocaleDateString()}
 function closeModal(id){document.getElementById(id).classList.remove('show')}
+
+const PL = {
+  'amneziawg_v1': 'AmneziaWG v1',
+  'amneziawg_v2': 'AmneziaWG v2',
+  'openvpn_xor': 'OpenVPN+XOR'
+};
 
 // Locale & Theme
 const I18N = {
