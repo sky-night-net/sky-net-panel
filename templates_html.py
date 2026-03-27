@@ -388,7 +388,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
             <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:16px; font-weight:800; color:#fff;" id="ram-val">0%</div>
           </div>
           <div style="font-size:11px; color:var(--kg-text-dim); text-transform:uppercase; font-weight:700; margin-top:8px; letter-spacing:1px;">RAM</div>
-          <span style="font-size: 11px; color: var(--kg-text-dim); margin-bottom: 20px; display: block;">Текущее время сервера: <span id="server-clock">--</span></span>
+          <div style="font-size:10px; color:var(--kg-text-dim); margin-top:2px;" id="ram-detail"></div>
         </div>
         <!-- DISK Gauge -->
         <div style="text-align:center;">
