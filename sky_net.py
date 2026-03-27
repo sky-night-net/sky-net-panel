@@ -710,6 +710,33 @@ def api_db_import():
 
 # ─── API: Full System Backup & Restore ────────────────────────────────────────
 
+@app.route("/panel/api/system/ssl-status", methods=["GET"])
+@login_required
+def api_system_ssl_status():
+    with get_db() as db:
+        mode = db.execute("SELECT value FROM settings WHERE key='ssl_mode'").fetchone()
+        cert = db.execute("SELECT value FROM settings WHERE key='ssl_cert'").fetchone()
+        key = db.execute("SELECT value FROM settings WHERE key='ssl_key'").fetchone()
+        domain = db.execute("SELECT value FROM settings WHERE key='panel_domain'").fetchone()
+    
+    mode = mode[0] if mode else "off"
+    cert_path = cert[0] if cert else ""
+    key_path = key[0] if key else ""
+    domain_val = domain[0] if domain else ""
+    
+    active = False
+    if mode != "off" and cert_path and key_path:
+        if os.path.exists(cert_path) and os.path.exists(key_path):
+            active = True
+            
+    return jsonify({
+        "mode": mode,
+        "domain": domain_val,
+        "active": active,
+        "cert_path": cert_path,
+        "key_path": key_path
+    })
+
 @app.route("/panel/api/system/backup")
 @login_required
 def api_system_backup():
@@ -1352,5 +1379,16 @@ if __name__ == "__main__":
     start_all_inbounds()
     t = threading.Thread(target=poll_traffic, daemon=True)
     t.start()
+    # Load SSL Settings
+    ssl_ctx = None
+    with get_db() as db:
+        s_mode = db.execute("SELECT value FROM settings WHERE key='ssl_mode'").fetchone()
+        s_cert = db.execute("SELECT value FROM settings WHERE key='ssl_cert'").fetchone()
+        s_key = db.execute("SELECT value FROM settings WHERE key='ssl_key'").fetchone()
+        if s_mode and s_mode[0] != "off" and s_cert and s_key:
+            if os.path.exists(s_cert[0]) and os.path.exists(s_key[0]):
+                ssl_ctx = (s_cert[0], s_key[0])
+                log.info(f"SSL enabled: {s_mode[0]} mode")
+
     log.info(f"Sky-Net started on port {PORT}")
-    app.run(host="0.0.0.0", port=PORT, debug=False, threaded=True)
+    app.run(host="0.0.0.0", port=PORT, debug=False, threaded=True, ssl_context=ssl_ctx)

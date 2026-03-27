@@ -637,6 +637,13 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       </div>
       <p style="font-size:11px; color:var(--kg-text-dim); margin:0 0 15px;">Self-Signed: браузер предупредит — это нормально. Let's Encrypt: бесплатный доверенный сертификат, требует домен.</p>
       <button class="btn btn-p" onclick="applySSL()">Применить настройки SSL</button>
+      <div id="ssl-status-box" style="margin-top:20px; padding:15px; background:rgba(0,0,0,0.2); border-radius:8px; display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:12px; color:var(--kg-text-dim);">Текущий статус:</span>
+          <span id="ssl-badge" class="badge">--</span>
+        </div>
+        <div id="ssl-info" style="font-size:11px; color:var(--kg-text-dim); margin-top:8px;"></div>
+      </div>
     </div>
   </div>
 
@@ -1614,6 +1621,7 @@ async function loadSystem(){
     if(!found){const opt=document.createElement('option');opt.value=tz.timezone;opt.text=tz.timezone;opt.selected=true;sel.add(opt);}
   }
   checkFail2Ban();
+  checkSSLStatus();
 }
 async function saveHostname(){const r=await POST('/panel/api/system/hostname',{hostname:document.getElementById('sys-hostname').value});alert(r.success?'Сохранено':'Ошибка')}
 async function saveTimezone(){const r=await POST('/panel/api/system/timezone',{timezone:document.getElementById('sys-tz').value});alert(r.success?'Часовой пояс обновлён':'Ошибка')}
@@ -1688,6 +1696,23 @@ async function loadLogs(){const unit=document.getElementById('log-unit').value;
   document.getElementById('log-output').textContent=r.logs||'Нет логов'}
 
 async function issueSSL(){const d=document.getElementById('ssl-domain').value;if(!d)return alert('Укажите домен');const r=await POST('/panel/api/system/set-ssl',{mode:'letsencrypt',domain:d});alert(r.msg)}
+
+async function checkSSLStatus(){
+  const r=await API('/panel/api/system/ssl-status');
+  const box=document.getElementById('ssl-status-box');
+  const badge=document.getElementById('ssl-badge');
+  const info=document.getElementById('ssl-info');
+  if(box && badge && info){
+    box.style.display='block';
+    badge.textContent=r.active ? 'АКТИВЕН' : 'НЕАКТИВЕН';
+    badge.className='badge '+(r.active?'badge-on':'badge-off');
+    let msg = `Режим: ${r.mode}`;
+    if(r.domain) msg += ` | Домен: ${r.domain}`;
+    if(r.active) msg += `<br><span style="color:var(--kg-green)">Панель работает через HTTPS. Используйте https://${r.domain || window.location.hostname}:${window.location.port}</span>`;
+    else msg += `<br><span style="color:var(--kg-red)">Панель работает через HTTP.</span>`;
+    info.innerHTML=msg;
+  }
+}
 
 // Backup & Restore
 async function downloadBackup(){
