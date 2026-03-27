@@ -855,8 +855,31 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 </div>
 
 <script>
-const API=p=>fetch(p).then(r=>r.json());
-const POST=(p,b)=>fetch(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).then(r=>r.json());
+const API = async (p) => {
+  try {
+    const r = await fetch(p);
+    if(r.status === 401) { window.location.href = '/login'; return {success:false}; }
+    if(!r.ok) return {success:false, status: r.status};
+    return await r.json();
+  } catch(e) {
+    console.error("API Error: " + p, e);
+    return {success:false, error: e.message};
+  }
+};
+const POST = async (p, b) => {
+  try {
+    const r = await fetch(p, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(b)
+    });
+    if(r.status === 401) { window.location.href = '/login'; return {success:false}; }
+    return await r.json();
+  } catch(e) {
+    console.error("POST Error: " + p, e);
+    return {success:false, error: e.message};
+  }
+};
 function fmtB(b){if(!b||b===0)return'0 B';const k=1024,s=['B','KB','MB','GB','TB'];const i=Math.floor(Math.log(b)/Math.log(k));return(b/Math.pow(k,i)).toFixed(1)+' '+s[i]}
 function fmtUp(s){const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);return d+'d '+h+'h '+m+'m'}
 function fmtDate(ts){if(!ts||ts===0)return'Никогда';return new Date(ts*1000).toLocaleDateString()}
