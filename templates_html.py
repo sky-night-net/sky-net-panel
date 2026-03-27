@@ -860,33 +860,30 @@ const API = async (p) => {
   try {
     const r = await fetch(p, { credentials: 'include' });
     if(r.status === 401) { console.warn("401 Unauthorized for " + p); window.location.href = '/login'; return {success:false}; }
-    if(!r.ok) { console.error("API Fetch failed: " + p, r.status); return {success:false, status: r.status}; }
+    if(!r.ok) { 
+      const err = "API Fetch failed: " + p + " Status: " + r.status;
+      console.error(err);
+      notifyError(err);
+      return {success:false, status: r.status}; 
+    }
     const data = await r.json();
     console.log("SKY-NET API SUCCESS:", p, data);
     return data;
   } catch(e) {
-    console.error("API Exception: " + p, e);
+    const err = "API Exception: " + p + " error: " + e.message;
+    console.error(err);
+    notifyError(err);
     return {success:false, error: e.message};
   }
 };
-const POST = async (p, b) => {
-  console.log("SKY-NET POST CALL:", p, b);
-  try {
-    const r = await fetch(p, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(b),
-      credentials: 'include'
-    });
-    if(r.status === 401) { window.location.href = '/login'; return {success:false}; }
-    const data = await r.json();
-    console.log("SKY-NET POST SUCCESS:", p, data);
-    return data;
-  } catch(e) {
-    console.error("POST Exception: " + p, e);
-    return {success:false, error: e.message};
+function notifyError(msg) {
+  const bar = document.getElementById('debug-error-bar');
+  if(bar) {
+    bar.textContent = msg;
+    bar.style.display = 'block';
+    setTimeout(() => bar.style.display = 'none', 10000);
   }
-};
+}
 console.log("SKY-NET FRONTEND LOADED V3.0");
 function fmtB(b){if(!b||b===0)return'0 B';const k=1024,s=['B','KB','MB','GB','TB'];const i=Math.floor(Math.log(b)/Math.log(k));return(b/Math.pow(k,i)).toFixed(1)+' '+s[i]}
 function fmtUp(s){const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);return d+'d '+h+'h '+m+'m'}
