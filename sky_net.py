@@ -1114,6 +1114,42 @@ def api_set_ssl():
             db.commit()
         return jsonify({"success": True, "msg": "HTTPS отключён. HTTP режим активен."})
 
+# ─── API: System Updates (GitHub) ──────────────────────────────────────────
+
+@app.route("/panel/api/system/update/check", methods=["GET"])
+@login_required
+def api_system_update_check():
+    """Проверка обновлений на GitHub."""
+    import subprocess
+    try:
+        subprocess.run(["git", "fetch", "origin", "main"], check=True)
+        current_hash = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode().strip()
+        remote_hash = subprocess.check_output(["git", "rev-parse", "--short", "origin/main"]).decode().strip()
+        behind_count = int(subprocess.check_output(["git", "rev-list", "--count", "HEAD..origin/main"]).decode().strip())
+        
+        return jsonify({
+            "success": True,
+            "current_hash": current_hash,
+            "remote_hash": remote_hash,
+            "needs_update": behind_count > 0,
+            "behind_count": behind_count
+        })
+    except Exception as e:
+        return jsonify({"success": False, "msg": str(e)})
+
+@app.route("/panel/api/system/update/apply", methods=["POST"])
+@login_required
+def api_system_update_apply():
+    """Применение обновления и перезапуск сервиса."""
+    import subprocess
+    try:
+        subprocess.run(["git", "reset", "--hard", "origin/main"], check=True)
+        # Перезагружаем сервис. Subprocess.Popen не блокирует выполнение ответа.
+        subprocess.Popen(["systemctl", "restart", "skynet"])
+        return jsonify({"success": True, "msg": "Обновление применено. Панель перезапускается..."})
+    except Exception as e:
+        return jsonify({"success": False, "msg": str(e)})
+
 # ─── Traffic History ─────────────────────────────────────────────────────────
 
 traffic_history = {"up": deque([0]*60, maxlen=60), "down": deque([0]*60, maxlen=60)}

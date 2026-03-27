@@ -670,6 +670,23 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     </div>
   </div>
 
+  <!-- Block 6: Update Management -->
+  <div class="card no-blue" id="block-update">
+    <div class="card-header"><h3>ОБНОВЛЕНИЕ ПАНЕЛИ</h3></div>
+    <div style="padding:25px;">
+      <p style="font-size:12px; color:var(--kg-text-dim); margin:0 0 15px;">Проверка наличия новых версий на GitHub и автоматическая установка.</p>
+      <div class="fr">
+        <div class="fg"><label>Текущий коммит</label><span id="current-hash" style="font-family:monospace; color:var(--kg-blue); font-size:14px;">...</span></div>
+        <div class="fg"><label>Последний на GitHub</label><span id="remote-hash" style="font-family:monospace; color:var(--kg-green); font-size:14px;">...</span></div>
+      </div>
+      <div id="update-info" style="margin-top:12px; font-weight:600; font-size:13px;"></div>
+      <div style="margin-top:20px; display:flex; gap:10px;">
+        <button class="btn btn-p" onclick="checkUpdate()">Проверить обновления</button>
+        <button id="btn-apply-update" class="btn btn-s" style="display:none;" onclick="applyUpdate()">Установить обновление</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- LOGS -->
@@ -1548,6 +1565,43 @@ async function loadFirewall(){const r=await API('/panel/api/firewall/status');
 async function fwToggle(en){await POST('/panel/api/firewall/toggle',{enable:en});loadFirewall()}
 async function fwAddRule(){await POST('/panel/api/firewall/addRule',{port:document.getElementById('fw-port').value,proto:document.getElementById('fw-proto').value,action:document.getElementById('fw-action').value,from_ip:document.getElementById('fw-from').value||'any'});loadFirewall()}
 async function fwDel(n){if(!confirm('Удалить правило #'+n+'?'))return;await POST('/panel/api/firewall/delRule',{rule_num:n});loadFirewall()}
+
+async function checkUpdate() {
+  const info = document.getElementById('update-info');
+  const btn = document.getElementById('btn-apply-update');
+  info.innerHTML = "Проверка...";
+  try {
+    const d = await API('/panel/api/system/update/check');
+    if (d.success) {
+      document.getElementById('current-hash').innerText = d.current_hash;
+      document.getElementById('remote-hash').innerText = d.remote_hash;
+      if (d.needs_update) {
+        info.innerHTML = `<span style="color:var(--kg-green)">Найдено ${d.behind_count} новых изменений на GitHub!</span>`;
+        btn.style.display = 'block';
+      } else {
+        info.innerHTML = "У вас установлена последняя версия.";
+        btn.style.display = 'none';
+      }
+    } else {
+      info.innerHTML = `<span style="color:var(--kg-red)">Ошибка: ${d.msg}</span>`;
+    }
+  } catch(e) { info.innerHTML = `<span style="color:var(--kg-red)">Ошибка сети</span>`; }
+}
+
+async function applyUpdate() {
+  if (!confirm("Вы уверены, что хотите обновить панель? Сервис будет перезагружен.")) return;
+  const info = document.getElementById('update-info');
+  info.innerHTML = "Обновление...";
+  try {
+    const d = await POST('/panel/api/system/update/apply', {});
+    if (d.success) {
+      alert(d.msg);
+      setTimeout(() => window.location.reload(), 5000);
+    } else {
+      alert(d.msg || "Ошибка обновления");
+    }
+  } catch(e) { alert(e.message); }
+}
 
 async function loadSystem(){
   const h=await API('/panel/api/system/hostname');document.getElementById('sys-hostname').value=h.hostname||'';
