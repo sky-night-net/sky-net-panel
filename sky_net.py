@@ -1289,6 +1289,11 @@ def page_system():
 def page_logs():
     return render_template_string(MAIN_HTML, page="logs")
 
+@app.route("/instructions")
+@login_required
+def page_instructions():
+    return render_template_string(MAIN_HTML, page="instructions")
+
 # ─── HTML Templates (embedded) ──────────────────────────────────────────────
 # Will be defined in templates file and imported
 from templates_html import LOGIN_HTML, MAIN_HTML
