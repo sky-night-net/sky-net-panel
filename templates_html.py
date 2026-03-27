@@ -854,7 +854,23 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   </div>
 </div>
 
+<div id="debug-error-bar" style="display:none; position:fixed; top:0; left:0; width:100%; z-index:999999; background:red; color:white; padding:20px; font-weight:bold; font-size:18px;"></div>
 <script>
+window.onerror = function(msg, url, lineNo, columnNo, error) {
+  const bar = document.getElementById('debug-error-bar');
+  if(bar) {
+    bar.textContent = 'FATAL UI ERROR: ' + msg + ' at line ' + lineNo;
+    bar.style.display = 'block';
+  }
+  return false;
+};
+window.addEventListener('unhandledrejection', function(event) {
+  const bar = document.getElementById('debug-error-bar');
+  if(bar) {
+    bar.textContent = 'UNHANDLED PROMISE: ' + (event.reason ? event.reason.message || event.reason : 'Unknown');
+    bar.style.display = 'block';
+  }
+});
 const API = async (p) => {
   console.log("SKY-NET API CALL:", p);
   try {
