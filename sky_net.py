@@ -43,6 +43,37 @@ def get_db():
     finally:
         conn.close()
 
+def check_schema():
+    with get_db() as db:
+        # Ensure firewall_rules table exists
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS firewall_rules (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                enabled INTEGER DEFAULT 1,
+                priority INTEGER DEFAULT 100,
+                action TEXT DEFAULT 'allow',
+                protocol TEXT DEFAULT 'any',
+                src_ip TEXT DEFAULT 'any',
+                src_port TEXT DEFAULT 'any',
+                dst_ip TEXT DEFAULT 'any',
+                dst_port TEXT DEFAULT 'any',
+                interface TEXT DEFAULT 'any',
+                comment TEXT DEFAULT ''
+            )
+        """)
+        
+        # Check for missing columns and add them if necessary
+        res = db.execute("PRAGMA table_info(firewall_rules)").fetchall()
+        cols = [r["name"] for r in res]
+        if "interface" not in cols:
+            db.execute("ALTER TABLE firewall_rules ADD COLUMN interface TEXT DEFAULT 'any'")
+        if "schedule" not in cols:
+            db.execute("ALTER TABLE firewall_rules ADD COLUMN schedule TEXT DEFAULT 'always'")
+        db.commit()
+
+# Call schema check on startup
+check_schema()
+
 # ─── Persistent Secret Key ───────────────────────────────────────────────────
 def get_secret_key():
     with get_db() as db:
