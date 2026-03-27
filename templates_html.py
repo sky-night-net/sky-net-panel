@@ -980,6 +980,8 @@ function changeTheme(t){
 })();
 
 // Nav
+const loadSettings = async () => {};
+
 function switchPage(page) {
   document.querySelectorAll('.sidebar nav a').forEach(a=>{
     a.classList.remove('active');
