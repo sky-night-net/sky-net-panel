@@ -59,6 +59,11 @@ def get_secret_key():
 
 app.secret_key = get_secret_key()
 PORT = int(os.getenv("SKYNET_PORT", "9090"))
+HTTPS_PORT = 4467
+with get_db() as db:
+    p2 = db.execute("SELECT value FROM settings WHERE key='panel_port_https'").fetchone()
+    if p2 and p2[0].isdigit():
+        HTTPS_PORT = int(p2[0])
 POLL_SEC = int(os.getenv("POLL_INTERVAL", "15"))
 
 # ─── Auth Decorator ──────────────────────────────────────────────────────────
@@ -685,6 +690,8 @@ def api_server_status():
             "load_avg": f"{load1:.2f}  {load5:.2f}  {load15:.2f}",
             "panel_version": panel_version,
             "https_status": https_status,
+            "panel_port": PORT,
+            "panel_port_https": HTTPS_PORT,
             "server_time": int(time.time())
         })
     except Exception as e:
@@ -1053,25 +1060,44 @@ def api_change_credentials():
 @login_required
 def api_change_port():
     data = request.get_json(silent=True) or {}
-    new_port = int(data.get("port", 0))
-    if new_port < 1024 or new_port > 65535:
-        return jsonify({"success": False, "msg": "Порт должен быть от 1024 до 65535"}), 400
+    new_port = int(data.get("port", PORT))
+    new_port_https = int(data.get("port_https", HTTPS_PORT))
+    
+    if (new_port < 1024 or new_port > 65535) or (new_port_https < 1024 or new_port_https > 65535):
+        return jsonify({"success": False, "msg": "Порты должны быть от 1024 до 65535"}), 400
+    if new_port == new_port_https:
+        return jsonify({"success": False, "msg": "Порты HTTP и HTTPS должны различаться"}), 400
+        
     old_port = PORT
-    # Step 1: Open new port FIRST to avoid lockout
+    old_port_https = HTTPS_PORT
+    
+    # Step 1: Open new ports FIRST to avoid lockout
     subprocess.run(["ufw", "allow", f"{new_port}/tcp"], capture_output=True)
-    # Step 2: Save new port to DB settings
+    subprocess.run(["ufw", "allow", f"{new_port_https}/tcp"], capture_output=True)
+    
+    # Step 2: Save new ports to DB settings
     with get_db() as db:
         db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('panel_port', ?)", (str(new_port),))
+        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('panel_port_https', ?)", (str(new_port_https),))
         db.commit()
-    # Step 3: Close old port (only if different)
+        
+    # Step 3: Close old ports (only if different)
     if new_port != old_port:
         subprocess.run(["ufw", "delete", "allow", f"{old_port}/tcp"], capture_output=True)
+    if new_port_https != old_port_https:
+        subprocess.run(["ufw", "delete", "allow", f"{old_port_https}/tcp"], capture_output=True)
+        
     # Step 4: Schedule restart after response is sent
     def delayed_restart():
         import time; time.sleep(2)
         subprocess.Popen(["systemctl", "restart", "skynet"])
     threading.Thread(target=delayed_restart, daemon=True).start()
-    return jsonify({"success": True, "msg": f"Порт изменён на {new_port}. Панель перезапускается...", "new_port": new_port})
+    return jsonify({
+        "success": True, 
+        "msg": f"Порты изменены на HTTP:{new_port} и HTTPS:{new_port_https}. Панель перезапускается...", 
+        "new_port": new_port,
+        "new_port_https": new_port_https
+    })
 
 # ─── API: Fail2Ban Installation ───────────────────────────────────────────────
 
@@ -1406,5 +1432,20 @@ if __name__ == "__main__":
                 ssl_ctx = (s_cert[0], s_key[0])
                 log.info(f"SSL enabled: {s_mode[0]} mode")
 
-    log.info(f"Sky-Net started on port {PORT}")
-    app.run(host="0.0.0.0", port=PORT, debug=False, threaded=True, ssl_context=ssl_ctx)
+    log.info(f"Sky-Net HTTP server binding on port {PORT}")
+    if ssl_ctx:
+        from werkzeug.serving import make_server
+        def run_http():
+            try:
+                srv = make_server("0.0.0.0", PORT, app, threaded=True)
+                srv.serve_forever()
+            except Exception as e:
+                log.error(f"Failed to start secondary HTTP server: {e}")
+                
+        t_http = threading.Thread(target=run_http, daemon=True)
+        t_http.start()
+        
+        log.info(f"Sky-Net HTTPS server binding on port {HTTPS_PORT}")
+        app.run(host="0.0.0.0", port=HTTPS_PORT, debug=False, threaded=True, ssl_context=ssl_ctx)
+    else:
+        app.run(host="0.0.0.0", port=PORT, debug=False, threaded=True)

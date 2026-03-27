@@ -620,14 +620,15 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       </div>
       <hr style="border-color:var(--kg-border); margin:20px 0;">
       <div style="margin-bottom:20px;">
-        <h4 style="margin:0 0 12px; font-size:13px; text-transform:uppercase; color:var(--kg-text-dim);">Порт веб-панели</h4>
+        <h4 style="margin:0 0 12px; font-size:13px; text-transform:uppercase; color:var(--kg-text-dim);">Порты веб-панели</h4>
         <div class="fr">
-          <div class="fg"><label>Новый порт (1024–65535)</label><input id="new-panel-port" type="number" placeholder="4466"></div>
+          <div class="fg"><label>HTTP Порт (1024-65535)</label><input id="new-panel-port" type="number" placeholder="4466"></div>
+          <div class="fg"><label>HTTPS Порт (1024-65535)</label><input id="new-panel-port-https" type="number" placeholder="4467"></div>
           <div class="fg" style="align-self:flex-end;">
-            <button class="btn btn-p" onclick="changePanelPort()">Сменить порт</button>
+            <button class="btn btn-p" onclick="changePanelPort()">Применить порты</button>
           </div>
         </div>
-        <p style="font-size:11px; color:var(--kg-orange); margin:5px 0 0;">Внимание: панель перезапустится. Браузер автоматически перейдёт на новый порт.</p>
+        <p style="font-size:11px; color:var(--kg-orange); margin:5px 0 0;">Внимание: панель перезапустится на новых портах.</p>
       </div>
       <hr style="border-color:var(--kg-border); margin:20px 0;">
       <div>
@@ -1730,6 +1731,13 @@ async function loadSystem(){
     for(let o of sel.options){if(o.value===tz.timezone){o.selected=true;found=true;break;}}
     if(!found){const opt=document.createElement('option');opt.value=tz.timezone;opt.text=tz.timezone;opt.selected=true;sel.add(opt);}
   }
+  const st=await API('/panel/api/server/status');
+  if(st && st.panel_port){
+    const http_input = document.getElementById('new-panel-port');
+    const https_input = document.getElementById('new-panel-port-https');
+    if(http_input) http_input.value = st.panel_port;
+    if(https_input) https_input.value = st.panel_port_https || (st.panel_port + 1);
+  }
   checkFail2Ban();
   checkSSLStatus();
 }
@@ -1762,16 +1770,18 @@ async function changeCredentials(){
 // Panel Port Change
 async function changePanelPort(){
   const p=parseInt(document.getElementById('new-panel-port').value);
-  if(!p||p<1024||p>65535)return alert('Укажите порт от 1024 до 65535');
-  if(!confirm('Сменить порт панели на '+p+'? Браузер переключится автоматически.'))return;
-  const r=await POST('/panel/api/system/change-port',{port:p});
+  const p_https=parseInt(document.getElementById('new-panel-port-https').value);
+  if(!p||!p_https||p<1024||p>65535||p_https<1024||p_https>65535)return alert('Оба порта должны быть от 1024 до 65535');
+  if(p===p_https)return alert('Порты HTTP и HTTPS должны различаться');
+  if(!confirm(`Новые порты:\nHTTP: ${p}\nHTTPS: ${p_https}\n\nПанель перезапустится. Применить?`))return;
+  const r=await POST('/panel/api/system/change-port', {port: p, port_https: p_https});
   alert(r.msg);
   if(r.success){
     setTimeout(()=>{
       const host=window.location.hostname;
-      const proto=window.location.protocol;
-      window.location.href=proto+'//'+host+':'+r.new_port;
-    },2500);
+      const is_secure = window.location.protocol === 'https:';
+      window.location.href = is_secure ? `https://${host}:${r.new_port_https}` : `http://${host}:${r.new_port}`;
+    }, 3000);
   }
 }
 
