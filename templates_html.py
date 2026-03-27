@@ -1875,6 +1875,7 @@ async function deleteClient(id){if(!confirm('Удалить клиента?'))re
 
 let currentFwIface = 'any';
 let fwRulesData = [];
+let fwInterfacesData = [];
 
 async function loadFirewall() {
   const r = await API('/panel/api/firewall');
@@ -1901,6 +1902,8 @@ async function loadFirewall() {
       ms.innerHTML += `<option value="${iface}">${iface}</option>`;
     });
   }
+  
+  fwInterfacesData = r.interfaces || [];
 
   fwRulesData = r.rules || [];
   renderFwRules();
