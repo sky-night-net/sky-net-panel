@@ -1961,16 +1961,27 @@ async function applyUpdate() {
 }
 
 async function loadSystem(){
-  const h=await API('/panel/api/system/hostname');document.getElementById('sys-hostname').value=h.hostname||'';
-  const tz=await API('/panel/api/system/timezone');
-  const sel=document.getElementById('sys-tz');
-  if(sel && tz.timezone){
-    let found=false;
-    for(let o of sel.options){if(o.value===tz.timezone){o.selected=true;found=true;break;}}
-    if(!found){const opt=document.createElement('option');opt.value=tz.timezone;opt.text=tz.timezone;opt.selected=true;sel.add(opt);}
+  const h_el = document.getElementById('sys-hostname');
+  if(h_el) {
+    const h=await API('/panel/api/system/hostname');
+    h_el.value=h.hostname||'';
   }
-  const ntp=await API('/panel/api/system/ntp');
-  if(ntp && ntp.servers) document.getElementById('sys-ntp').value = ntp.servers;
+  
+  const tz_el = document.getElementById('sys-tz');
+  if(tz_el) {
+    const tz=await API('/panel/api/system/timezone');
+    if(tz && tz.timezone){
+      let found=false;
+      for(let o of tz_el.options){if(o.value===tz.timezone){o.selected=true;found=true;break;}}
+      if(!found){const opt=document.createElement('option');opt.value=tz.timezone;opt.text=tz.timezone;opt.selected=true;tz_el.add(opt);}
+    }
+  }
+
+  const ntp_el = document.getElementById('sys-ntp');
+  if(ntp_el) {
+    const ntp=await API('/panel/api/system/ntp');
+    if(ntp && ntp.servers) ntp_el.value = ntp.servers;
+  }
   
   const st=await API('/panel/api/server/status');
   if(st && st.panel_port){
