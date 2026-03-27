@@ -2297,7 +2297,9 @@ async function loadLogs(){const unit=document.getElementById('log-unit').value;
 async function issueSSL(){const d=document.getElementById('ssl-domain').value;if(!d)return alert('Укажите домен');const r=await POST('/panel/api/system/set-ssl',{mode:'letsencrypt',domain:d});alert(r.msg)}
 
 async function checkSSLStatus(){
-  const r=await API('/panel/api/system/ssl-status');
+  const r = await API('/panel/api/system/ssl-status');
+  const st = await API('/panel/api/server/status');
+  if(!r || !st) return;
   const dSslStatus = document.getElementById('d-ssl-status');
   const badge = document.getElementById('ssl-badge');
   const certState = document.getElementById('ssl-cert-state');
