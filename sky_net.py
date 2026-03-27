@@ -903,6 +903,44 @@ def api_firewall_get():
         "rules": [dict(r) for r in rules]
     })
 
+def _apply_firewall_rules():
+    import subprocess
+    # First, reset UFW to default deny to clear all rules
+    try:
+        subprocess.run(["ufw", "--force", "reset"], capture_output=True)
+        subprocess.run(["ufw", "default", "deny", "incoming"], capture_output=True)
+        subprocess.run(["ufw", "default", "allow", "outgoing"], capture_output=True)
+        
+        with get_db() as db:
+            rules = db.execute("SELECT * FROM firewall_rules WHERE enabled=1 ORDER BY priority ASC").fetchall()
+            
+        for rule in rules:
+            cmd = ["ufw", rule["action"]] # allow or deny
+            if rule["interface"] and rule["interface"] != "any":
+                cmd += ["in", "on", rule["interface"]]
+            if rule["protocol"] and rule["protocol"] != "any":
+                cmd += ["proto", rule["protocol"]]
+            if rule["src_ip"] and rule["src_ip"] != "any":
+                cmd += ["from", rule["src_ip"]]
+            else:
+                cmd += ["from", "any"]
+            if rule["src_port"] and rule["src_port"] != "any":
+                cmd += ["port", str(rule["src_port"])]
+            if rule["dst_ip"] and rule["dst_ip"] != "any":
+                cmd += ["to", rule["dst_ip"]]
+            else:
+                cmd += ["to", "any"]
+            if rule["dst_port"] and rule["dst_port"] != "any":
+                cmd += ["port", str(rule["dst_port"])]
+            
+            subprocess.run(cmd, capture_output=True)
+        
+        subprocess.run(["ufw", "--force", "enable"], capture_output=True)
+        return True
+    except Exception as e:
+        log.error(f"Firewall apply failed: {e}")
+        return False
+
 @app.route("/panel/api/firewall/toggle", methods=["POST"])
 @login_required
 def api_firewall_toggle():
@@ -915,46 +953,8 @@ def api_firewall_toggle():
 @app.route("/panel/api/firewall/apply", methods=["POST"])
 @login_required
 def api_firewall_apply():
-    import subprocess
-    # First, reset UFW to default deny to clear all rules
-    subprocess.run(["ufw", "--force", "reset"])
-    subprocess.run(["ufw", "default", "deny", "incoming"])
-    subprocess.run(["ufw", "default", "allow", "outgoing"])
-    
-    with get_db() as db:
-        rules = db.execute("SELECT * FROM firewall_rules WHERE enabled=1 ORDER BY priority ASC").fetchall()
-        
-    for rule in rules:
-        cmd = ["ufw", rule["action"]] # allow or deny
-        if rule["interface"] and rule["interface"] != "any":
-            cmd += ["in", "on", rule["interface"]]
-            
-        if rule["protocol"] and rule["protocol"] != "any":
-            cmd += ["proto", rule["protocol"]]
-            
-        if rule["src_ip"] and rule["src_ip"] != "any":
-            cmd += ["from", rule["src_ip"]]
-        else:
-            cmd += ["from", "any"]
-            
-        if rule["src_port"] and rule["src_port"] != "any":
-            cmd += ["port", str(rule["src_port"])]
-            
-        if rule["dst_ip"] and rule["dst_ip"] != "any":
-            cmd += ["to", rule["dst_ip"]]
-        else:
-            cmd += ["to", "any"]
-            
-        if rule["dst_port"] and rule["dst_port"] != "any":
-            cmd += ["port", str(rule["dst_port"])]
-            
-        # Add the UFW rule
-        subprocess.run(cmd)
-
-    # Re-enable UFW
-    subprocess.run(["ufw", "--force", "enable"])
-    
-    return jsonify({"success": True, "msg": "Правила успешно применены!"})
+    success = _apply_firewall_rules()
+    return jsonify({"success": success, "msg": "Правила успешно применены!" if success else "Ошибка применения"})
 
 @app.route("/panel/api/firewall/save", methods=["POST"])
 @login_required
@@ -985,6 +985,8 @@ def api_firewall_save():
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (enabled, priority, action, proto, src_ip, src_port, dst_ip, dst_port, interface, comment))
         db.commit()
+    
+    _apply_firewall_rules()
     return jsonify({"success": True, "msg": "Правило сохранено"})
 
 @app.route("/panel/api/firewall/delete", methods=["POST"])
@@ -997,7 +999,58 @@ def api_firewall_delete():
     with get_db() as db:
         db.execute("DELETE FROM firewall_rules WHERE id=?", (rid,))
         db.commit()
+        
+    _apply_firewall_rules()
     return jsonify({"success": True, "msg": "Правило удалено"})
+
+@app.route("/panel/api/firewall/sync", methods=["POST"])
+@login_required
+def api_firewall_sync():
+    import subprocess
+    import re
+    try:
+        r = subprocess.run(["ufw", "status", "numbered"], capture_output=True, text=True)
+        if r.returncode != 0:
+            return jsonify({"success": False, "msg": "UFW не доступен или ошибка выполнения"})
+            
+        lines = r.stdout.splitlines()
+        imported_count = 0
+        with get_db() as db:
+            for line in lines:
+                # Regex to match: [ 1] 22/tcp  ALLOW IN  Anywhere
+                m = re.search(r"\[\s*(\d+)\]\s+(\S+)\s+(ALLOW|DENY)\s+IN\s+(.*)", line, re.IGNORECASE)
+                if m:
+                    dst = m.group(2)
+                    action = m.group(3).lower()
+                    src = m.group(4).strip()
+                    
+                    dst_port = "any"
+                    proto = "any"
+                    if "/" in dst:
+                        parts = dst.split("/")
+                        dst_port = parts[0]
+                        proto = parts[1]
+                    elif dst.lower() == "anywhere":
+                        dst_port = "any"
+                    else:
+                        dst_port = dst
+                        
+                    src_ip = "any" if src.lower() == "anywhere" else src
+                    
+                    # Check for duplicates
+                    exists = db.execute("SELECT id FROM firewall_rules WHERE dst_port=? AND protocol=? AND action=? AND src_ip=?", 
+                                      (dst_port, proto, action, src_ip)).fetchone()
+                    if not exists:
+                        db.execute("""
+                            INSERT INTO firewall_rules (enabled, priority, action, protocol, src_ip, src_port, dst_ip, dst_port, interface, comment)
+                            VALUES (1, ?, ?, ?, ?, 'any', 'any', ?, 'any', ?)
+                        """, (100 + imported_count*10, action, proto, src_ip, dst_port, f"System rule: {dst}"))
+                        imported_count += 1
+            db.commit()
+        return jsonify({"success": True, "msg": f"Импортировано {imported_count} правил"})
+    except Exception as e:
+        log.error(f"Firewall sync failed: {e}")
+        return jsonify({"success": False, "msg": str(e)})
 
 
 # ─── API: Network & System ──────────────────────────────────────────────────

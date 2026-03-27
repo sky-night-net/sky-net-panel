@@ -513,8 +513,9 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   </div> <!-- end grid -->
   
   <div style="text-align: center; margin-top: 30px; margin-bottom: 20px;">
-    <button class="btn btn-o" onclick="openWidgetSettings()" style="background:transparent; border:none; color:var(--kg-blue); font-size:14px; font-weight:600;">
-      Редактировать системный монитор ⚙️
+    <button class="btn btn-o" onclick="openWidgetSettings()" style="display:flex; align-items:center; gap:8px; margin: 0 auto; background:transparent; border:none; color:var(--kg-blue); font-size:14px; font-weight:600;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      Редактировать системный монитор
     </button>
   </div>
 </div>
@@ -566,7 +567,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <span id="fw-status-badge" class="badge" style="margin-top:10px;display:inline-block;">--</span>
         <button class="btn btn-o btn-sm" onclick="fwToggle(true)" style="margin-left:10px;">Включить UFW</button>
         <button class="btn btn-d btn-sm" onclick="fwToggle(false)">Выключить UFW</button>
-        <button class="btn btn-p btn-sm" onclick="fwApply()" style="margin-left:10px; background:var(--kg-green);">Применить правила</button>
+        <button class="btn btn-p btn-sm" onclick="fwApply()" style="margin-left:10px; background:var(--kg-green);">Применить в систему</button>
+        <button class="btn btn-o btn-sm" onclick="fwSync()" style="margin-left:10px; border-color:var(--kg-blue); color:var(--kg-blue);">Импорт из системы</button>
       </p>
     </div>
     
@@ -1810,12 +1812,23 @@ function fwSwitchTab(iface) {
   loadFirewall();
 }
 
+async function fwSync() {
+  if(!confirm('Импортировать текущие правила из системы в панель? (Оригинальные приоритеты не сохранятся)')) return;
+  const r = await POST('/panel/api/firewall/sync');
+  if(r.success) {
+    loadFirewall();
+    alert('Импорт завершен!');
+  } else {
+    alert('Ошибка: ' + r.msg);
+  }
+}
+
 function renderFwRules() {
   const tbody = document.getElementById('fw-rules-body_2');
   if(!tbody) return;
   tbody.innerHTML = '';
   
-  const filtered = currentFwIface === 'any' ? fwRulesData : fwRulesData.filter(x => x.interface === currentFwIface);
+  const filtered = currentFwIface === 'any' ? fwRulesData : fwRulesData.filter(x => x.interface === currentFwIface || x.interface === 'any');
   
   filtered.forEach(rule => {
     const tr = document.createElement('tr');
@@ -1831,8 +1844,12 @@ function renderFwRules() {
       <td style="padding:12px;">${rule.dst_port}</td>
       <td style="padding:12px; color:var(--kg-text-dim); font-size:12px;">${rule.comment || '--'}</td>
       <td style="padding:12px; text-align:right; white-space:nowrap;">
-         <button class="btn btn-o btn-sm" onclick="fwOpenModal(${rule.id})">⚙️</button>
-         <button class="btn btn-d btn-sm" onclick="fwDelete(${rule.id})">🗑️</button>
+         <button class="btn btn-o btn-sm" onclick="fwOpenModal(${rule.id})" title="Редактировать">
+           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+         </button>
+         <button class="btn btn-d btn-sm" onclick="fwDelete(${rule.id})" title="Удалить">
+           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+         </button>
       </td>
     `;
     tbody.appendChild(tr);
