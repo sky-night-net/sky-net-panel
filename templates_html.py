@@ -534,7 +534,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
             <svg fill="none" stroke="#f59e0b" stroke-width="2" width="16" height="16" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
             <span class="k-lbl" style="margin:0;">HTTPS Порт</span>
           </div>
-          <span class="k-val" id="d-https-port" style="font-size:12px; font-weight:700;">4467</span>
+          <span class="k-val" id="d-https-port" style="font-size:12px; font-weight:700;">--</span>
         </div>
         <div class="stat-item">
           <div style="display:flex; align-items:center; gap:10px;">
@@ -883,8 +883,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         </div>
         <div id="ssl-details" style="font-size:12px; line-height:1.5;">
           <div style="color:var(--kg-text-dim); margin-bottom:4px;">SSL сертификат: <span id="ssl-cert-state" style="color:white;">--</span></div>
-          <div id="ssl-restart-warn" style="display:none; color:#f59e0b; font-weight:600; margin-top:10px;">⚠️ Требуется перезапуск панели для активации HTTPS (порт 4467)</div>
-          <div id="ssl-active-info" style="display:none; color:var(--kg-green); font-weight:600; margin-top:10px;">✅ HTTPS активен на порту 4467. Используйте https://[IP-или-Домен]:4467</div>
+          <div id="ssl-restart-warn" style="display:none; color:#f59e0b; font-weight:600; margin-top:10px;">⚠️ Требуется перезапуск панели для активации HTTPS</div>
+          <div id="ssl-active-info" style="display:none; color:var(--kg-green); font-weight:600; margin-top:10px;"></div>
         </div>
       </div>
       <div style="display:flex; gap:10px; margin-top:15px;">
@@ -2319,10 +2319,12 @@ async function checkSSLStatus(){
   if(restartWarn && activeInfo) {
       if (r.mode !== 'off' && !r.active) {
           restartWarn.style.display = 'block';
+          restartWarn.innerHTML = `⚠️ Требуется перезапуск панели для активации HTTPS (порт ${st.panel_port_https})`;
           activeInfo.style.display = 'none';
       } else if (r.active) {
           restartWarn.style.display = 'none';
           activeInfo.style.display = 'block';
+          activeInfo.innerHTML = `✅ HTTPS активен на порту ${st.panel_port_https}. Используйте https://[IP-или-Домен]:${st.panel_port_https}`;
       } else {
           restartWarn.style.display = 'none';
           activeInfo.style.display = 'none';
