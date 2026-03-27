@@ -24,14 +24,12 @@ log = logging.getLogger("sky-net")
 
 app = Flask(__name__)
 CORS(app)
-app.secret_key = os.getenv("SKYNET_SECRET", secrets.token_hex(32))
 
-PORT = int(os.getenv("SKYNET_PORT", "9090"))
-DB_FILE = os.getenv("SKYNET_DB", "sky_net.db")
-POLL_SEC = int(os.getenv("POLL_INTERVAL", "15"))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_DB = os.path.join(SCRIPT_DIR, "sky_net.db")
+DB_FILE = os.getenv("SKYNET_DB", DEFAULT_DB)
 
 # ─── Database ────────────────────────────────────────────────────────────────
-
 import contextlib
 
 @contextlib.contextmanager
@@ -44,6 +42,24 @@ def get_db():
         yield conn
     finally:
         conn.close()
+
+# ─── Persistent Secret Key ───────────────────────────────────────────────────
+def get_secret_key():
+    with get_db() as db:
+        # Check if settings table exists first
+        db.execute("CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE NOT NULL, value TEXT DEFAULT '')")
+        res = db.execute("SELECT value FROM settings WHERE key='secret_key'").fetchone()
+        if res and res[0]:
+            return res[0]
+        else:
+            new_key = secrets.token_hex(32)
+            db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('secret_key', ?)", (new_key,))
+            db.commit()
+            return new_key
+
+app.secret_key = get_secret_key()
+PORT = int(os.getenv("SKYNET_PORT", "9090"))
+POLL_SEC = int(os.getenv("POLL_INTERVAL", "15"))
 
 # ─── Auth Decorator ──────────────────────────────────────────────────────────
 
@@ -369,11 +385,13 @@ def api_inbounds_list():
     with get_db() as db:
         rows = db.execute("SELECT * FROM inbounds ORDER BY id").fetchall()
         inbounds = [dict(r) for r in rows]
+        log.info(f"API List: Found {len(inbounds)} inbounds in DB")
         for ib in inbounds:
             clients = db.execute(
                 "SELECT * FROM client_traffics WHERE inbound_id=?", (ib["id"],)
             ).fetchall()
             ib["clients"] = [dict(c) for c in clients]
+            log.info(f"Inbound {ib['id']} ({ib['protocol']}): {len(ib['clients'])} clients")
     return jsonify({"success": True, "obj": inbounds})
 
 @app.route("/panel/api/inbounds/add", methods=["POST"])
