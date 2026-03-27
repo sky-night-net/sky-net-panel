@@ -890,12 +890,6 @@ function fmtUp(s){const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.
 function fmtDate(ts){if(!ts||ts===0)return'Никогда';return new Date(ts*1000).toLocaleDateString()}
 function closeModal(id){document.getElementById(id).classList.remove('show')}
 
-const PL = {
-  'amneziawg_v1': 'AmneziaWG v1',
-  'amneziawg_v2': 'AmneziaWG v2',
-  'openvpn_xor': 'OpenVPN+XOR'
-};
-
 // Locale & Theme
 const I18N = {
   en: {
