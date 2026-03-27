@@ -1063,6 +1063,8 @@ def api_firewall_delete():
 def api_firewall_sync():
     import subprocess
     import re
+    # Ensure schema is up-to-date before sync
+    check_schema()
     try:
         r = subprocess.run(["ufw", "status"], capture_output=True, text=True)
         if r.returncode != 0:

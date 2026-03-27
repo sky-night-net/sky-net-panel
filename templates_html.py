@@ -657,7 +657,9 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   </div>
 </div>
 
-  <div id="modal-fw-content" style="background:#1a222f; width:100%; max-width:480px; border-radius:12px; box-shadow:0 30px 60px rgba(0,0,0,0.6); position:relative; overflow:hidden;">
+<!-- FIREWALL MODAL -->
+<div class="modal" id="modal-fw" style="display:none; position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
+  <div id="modal-fw-content" style="background:#1a222f; width:100%; max-width:480px; border-radius:12px; box-shadow:0 30px 60px rgba(0,0,0,0.6); position:relative; overflow:hidden; animation: modalIn 0.3s ease-out;">
     <div style="padding:40px 40px 24px 40px;">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
         <h2 style="margin:0; font-size:28px; font-weight:700; color:white;">Правило межсетевого экрана</h2>
@@ -761,6 +763,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <button class="btn" style="flex:1; height:50px; background:rgba(255,255,255,0.05); color:var(--kg-blue); border:1px solid rgba(0,161,228,0.3); border-radius:8px; font-weight:600; font-size:16px; cursor:pointer;" onclick="document.getElementById('modal-fw').style.display='none'">Отменить</button>
     </div>
   </div>
+</div>
 
 
 <!-- SYSTEM -->
