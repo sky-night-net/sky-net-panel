@@ -659,6 +659,14 @@ def api_server_status():
             ifaces_traffic[nic] = {"bytes_sent": st.bytes_sent, "bytes_recv": st.bytes_recv}
         
         load1, load5, load15 = os.getloadavg()
+        
+        # Check HTTPS status
+        https_status = "Отключен"
+        with get_db() as db:
+            s_mode = db.execute("SELECT value FROM settings WHERE key='ssl_mode'").fetchone()
+            if s_mode and s_mode[0] != "off":
+                https_status = "Активен"
+
         return jsonify({
             "cpu": cpu, "mem_percent": mem.percent,
             "mem_used": mem.used, "mem_total": mem.total,
@@ -668,7 +676,10 @@ def api_server_status():
             "hostname": platform.node(),
             "os_version": f"{platform.system()} {platform.release()}",
             "public_ip": public_ip,
-            "load_avg": f"{load1:.2f}  {load5:.2f}  {load15:.2f}"
+            "load_avg": f"{load1:.2f}  {load5:.2f}  {load15:.2f}",
+            "panel_version": "v3.0",
+            "https_status": https_status,
+            "server_time": int(time.time())
         })
     except Exception as e:
         log.error(f"Error in api_server_status: {e}")

@@ -434,6 +434,27 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           </div>
           <span class="k-val" id="d-loadavg" style="font-family:'JetBrains Mono',monospace;">--</span>
         </div>
+        <div class="stat-item">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <svg fill="none" stroke="var(--kg-blue)" stroke-width="2" width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <span class="k-lbl" style="margin:0;">Время сервера</span>
+          </div>
+          <span class="k-val" id="d-time" style="font-family:'JetBrains Mono',monospace; color:#fff;">--</span>
+        </div>
+        <div class="stat-item">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <svg fill="none" stroke="var(--kg-green)" stroke-width="2" width="16" height="16" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+            <span class="k-lbl" style="margin:0;">Версия</span>
+          </div>
+          <span class="k-val" id="d-version" style="font-size:12px; font-weight:700;">--</span>
+        </div>
+        <div class="stat-item">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <svg fill="none" stroke="#f59e0b" stroke-width="2" width="16" height="16" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <span class="k-lbl" style="margin:0;">HTTPS SSL</span>
+          </div>
+          <span class="k-val" id="d-https" style="font-size:12px; font-weight:700; color:var(--kg-green);">--</span>
+        </div>
       </div>
     </div>
     
@@ -1144,8 +1165,15 @@ async function loadDashboard(){
   try { hist = await API('/panel/api/trafficHistory') || {up:[],down:[]}; } catch(e) { console.error("Traffic API fail", e); }
   
   const d_ip=document.getElementById('d-ip'), d_host=document.getElementById('d-host'), d_os=document.getElementById('d-os');
+  const d_time=document.getElementById('d-time'), d_version=document.getElementById('d-version'), d_https=document.getElementById('d-https');
   if(d_host) d_host.textContent = st.hostname || 'Sky-Net';
   if(d_os) d_os.textContent = st.os_version || 'Ubuntu';
+  if(d_time && st.server_time) d_time.textContent = new Date(st.server_time * 1000).toLocaleString('ru-RU');
+  if(d_version) d_version.textContent = st.panel_version || 'v3.0';
+  if(d_https) {
+    d_https.textContent = st.https_status || 'Отключен';
+    d_https.style.color = (st.https_status === 'Активен') ? 'var(--kg-green)' : 'var(--kg-red)';
+  }
   
   const curTime = new Date().toLocaleTimeString('ru-RU');
   const now = Date.now();
