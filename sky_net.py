@@ -89,9 +89,13 @@ def get_secret_key():
             return new_key
 
 app.secret_key = get_secret_key()
+# Load Port Settings from DB
 PORT = int(os.getenv("SKYNET_PORT", "9090"))
 HTTPS_PORT = 4467
 with get_db() as db:
+    p1 = db.execute("SELECT value FROM settings WHERE key='panel_port'").fetchone()
+    if p1 and p1[0].isdigit():
+        PORT = int(p1[0])
     p2 = db.execute("SELECT value FROM settings WHERE key='panel_port_https'").fetchone()
     if p2 and p2[0].isdigit():
         HTTPS_PORT = int(p2[0])
