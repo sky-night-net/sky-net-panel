@@ -1005,8 +1005,9 @@ function changeTheme(t){
 const loadSettings = async () => {};
 
 function switchPage(page, noPush=false) {
-  if(!noPush && window.location.pathname !== '/panel/' + page) {
-    window.history.pushState({page: page}, '', '/panel/' + page);
+  let targetUrl = page === 'dashboard' ? '/' : '/' + page;
+  if(!noPush && window.location.pathname !== targetUrl) {
+    window.history.pushState({page: page}, '', targetUrl);
   }
   document.querySelectorAll('.sidebar nav a').forEach(a=>{
     a.classList.remove('active');
