@@ -667,6 +667,12 @@ def api_server_status():
             if s_mode and s_mode[0] != "off":
                 https_status = "Активен"
 
+        try:
+            current_hash = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd="/opt/sky-net").decode().strip()
+            panel_version = f"v3.0 ({current_hash})"
+        except Exception:
+            panel_version = "v3.0"
+
         return jsonify({
             "cpu": cpu, "mem_percent": mem.percent,
             "mem_used": mem.used, "mem_total": mem.total,
@@ -677,7 +683,7 @@ def api_server_status():
             "os_version": f"{platform.system()} {platform.release()}",
             "public_ip": public_ip,
             "load_avg": f"{load1:.2f}  {load5:.2f}  {load15:.2f}",
-            "panel_version": "v3.0",
+            "panel_version": panel_version,
             "https_status": https_status,
             "server_time": int(time.time())
         })
