@@ -166,13 +166,14 @@ mssfix 1350
 
         return f"""client
 dev tun
-proto {settings.get('proto','udp')}4
+proto {settings.get('proto','udp')}
 remote {server_ip} {port}
 resolv-retry infinite
 nobind
 persist-key
 persist-tun
 remote-cert-tls server
+data-ciphers {settings.get('cipher','AES-256-CBC')}:AES-256-GCM:AES-128-GCM
 cipher {settings.get('cipher','AES-256-CBC')}
 auth SHA256
 auth-nocache

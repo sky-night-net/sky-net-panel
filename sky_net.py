@@ -702,6 +702,75 @@ def api_db_import():
     init_db()
     return jsonify({"success": True, "msg": "Database imported"})
 
+# ─── API: Full System Backup & Restore ────────────────────────────────────────
+
+@app.route("/panel/api/system/backup")
+@login_required
+def api_system_backup():
+    """Create a full ZIP backup: DB + VPN configs + panel settings."""
+    import zipfile, tempfile, shutil
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_name = f"skynet_backup_{ts}.zip"
+    tmp_path = os.path.join(tempfile.gettempdir(), backup_name)
+    try:
+        with zipfile.ZipFile(tmp_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            # Database
+            if os.path.exists(DB_FILE):
+                zf.write(DB_FILE, "sky_net.db")
+            # OpenVPN configs
+            for cfg_dir in ["/etc/openvpn", "/etc/wireguard"]:
+                if os.path.isdir(cfg_dir):
+                    for root, dirs, files in os.walk(cfg_dir):
+                        for fname in files:
+                            fp = os.path.join(root, fname)
+                            zf.write(fp, fp.lstrip("/"))
+            # Panel PKI (EasyRSA keys)
+            pki_dir = "/etc/openvpn/pki"
+            if os.path.isdir(pki_dir):
+                for root, dirs, files in os.walk(pki_dir):
+                    for fname in files:
+                        fp = os.path.join(root, fname)
+                        zf.write(fp, fp.lstrip("/"))
+        return send_file(tmp_path, as_attachment=True, download_name=backup_name,
+                         mimetype="application/zip")
+    except Exception as e:
+        log.error(f"Backup failed: {e}")
+        return jsonify({"success": False, "msg": str(e)}), 500
+
+@app.route("/panel/api/system/restore", methods=["POST"])
+@login_required
+def api_system_restore():
+    """Restore from a ZIP backup file."""
+    import zipfile, shutil, tempfile
+    f = request.files.get("file")
+    if not f or not f.filename.endswith(".zip"):
+        return jsonify({"success": False, "msg": "Загрузите файл .zip"}), 400
+    tmp_path = os.path.join(tempfile.gettempdir(), "skynet_restore.zip")
+    f.save(tmp_path)
+    try:
+        # Backup current DB before restoring
+        if os.path.exists(DB_FILE):
+            shutil.copy2(DB_FILE, DB_FILE + ".pre_restore_bak")
+        with zipfile.ZipFile(tmp_path, "r") as zf:
+            names = zf.namelist()
+            # Extract DB
+            if "sky_net.db" in names:
+                zf.extract("sky_net.db", os.path.dirname(DB_FILE) or ".")
+            # Extract configs to root (they have full paths like etc/openvpn/...)
+            for name in names:
+                if name.startswith("etc/"):
+                    zf.extract(name, "/")
+        # Restart service to apply restored config
+        def _restart():
+            import time; time.sleep(1)
+            subprocess.Popen(["systemctl", "restart", "skynet"])
+        threading.Thread(target=_restart, daemon=True).start()
+        return jsonify({"success": True, "msg": "Восстановление завершено. Панель перезапускается..."})
+    except Exception as e:
+        log.error(f"Restore failed: {e}")
+        return jsonify({"success": False, "msg": str(e)}), 500
+
+
 # ─── API: Firewall (UFW) ────────────────────────────────────────────────────
 
 @app.route("/panel/api/firewall/status")
@@ -865,9 +934,190 @@ def api_system_timezone():
                        capture_output=True, text=True)
     return jsonify({"success": True, "timezone": r.stdout.strip()})
 
+# ─── API: System Time (Live Clock) ──────────────────────────────────────────
+
+@app.route("/panel/api/system/time")
+@login_required
+def api_system_time():
+    import datetime as dt
+    import zoneinfo
+    try:
+        r = subprocess.run(["timedatectl", "show", "--property=Timezone", "--value"],
+                           capture_output=True, text=True)
+        tz_name = r.stdout.strip() or "UTC"
+        tz = zoneinfo.ZoneInfo(tz_name)
+        now = dt.datetime.now(tz)
+        return jsonify({
+            "success": True,
+            "time": now.strftime("%Y-%m-%d %H:%M:%S"),
+            "timezone": tz_name,
+            "utc_offset": now.strftime("%z")
+        })
+    except Exception as e:
+        return jsonify({"success": False, "time": str(dt.datetime.utcnow())[:19], "timezone": "UTC"})
+
+# ─── API: Credentials Change ─────────────────────────────────────────────────
+
+@app.route("/panel/api/system/change-credentials", methods=["POST"])
+@login_required
+def api_change_credentials():
+    data = request.get_json(silent=True) or {}
+    new_login = data.get("login", "").strip()
+    new_pass = data.get("password", "").strip()
+    if not new_login or not new_pass:
+        return jsonify({"success": False, "msg": "Логин и пароль не могут быть пустыми"}), 400
+    if len(new_pass) < 6:
+        return jsonify({"success": False, "msg": "Пароль должен быть минимум 6 символов"}), 400
+    pw_hash = hashlib.sha256(new_pass.encode()).hexdigest()
+    with get_db() as db:
+        db.execute("UPDATE users SET username=?, password=? WHERE id=1", (new_login, pw_hash))
+        db.commit()
+    session.clear()
+    return jsonify({"success": True, "msg": "Данные обновлены. Войдите заново."})
+
+# ─── API: Panel Port Change ───────────────────────────────────────────────────
+
+@app.route("/panel/api/system/change-port", methods=["POST"])
+@login_required
+def api_change_port():
+    data = request.get_json(silent=True) or {}
+    new_port = int(data.get("port", 0))
+    if new_port < 1024 or new_port > 65535:
+        return jsonify({"success": False, "msg": "Порт должен быть от 1024 до 65535"}), 400
+    old_port = PORT
+    # Step 1: Open new port FIRST to avoid lockout
+    subprocess.run(["ufw", "allow", f"{new_port}/tcp"], capture_output=True)
+    # Step 2: Save new port to DB settings
+    with get_db() as db:
+        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('panel_port', ?)", (str(new_port),))
+        db.commit()
+    # Step 3: Close old port (only if different)
+    if new_port != old_port:
+        subprocess.run(["ufw", "delete", "allow", f"{old_port}/tcp"], capture_output=True)
+    # Step 4: Schedule restart after response is sent
+    def delayed_restart():
+        import time; time.sleep(2)
+        subprocess.Popen(["systemctl", "restart", "skynet"])
+    threading.Thread(target=delayed_restart, daemon=True).start()
+    return jsonify({"success": True, "msg": f"Порт изменён на {new_port}. Панель перезапускается...", "new_port": new_port})
+
+# ─── API: Fail2Ban Installation ───────────────────────────────────────────────
+
+@app.route("/panel/api/system/install-fail2ban", methods=["POST"])
+@login_required
+def api_install_fail2ban():
+    def _install():
+        subprocess.run(["apt-get", "install", "-y", "fail2ban"], capture_output=True)
+        # Create local jail override
+        jail_conf = f"""[DEFAULT]
+bantime = 3600
+findtime = 600
+maxretry = 5
+
+[sshd]
+enabled = true
+port = ssh
+filter = sshd
+logpath = /var/log/auth.log
+
+[skynet-panel]
+enabled = true
+port = {PORT}
+filter = skynet-panel
+logpath = /var/log/skynet-auth.log
+maxretry = 5
+"""
+        filter_conf = """[Definition]
+failregex = .* Неверный пароль от <HOST>
+            .* LOGIN_FAIL from <HOST>
+            .* Failed login from <HOST>
+ignoreregex =
+"""
+        try:
+            with open("/etc/fail2ban/jail.local", "w") as f:
+                f.write(jail_conf)
+            os.makedirs("/etc/fail2ban/filter.d", exist_ok=True)
+            with open("/etc/fail2ban/filter.d/skynet-panel.conf", "w") as f:
+                f.write(filter_conf)
+            subprocess.run(["systemctl", "enable", "fail2ban"], capture_output=True)
+            subprocess.run(["systemctl", "restart", "fail2ban"], capture_output=True)
+        except Exception as e:
+            log.error(f"Fail2Ban config error: {e}")
+    threading.Thread(target=_install, daemon=True).start()
+    return jsonify({"success": True, "msg": "Fail2Ban устанавливается в фоне (~30 сек)..."})
+
+@app.route("/panel/api/system/fail2ban-status")
+@login_required
+def api_fail2ban_status():
+    r = subprocess.run(["fail2ban-client", "status"], capture_output=True, text=True)
+    installed = r.returncode == 0
+    return jsonify({"success": True, "installed": installed, "output": r.stdout[:500] if installed else ""})
+
+# ─── API: SSL / HTTPS Configuration ─────────────────────────────────────────
+
+@app.route("/panel/api/system/set-ssl", methods=["POST"])
+@login_required
+def api_set_ssl():
+    data = request.get_json(silent=True) or {}
+    mode = data.get("mode", "off")        # off | self-signed | letsencrypt
+    domain = data.get("domain", "").strip()
+
+    if mode == "self-signed":
+        # Generate self-signed certificate
+        cert_dir = "/etc/sky-net/ssl"
+        os.makedirs(cert_dir, exist_ok=True)
+        cmd = [
+            "openssl", "req", "-x509", "-nodes", "-newkey", "rsa:2048",
+            "-keyout", f"{cert_dir}/key.pem",
+            "-out", f"{cert_dir}/cert.pem",
+            "-days", "3650",
+            "-subj", f"/CN={domain or 'sky-net-panel'}"
+        ]
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        if r.returncode != 0:
+            return jsonify({"success": False, "msg": r.stderr[:300]})
+        with get_db() as db:
+            db.execute("INSERT OR REPLACE INTO settings (key,value) VALUES ('ssl_mode','self-signed')")
+            db.execute("INSERT OR REPLACE INTO settings (key,value) VALUES ('ssl_cert',?)", (f"{cert_dir}/cert.pem",))
+            db.execute("INSERT OR REPLACE INTO settings (key,value) VALUES ('ssl_key',?)", (f"{cert_dir}/key.pem",))
+            db.execute("INSERT OR REPLACE INTO settings (key,value) VALUES ('panel_domain',?)", (domain,))
+            db.commit()
+        return jsonify({"success": True, "msg": "Самоподписанный сертификат создан. Перезапустите панель."})
+
+    elif mode == "letsencrypt":
+        if not domain:
+            return jsonify({"success": False, "msg": "Укажите домен для Let's Encrypt"}), 400
+        def _certbot():
+            r = subprocess.run(
+                ["certbot", "certonly", "--standalone", "--non-interactive",
+                 "--agree-tos", "--register-unsafely-without-email", "-d", domain],
+                capture_output=True, text=True
+            )
+            if r.returncode == 0:
+                with get_db() as db:
+                    cert = f"/etc/letsencrypt/live/{domain}/fullchain.pem"
+                    key = f"/etc/letsencrypt/live/{domain}/privkey.pem"
+                    db.execute("INSERT OR REPLACE INTO settings (key,value) VALUES ('ssl_mode','letsencrypt')")
+                    db.execute("INSERT OR REPLACE INTO settings (key,value) VALUES ('ssl_cert',?)", (cert,))
+                    db.execute("INSERT OR REPLACE INTO settings (key,value) VALUES ('ssl_key',?)", (key,))
+                    db.execute("INSERT OR REPLACE INTO settings (key,value) VALUES ('panel_domain',?)", (domain,))
+                    db.commit()
+                log.info(f"Let's Encrypt cert issued for {domain}")
+            else:
+                log.error(f"Certbot failed: {r.stderr}")
+        threading.Thread(target=_certbot, daemon=True).start()
+        return jsonify({"success": True, "msg": f"Запрос сертификата Let's Encrypt для {domain}. Это займёт ~30 сек."})
+
+    else:  # off
+        with get_db() as db:
+            db.execute("INSERT OR REPLACE INTO settings (key,value) VALUES ('ssl_mode','off')")
+            db.commit()
+        return jsonify({"success": True, "msg": "HTTPS отключён. HTTP режим активен."})
+
 # ─── Traffic History ─────────────────────────────────────────────────────────
 
 traffic_history = {"up": deque([0]*60, maxlen=60), "down": deque([0]*60, maxlen=60)}
+
 
 @app.route("/panel/api/system/reboot", methods=["POST"])
 @login_required
@@ -1001,8 +1251,33 @@ def start_all_inbounds():
                 AdapterFactory.get(ib["protocol"]).start(ib_dict)
             except Exception as e: log.error(f"Startup error for inbound {ib['id']}: {e}")
 
+def start_telegram_bot():
+    """Starts the telegram_bot.py as a separate subprocess."""
+    with get_db() as db:
+        token = db.execute("SELECT value FROM settings WHERE key='telegram_bot_token'").fetchone()
+        allowed_ids = db.execute("SELECT value FROM settings WHERE key='telegram_allowed_ids'").fetchone()
+
+    if not token or not token[0]:
+        log.info("Telegram Bot Token not configured. Skipping bot start.")
+        return
+
+    env = os.environ.copy()
+    env["TELEGRAM_BOT_TOKEN"] = token[0]
+    env["TELEGRAM_ALLOWED_IDS"] = allowed_ids[0] if (allowed_ids and allowed_ids[0]) else ""
+    env["SKYNET_DB"] = os.path.abspath(DB_FILE)
+
+    script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "telegram_bot.py")
+    if os.path.exists(script_path):
+        log.info("Starting Telegram Bot...")
+        subprocess.Popen(["python3", script_path], env=env)
+    else:
+        log.error(f"Telegram bot script not found at {script_path}")
+
 if __name__ == "__main__":
     init_db()
+    # Start the bot
+    start_telegram_bot()
+
     
     # Global Routing & System Optimization
     try:

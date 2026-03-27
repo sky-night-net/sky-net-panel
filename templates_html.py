@@ -94,6 +94,7 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
 .sidebar.collapsed nav a span { opacity: 0; pointer-events: none; transition: 0.2s; }
 .sidebar nav .section { font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,0.2); padding: 30px 25px 10px; font-weight: 800; letter-spacing: 1.5px; white-space: nowrap; transition: 0.3s; }
 .sidebar.collapsed nav .section { opacity: 0; pointer-events: none; height: 0; padding-top: 20px; padding-bottom: 0; }
+.sidebar-sep { height: 1px; background: rgba(255,255,255,0.05); margin: 10px 25px; }
 
 /* Mobile Overlay */
 @media (max-width: 768px) {
@@ -297,6 +298,11 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
       <span data-i18n="nav_sys">Настройки системы</span>
     </a>
+    <div class="sidebar-sep"></div>
+    <a href="#" data-page="instructions">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+      <span>Инструкции</span>
+    </a>
     <a href="#" data-page="logs" style="display:none"><span>Журнал событий</span></a>
     <a href="#" data-page="settings" style="display:none"><span>Параметры панели</span></a>
   </nav>
@@ -332,6 +338,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
             <div class="sd-links">
               <span class="sd-link" data-i18n="sys_log" onclick="switchPage('logs'); toggleSysMenu()">Системный журнал</span>
               <span class="sd-link" data-i18n="cli" onclick="switchPage('cli'); toggleSysMenu()">Командная строка</span>
+              <span class="sd-link" onclick="switchPage('instructions'); toggleSysMenu()">Инструкции</span>
             </div>
           </div>
           <div class="sd-footer">
@@ -529,25 +536,140 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
 <!-- SYSTEM -->
 <div class="page" id="page-system">
+
+  <!-- Block 1: Hostname & Timezone -->
   <div class="card no-blue">
-    <div class="card-header"><h3>УПРАВЛЕНИЕ СИСТЕМОЙ</h3></div>
+    <div class="card-header"><h3>УСТРОЙСТВО И ВРЕМЯ</h3></div>
     <div style="padding:25px;">
       <div class="fr">
         <div class="fg"><label>Имя устройства</label><input id="sys-hostname" placeholder="sky-net"></div>
-        <div class="fg"><label>Часовой пояс</label><input id="sys-tz" placeholder="Etc/UTC"></div>
+        <div class="fg"><label>Часовой пояс</label>
+          <select id="sys-tz">
+            <option value="UTC">UTC</option>
+            <option value="Europe/Moscow">Europe/Moscow (UTC+3)</option>
+            <option value="Europe/Kiev">Europe/Kiev (UTC+2)</option>
+            <option value="Europe/Berlin">Europe/Berlin (UTC+1)</option>
+            <option value="Europe/London">Europe/London (UTC+0)</option>
+            <option value="Asia/Tashkent">Asia/Tashkent (UTC+5)</option>
+            <option value="Asia/Almaty">Asia/Almaty (UTC+6)</option>
+            <option value="Asia/Novosibirsk">Asia/Novosibirsk (UTC+7)</option>
+            <option value="Asia/Irkutsk">Asia/Irkutsk (UTC+8)</option>
+            <option value="Asia/Yakutsk">Asia/Yakutsk (UTC+9)</option>
+            <option value="Asia/Vladivostok">Asia/Vladivostok (UTC+10)</option>
+            <option value="Asia/Baku">Asia/Baku (UTC+4)</option>
+            <option value="Asia/Dubai">Asia/Dubai (UTC+4)</option>
+            <option value="Asia/Kolkata">Asia/Kolkata (UTC+5:30)</option>
+            <option value="Asia/Bangkok">Asia/Bangkok (UTC+7)</option>
+            <option value="Asia/Singapore">Asia/Singapore (UTC+8)</option>
+            <option value="Asia/Tokyo">Asia/Tokyo (UTC+9)</option>
+            <option value="America/New_York">America/New_York (UTC-5)</option>
+            <option value="America/Chicago">America/Chicago (UTC-6)</option>
+            <option value="America/Los_Angeles">America/Los_Angeles (UTC-8)</option>
+            <option value="America/Sao_Paulo">America/Sao_Paulo (UTC-3)</option>
+            <option value="Africa/Cairo">Africa/Cairo (UTC+2)</option>
+            <option value="Australia/Sydney">Australia/Sydney (UTC+10)</option>
+            <option value="Pacific/Auckland">Pacific/Auckland (UTC+12)</option>
+          </select>
+        </div>
       </div>
-      <div class="fr">
-        <div class="fg"><label>SSL домен</label><input id="ssl-domain" placeholder="vpn.example.com"></div>
-        <div class="fg" style="align-self:flex-end;"><button class="btn btn-p" onclick="issueSSL()">Выпустить сертификат</button></div>
+      <div style="margin-top:5px; display:flex; gap:10px; align-items:center; font-size:12px; color:var(--kg-text-dim);">
+        <span>Текущее время сервера:</span>
+        <span id="server-clock" style="font-family:monospace; color:var(--kg-green);">—</span>
       </div>
-      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:5px;">
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:15px;">
         <button class="btn btn-o" onclick="saveHostname()">Сохранить имя</button>
         <button class="btn btn-o" onclick="saveTimezone()">Сохранить часовой пояс</button>
         <button class="btn btn-o" onclick="setupService()">Настроить Автозапуск</button>
-        <button class="btn btn-o" onclick="installFail2Ban()">Установить Fail2Ban</button>
       </div>
     </div>
   </div>
+
+  <!-- Block 2: Security (Credentials + Port + Fail2Ban) -->
+  <div class="card no-blue">
+    <div class="card-header"><h3>БЕЗОПАСНОСТЬ</h3></div>
+    <div style="padding:25px;">
+      <div style="margin-bottom:20px;">
+        <h4 style="margin:0 0 12px; font-size:13px; text-transform:uppercase; color:var(--kg-text-dim);">Смена логина и пароля</h4>
+        <div class="fr">
+          <div class="fg"><label>Новый логин</label><input id="new-login" placeholder="admin"></div>
+          <div class="fg"><label>Новый пароль</label><input id="new-password" type="password" placeholder="минимум 6 символов"></div>
+          <div class="fg"><label>Подтверждение</label><input id="confirm-password" type="password" placeholder="повторите пароль"></div>
+        </div>
+        <button class="btn btn-p" style="margin-top:10px;" onclick="changeCredentials()">Обновить данные входа</button>
+      </div>
+      <hr style="border-color:var(--kg-border); margin:20px 0;">
+      <div style="margin-bottom:20px;">
+        <h4 style="margin:0 0 12px; font-size:13px; text-transform:uppercase; color:var(--kg-text-dim);">Порт веб-панели</h4>
+        <div class="fr">
+          <div class="fg"><label>Новый порт (1024–65535)</label><input id="new-panel-port" type="number" placeholder="4466"></div>
+          <div class="fg" style="align-self:flex-end;">
+            <button class="btn btn-p" onclick="changePanelPort()">Сменить порт</button>
+          </div>
+        </div>
+        <p style="font-size:11px; color:var(--kg-orange); margin:5px 0 0;">Внимание: панель перезапустится. Браузер автоматически перейдёт на новый порт.</p>
+      </div>
+      <hr style="border-color:var(--kg-border); margin:20px 0;">
+      <div>
+        <h4 style="margin:0 0 12px; font-size:13px; text-transform:uppercase; color:var(--kg-text-dim);">Fail2Ban — защита от брутфорса</h4>
+        <p style="font-size:12px; color:var(--kg-text-dim); margin:0 0 10px;">Автоматически блокирует IP-адреса, которые пытаются подобрать пароль к SSH или панели.</p>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <span id="f2b-status" class="badge badge-off">Не установлен</span>
+          <button class="btn btn-o" onclick="installFail2Ban()">Установить Fail2Ban</button>
+          <button class="btn btn-o btn-sm" onclick="checkFail2Ban()">Проверить статус</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Block 3: SSL / HTTPS -->
+  <div class="card no-blue">
+    <div class="card-header"><h3>SSL / HTTPS</h3></div>
+    <div style="padding:25px;">
+      <div class="fr" style="margin-bottom:15px;">
+        <div class="fg"><label>Домен (например: sky-night.net)</label><input id="ssl-domain" placeholder="sky-night.net"></div>
+        <div class="fg"><label>Режим SSL</label>
+          <select id="ssl-mode">
+            <option value="off">HTTP (без SSL)</option>
+            <option value="self-signed">Self-Signed HTTPS (без домена)</option>
+            <option value="letsencrypt">Let's Encrypt HTTPS (нужен домен)</option>
+          </select>
+        </div>
+      </div>
+      <p style="font-size:11px; color:var(--kg-text-dim); margin:0 0 15px;">Self-Signed: браузер предупредит — это нормально. Let's Encrypt: бесплатный доверенный сертификат, требует домен.</p>
+      <button class="btn btn-p" onclick="applySSL()">Применить настройки SSL</button>
+    </div>
+  </div>
+
+  <!-- Block 4: Telegram -->
+  <div class="card no-blue">
+    <div class="card-header"><h3>TELEGRAM УПРАВЛЕНИЕ</h3></div>
+    <div style="padding:25px;">
+      <p style="font-size:12px; color:var(--kg-text-dim); margin:0 0 15px;">Создайте бота через @BotFather и введите токен. Управляйте VPN прямо из Telegram.</p>
+      <div class="fr">
+        <div class="fg" style="flex:2"><label>Bot Token (@BotFather)</label><input id="tg-token" placeholder="123456789:ABCdef..."></div>
+        <div class="fg"><label>Ваш Telegram ID</label><input id="tg-allowed-ids" placeholder="123456789"></div>
+      </div>
+      <button class="btn btn-p" style="margin-top:10px;" onclick="saveTelegramSettings()">Сохранить и запустить бота</button>
+      <p style="font-size:11px; color:var(--kg-text-dim); margin:8px 0 0;">Команды бота: /status /servers /add_server /clients /add_client /get_config /logs /restart</p>
+    </div>
+  </div>
+
+  <!-- Block 5: Backup & Restore -->
+  <div class="card no-blue">
+    <div class="card-header"><h3>РЕЗЕРВНОЕ КОПИРОВАНИЕ</h3></div>
+    <div style="padding:25px;">
+      <p style="font-size:12px; color:var(--kg-text-dim); margin:0 0 15px;">Полная копия базы данных и всех конфигураций VPN в одном ZIP-архиве.</p>
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button class="btn btn-o" onclick="downloadBackup()">Скачать бэкап</button>
+        <div style="position:relative;">
+          <button class="btn btn-p" onclick="document.getElementById('restore-file').click()">Восстановить из файла</button>
+          <input type="file" id="restore-file" style="display:none;" onchange="uploadRestore(this)">
+        </div>
+      </div>
+      <p style="font-size:11px; color:var(--kg-orange); margin:10px 0 0;">При восстановлении панель перезапустится автоматически.</p>
+    </div>
+  </div>
+
 </div>
 
 <!-- LOGS -->
@@ -598,11 +720,46 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <div class="page" id="page-settings">
   <div class="card no-blue">
     <div class="card-header"><h3>ПАРАМЕТРЫ ПАНЕЛИ</h3></div>
-    <div class="fr">
-      <div class="fg"><label>Порт панели</label><input id="s-port" type="number"></div>
-      <div class="fg"><label>Базовый путь</label><input id="s-basepath" placeholder="/panel"></div>
+    <div style="padding:25px;">
+      <div class="fr">
+        <div class="fg"><label>Порт панели</label><input id="s-port" type="number"></div>
+        <div class="fg"><label>Базовый путь</label><input id="s-basepath" placeholder="/panel"></div>
+      </div>
+      <button class="btn btn-p" onclick="saveSettings()">Сохранить изменения</button>
     </div>
-    <button class="btn btn-p" onclick="saveSettings()">Сохранить изменения</button>
+  </div>
+</div>
+
+<!-- INSTRUCTIONS -->
+<div class="page" id="page-instructions">
+  <div class="card no-blue" style="grid-column: span 12;">
+    <div class="card-header"><h3>ИНСТРУКЦИИ ПО ИСПОЛЬЗОВАНИЮ</h3></div>
+    <div style="padding:40px;">
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:30px;">
+        <div>
+          <h4 style="color:var(--kg-blue); margin-bottom:12px; font-size:18px;">1. Подключение к Telegram</h4>
+          <p style="color:var(--kg-text-dim); line-height:1.6;">Создайте бота через <a href="https://t.me/BotFather" target="_blank" style="color:var(--kg-blue)">@BotFather</a>, получите Token и введите его в разделе <strong>"Настройки системы"</strong>. После этого вы сможете управлять сервером через команды бота:</p>
+          <ul style="margin:10px 0 0 20px; color:var(--kg-text-dim); font-size:13px; line-height:1.8;">
+            <li><code>/status</code> — Состояние сервера</li>
+            <li><code>/servers</code> — Список VPN протоколов</li>
+            <li><code>/clients</code> — Список пользователей</li>
+            <li><code>/backup</code> — Создать и скачать бэкап</li>
+          </ul>
+        </div>
+        <div>
+          <h4 style="color:var(--kg-blue); margin-bottom:12px; font-size:18px;">2. Смена порта панели</h4>
+          <p style="color:var(--kg-text-dim); line-height:1.6;">Вы можете сменить порт управления на любой свободный (например, 8443). Панель автоматически откроет доступ в брандмауэре (UFW) и перезагрузится. <strong>Важно:</strong> дождитесь автоматического перенаправления в браузере или введите новый адрес вручную.</p>
+        </div>
+        <div>
+          <h4 style="color:var(--kg-blue); margin-bottom:12px; font-size:18px;">3. Настройка SSL (HTTPS)</h4>
+          <p style="color:var(--kg-text-dim); line-height:1.6;">Для безопасного подключения используйте <strong>Let's Encrypt</strong> (требуется домен) или <strong>Самоподписанный сертификат</strong>. При использовании самоподписанного сертификата браузер покажет предупреждение — это нормально, трафик всё равно зашифрован.</p>
+        </div>
+        <div>
+          <h4 style="color:var(--kg-blue); margin-bottom:12px; font-size:18px;">4. Резервное копирование</h4>
+          <p style="color:var(--kg-text-dim); line-height:1.6;">Регулярно скачивайте бэкап в разделе <strong>"Бэкап и восстановление"</strong>. Файл содержит полную базу пользователей и все конфигурации VPN. В случае сбоя или переезда на другой сервер вы сможете восстановить всё за один клик.</p>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1394,21 +1551,107 @@ async function fwDel(n){if(!confirm('Удалить правило #'+n+'?'))ret
 
 async function loadSystem(){
   const h=await API('/panel/api/system/hostname');document.getElementById('sys-hostname').value=h.hostname||'';
-  const tz=await API('/panel/api/system/timezone');document.getElementById('sys-tz').value=tz.timezone||'';
+  const tz=await API('/panel/api/system/timezone');
+  const sel=document.getElementById('sys-tz');
+  if(sel && tz.timezone){
+    // Try to select matching option, else add it
+    let found=false;
+    for(let o of sel.options){if(o.value===tz.timezone){o.selected=true;found=true;break;}}
+    if(!found){const opt=document.createElement('option');opt.value=tz.timezone;opt.text=tz.timezone;opt.selected=true;sel.add(opt);}
+  }
+  checkFail2Ban();
 }
-async function saveHostname(){await POST('/panel/api/system/hostname',{hostname:document.getElementById('sys-hostname').value})}
-async function saveTimezone(){await POST('/panel/api/system/timezone',{timezone:document.getElementById('sys-tz').value})}
+async function saveHostname(){const r=await POST('/panel/api/system/hostname',{hostname:document.getElementById('sys-hostname').value});alert(r.success?'Сохранено':'Ошибка')}
+async function saveTimezone(){const r=await POST('/panel/api/system/timezone',{timezone:document.getElementById('sys-tz').value});alert(r.success?'Часовой пояс обновлён':'Ошибка')}
+
+// Live Server Clock
+async function updateServerClock(){
+  const r=await API('/panel/api/system/time');
+  const el=document.getElementById('server-clock');
+  if(el && r.time) el.textContent=r.time+' ('+r.timezone+')';
+}
+setInterval(updateServerClock, 1000);
+updateServerClock();
+
+// Credentials
+async function changeCredentials(){
+  const login=document.getElementById('new-login').value.trim();
+  const pass=document.getElementById('new-password').value;
+  const conf=document.getElementById('confirm-password').value;
+  if(!login||!pass)return alert('Заполните все поля');
+  if(pass!==conf)return alert('Пароли не совпадают');
+  if(pass.length<6)return alert('Пароль минимум 6 символов');
+  if(!confirm('Сменить данные входа? Вы будете выйдены из системы.'))return;
+  const r=await POST('/panel/api/system/change-credentials',{login,password:pass});
+  alert(r.msg);
+  if(r.success)setTimeout(()=>window.location.href='/login',1000);
+}
+
+// Panel Port Change
+async function changePanelPort(){
+  const p=parseInt(document.getElementById('new-panel-port').value);
+  if(!p||p<1024||p>65535)return alert('Укажите порт от 1024 до 65535');
+  if(!confirm('Сменить порт панели на '+p+'? Браузер переключится автоматически.'))return;
+  const r=await POST('/panel/api/system/change-port',{port:p});
+  alert(r.msg);
+  if(r.success){
+    setTimeout(()=>{
+      const host=window.location.hostname;
+      const proto=window.location.protocol;
+      window.location.href=proto+'//'+host+':'+r.new_port;
+    },2500);
+  }
+}
+
+// Fail2Ban
+async function installFail2Ban(){if(!confirm('Установить Fail2Ban?'))return;const r=await POST('/panel/api/system/install-fail2ban',{});alert(r.msg)}
+async function checkFail2Ban(){
+  const r=await API('/panel/api/system/fail2ban-status');
+  const el=document.getElementById('f2b-status');
+  if(el){el.textContent=r.installed?'Установлен и активен':'Не установлен';el.className='badge '+(r.installed?'badge-on':'badge-off');}
+}
+
+// SSL
+async function applySSL(){
+  const mode=document.getElementById('ssl-mode').value;
+  const domain=document.getElementById('ssl-domain').value.trim();
+  if(mode==='letsencrypt'&&!domain)return alert('Укажите домен для Let\'s Encrypt');
+  const r=await POST('/panel/api/system/set-ssl',{mode,domain});
+  alert(r.msg);
+}
+
+// Telegram
+async function saveTelegramSettings(){
+  const token=document.getElementById('tg-token').value.trim();
+  const ids=document.getElementById('tg-allowed-ids').value.trim();
+  if(!token)return alert('Укажите Telegram Bot Token');
+  const r=await POST('/panel/api/settings',{telegram_bot_token:token,telegram_allowed_ids:ids});
+  alert(r.success?'Настройки Telegram сохранены. Перезапустите панель.':'Ошибка');
+}
+
 async function loadLogs(){const unit=document.getElementById('log-unit').value;
   const r=await API(`/panel/api/system/logs?lines=100&unit=${unit}`);
   document.getElementById('log-output').textContent=r.logs||'Нет логов'}
 
-async function loadSettings(){const r=await API('/panel/api/settings');if(!r.success)return;
-  document.getElementById('s-port').value=r.obj.panel_port||'9090';document.getElementById('s-basepath').value=r.obj.web_base_path||''}
+async function issueSSL(){const d=document.getElementById('ssl-domain').value;if(!d)return alert('Укажите домен');const r=await POST('/panel/api/system/set-ssl',{mode:'letsencrypt',domain:d});alert(r.msg)}
 
-async function saveSettings(){await POST('/panel/api/settings',{panel_port:document.getElementById('s-port').value,web_base_path:document.getElementById('s-basepath').value})}
-async function setupService(){if(!confirm('Создать службу автозапуска?'))return;const r=await POST('/panel/api/system/setupService',{});alert(r.msg)}
-async function installFail2Ban(){if(!confirm('Установить Fail2Ban?'))return;const r=await POST('/panel/api/system/installFail2Ban',{});alert(r.msg)}
-async function issueSSL(){const d=document.getElementById('ssl-domain').value;if(!d)return alert('Укажите домен');const r=await POST('/panel/api/system/issueSSL',{domain:d});alert(r.msg)}
+// Backup & Restore
+async function downloadBackup(){
+  window.location.href='/panel/api/system/backup';
+}
+async function uploadRestore(input){
+  if(!input.files[0]) return;
+  if(!confirm('Восстановить систему из этого файла? Панель перезапустится.')) return;
+  const fd = new FormData();
+  fd.append('file', input.files[0]);
+  const r = await fetch('/panel/api/system/restore', {
+    method: 'POST',
+    body: fd
+  }).then(res => res.json());
+  alert(r.msg);
+  if(r.success) setTimeout(() => window.location.reload(), 3000);
+}
+
 
 loadDashboard();setInterval(loadDashboard,15000);
 document.addEventListener('DOMContentLoaded', () => {
