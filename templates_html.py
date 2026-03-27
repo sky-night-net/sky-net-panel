@@ -658,8 +658,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 </div>
 
 <!-- FIREWALL MODAL -->
-<div class="modal" id="modal-fw" style="display:none; position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
-  <div id="modal-fw-content" style="background:#1a222f; width:100%; max-width:480px; border-radius:12px; box-shadow:0 30px 60px rgba(0,0,0,0.6); position:relative; overflow:hidden; animation: modalIn 0.3s ease-out;">
+<div class="modal" id="modal-fw" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; display:none; justify-content:center; align-items:center; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);">
+  <div id="modal-fw-content" style="background:#1a222f; width:100%; max-width:480px; border-radius:12px; box-shadow:0 30px 60px rgba(0,0,0,0.6); position:relative; overflow:hidden; animation: modalIn 0.3s ease-out; margin: auto;">
     <div style="padding:40px 40px 24px 40px;">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
         <h2 style="margin:0; font-size:28px; font-weight:700; color:white;">Правило межсетевого экрана</h2>
@@ -671,6 +671,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     </div>
     
     <div style="padding:0 40px 40px 40px; max-height:70vh; overflow-y:auto;">
+      <input type="hidden" id="fw-m-id">
+      
       <label style="display:flex; align-items:center; gap:12px; margin-bottom:32px; cursor:pointer;">
         <input type="checkbox" id="fw-m-enabled" checked style="width:20px;height:20px; accent-color:var(--kg-blue); cursor:pointer;">
         <span style="color:white; font-size:16px;">Включить правило</span>
