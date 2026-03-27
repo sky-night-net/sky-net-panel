@@ -32,12 +32,18 @@ POLL_SEC = int(os.getenv("POLL_INTERVAL", "15"))
 
 # ─── Database ────────────────────────────────────────────────────────────────
 
+import contextlib
+
+@contextlib.contextmanager
 def get_db():
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")
-    return conn
+    try:
+        yield conn
+    finally:
+        conn.close()
 
 # ─── Auth Decorator ──────────────────────────────────────────────────────────
 
@@ -1088,23 +1094,35 @@ def api_set_ssl():
         if not domain:
             return jsonify({"success": False, "msg": "Укажите домен для Let's Encrypt"}), 400
         def _certbot():
-            r = subprocess.run(
-                ["certbot", "certonly", "--standalone", "--non-interactive",
-                 "--agree-tos", "--register-unsafely-without-email", "-d", domain],
-                capture_output=True, text=True
-            )
-            if r.returncode == 0:
-                with get_db() as db:
-                    cert = f"/etc/letsencrypt/live/{domain}/fullchain.pem"
-                    key = f"/etc/letsencrypt/live/{domain}/privkey.pem"
-                    db.execute("INSERT OR REPLACE INTO settings (key,value) VALUES ('ssl_mode','letsencrypt')")
-                    db.execute("INSERT OR REPLACE INTO settings (key,value) VALUES ('ssl_cert',?)", (cert,))
-                    db.execute("INSERT OR REPLACE INTO settings (key,value) VALUES ('ssl_key',?)", (key,))
-                    db.execute("INSERT OR REPLACE INTO settings (key,value) VALUES ('panel_domain',?)", (domain,))
-                    db.commit()
-                log.info(f"Let's Encrypt cert issued for {domain}")
-            else:
-                log.error(f"Certbot failed: {r.stderr}")
+            # Open port 80 if needed for Certbot
+            log.info(f"Preparing Port 80 for Certbot on {domain}...")
+            subprocess.run(["ufw", "allow", "80/tcp"], check=False, timeout=10)
+            
+            try:
+                r = subprocess.run(
+                    ["certbot", "certonly", "--standalone", "--non-interactive",
+                     "--agree-tos", "--register-unsafely-without-email", "-d", domain],
+                    capture_output=True, text=True, timeout=120
+                )
+                if r.returncode == 0:
+                    with get_db() as db:
+                        cert = f"/etc/letsencrypt/live/{domain}/fullchain.pem"
+                        key = f"/etc/letsencrypt/live/{domain}/privkey.pem"
+                        db.execute("INSERT OR REPLACE INTO settings (key,value) VALUES ('ssl_mode','letsencrypt')")
+                        db.execute("INSERT OR REPLACE INTO settings (key,value) VALUES ('ssl_cert',?)", (cert,))
+                        db.execute("INSERT OR REPLACE INTO settings (key,value) VALUES ('ssl_key',?)", (key,))
+                        db.execute("INSERT OR REPLACE INTO settings (key,value) VALUES ('panel_domain',?)", (domain,))
+                        db.commit()
+                    log.info(f"Let's Encrypt cert issued for {domain}")
+                else:
+                    log.error(f"Certbot failed: {r.stderr}")
+            except subprocess.TimeoutExpired:
+                log.error("Certbot timed out")
+            finally:
+                # Optionally close port 80 if you want to be extra secure, 
+                # but many keep it open for renewals. 
+                # subprocess.run(["ufw", "deny", "80/tcp"], check=False)
+                pass
         threading.Thread(target=_certbot, daemon=True).start()
         return jsonify({"success": True, "msg": f"Запрос сертификата Let's Encrypt для {domain}. Это займёт ~30 сек."})
 
@@ -1122,7 +1140,8 @@ def api_system_update_check():
     """Проверка обновлений на GitHub."""
     import subprocess
     try:
-        subprocess.run(["git", "fetch", "origin", "main"], check=True)
+        # Fetch with timeout to avoid hanging the panel
+        subprocess.run(["git", "fetch", "origin", "main"], check=True, timeout=30)
         current_hash = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode().strip()
         remote_hash = subprocess.check_output(["git", "rev-parse", "--short", "origin/main"]).decode().strip()
         behind_count = int(subprocess.check_output(["git", "rev-list", "--count", "HEAD..origin/main"]).decode().strip())
@@ -1334,4 +1353,4 @@ if __name__ == "__main__":
     t = threading.Thread(target=poll_traffic, daemon=True)
     t.start()
     log.info(f"Sky-Net started on port {PORT}")
-    app.run(host="0.0.0.0", port=PORT, debug=False)
+    app.run(host="0.0.0.0", port=PORT, debug=False, threaded=True)

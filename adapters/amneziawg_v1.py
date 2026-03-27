@@ -205,6 +205,11 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
             subnet = str(net)
         except: pass
 
+        # Ensure interface is down before starting
+        try:
+            self._run(["awg-quick", "down", conf])
+        except: pass
+
         self._run(["awg-quick", "up", conf])
         self._setup_nat(subnet)
         
