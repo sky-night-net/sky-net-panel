@@ -683,6 +683,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         </select>
       </div>
       
+      <div style="height:1px; background:var(--kg-border); margin:20px 0; opacity:0.5;"></div>
+      
       <div class="kn-field" id="kn-srcip-box">
         <label>IP-адрес источника</label>
         <select id="fw-m-srcip-sel" onchange="fwOnCustomChange(this, 'fw-m-srcip-val')">
@@ -727,6 +729,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         </select>
         <input id="fw-m-dstport-val" style="display:none; margin-top:5px; border-top:1px dashed var(--kg-border);" placeholder="например: 443 или 8000:9000">
       </div>
+      
+      <div style="height:1px; background:var(--kg-border); margin:20px 0; opacity:0.5;"></div>
       
       <div class="kn-field"><label>Интерфейс</label>
         <select id="fw-m-iface"></select>

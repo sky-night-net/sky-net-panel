@@ -1042,44 +1042,56 @@ def api_firewall_sync():
         
         for line in lines:
             line = line.strip()
+            # Skip headers and non-rule lines
             if not line or any(line.startswith(x) for x in ['To', '--', 'Status', 'Logging', 'Default', 'New']):
                 continue
             
             if '(v6)' in line: continue
             
             # Regex to capture target, action, direction, source
-            # Handles "22/tcp on eth0   ALLOW IN   Anywhere"
-            m = re.match(r'^(.+?)\s+(ALLOW|DENY|REJECT)\s+(IN|FWD|OUT)\s+(.*)', line, re.IGNORECASE)
+            # Supports numbered: [ 1] 22/tcp ALLOW Anywhere
+            # Supports verbose: 22/tcp ALLOW IN Anywhere
+            # Direction (3rd group) is now optional
+            m = re.match(r'^(?:\[\s*\d+\]\s+)?(.+?)\s+(ALLOW|DENY|REJECT)\s+(IN|FWD|OUT)?\s*(.*)', line, re.IGNORECASE)
             if not m: continue
             
             target_raw = m.group(1).strip()
             action = m.group(2).lower()
-            direction = m.group(3).upper()
-            source_raw = m.group(4).strip()
+            direction = (m.group(3) or "IN").upper()
+            source_raw = (m.group(4) or "").strip()
             
             dst_port, proto, src_ip, dst_ip, iface = "any", "any", "any", "any", "any"
             
             # Detect interface "on [iface]" in target or source
             if " on " in target_raw:
-                target_raw, iface = target_raw.split(" on ", 1)
+                parts = target_raw.split(" on ", 1)
+                target_raw = parts[0].strip()
+                iface = parts[1].strip()
             elif " on " in source_raw:
-                source_raw, iface = source_raw.split(" on ", 1)
+                parts = source_raw.split(" on ", 1)
+                source_raw = parts[0].strip()
+                iface = parts[1].strip()
             
             target_raw, source_raw = target_raw.strip(), source_raw.strip()
 
-            if direction == "IN":
-                if "/" in target_raw:
-                    dst_port, proto = target_raw.split("/", 1)
-                elif target_raw.lower() != "anywhere":
+            # Parse target port/proto (e.g. 22/tcp)
+            if "/" in target_raw:
+                dst_port, proto = target_raw.split("/", 1)
+            elif target_raw.lower() not in ["anywhere", "any"]:
+                # If it consists of digits, it's a port
+                if target_raw.isdigit():
                     dst_port = target_raw
-                if source_raw.lower() != "anywhere": src_ip = source_raw
-            elif direction == "FWD":
-                if target_raw.lower() != "anywhere": dst_ip = target_raw
-                if source_raw.lower() != "anywhere": src_ip = source_raw
+                else:
+                    dst_ip = target_raw
+
+            if source_raw.lower() not in ["anywhere", "any", ""]:
+                src_ip = source_raw
             
             comment = f"Imported {direction}"
-            if direction == "FWD": comment = f"FWD: {src_ip} -> {dst_ip}"
-            elif dst_port != "any": comment = f"Port: {dst_port}/{proto}"
+            if direction == "FWD": 
+                comment = f"FWD: {src_ip} -> {dst_ip}"
+            elif dst_port != "any":
+                comment = f"Port: {dst_port}/{proto}"
             
             imported.append({
                 "action": action, "proto": proto, "src_ip": src_ip, "src_port": "any",
