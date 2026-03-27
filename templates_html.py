@@ -228,26 +228,26 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
   background: rgba(255,255,255,0.02);
 }
 
-/* Keenetic-style floating label fields */
+/* Keenetic-style notched fields (Premium) */
 .kn-field {
   position: relative;
-  margin-bottom: 16px;
-  border: 1px solid var(--kg-border);
-  border-radius: 4px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
   background: transparent;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 .kn-field label {
   position: absolute;
-  top: -9px;
+  top: -10px;
   left: 12px;
-  background: var(--kg-bg-card);
+  background: #1a222f; /* Must match the exact modal/card background */
   padding: 0 6px;
-  font-size: 11px;
-  color: var(--kg-text-dim);
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
   pointer-events: none;
-  text-transform: none;
-  font-weight: 400;
-  letter-spacing: 0;
+  font-weight: 500;
+  z-index: 10;
 }
 .kn-field input,
 .kn-field select {
@@ -255,22 +255,25 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--kg-bg)
   background: transparent;
   border: none;
   color: #fff;
-  padding: 14px 14px 10px;
+  padding: 14px 14px;
   font-size: 14px;
   outline: none;
   box-sizing: border-box;
   -webkit-appearance: none;
   appearance: none;
+  position: relative;
+  z-index: 5;
 }
 .kn-field select {
   cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 32px;
+  background-position: right 14px center;
+  padding-right: 40px;
 }
 .kn-field:focus-within {
   border-color: var(--kg-blue);
+  box-shadow: 0 0 0 1px var(--kg-blue);
 }
 .kn-field:focus-within label {
   color: var(--kg-blue);
@@ -654,28 +657,30 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   </div>
 </div>
 
-<!-- FIREWALL MODAL -->
-<div class="modal" id="modal-fw" style="display:none; position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center;">
-  <div class="card" style="width:500px; max-width:90%; padding:0; background:var(--kg-bg-card); border:1px solid var(--kg-border);">
-    <div style="padding:24px; border-bottom:1px solid var(--kg-border); display:flex; justify-content:space-between; align-items:center;">
-      <h3 style="margin:0; font-size:20px; color:white;">Правило межсетевого экрана</h3>
-      <div style="cursor:pointer; color:var(--kg-text-dim);" onclick="document.getElementById('modal-fw').style.display='none'">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+  <div id="modal-fw-content" style="background:#1a222f; width:100%; max-width:480px; border-radius:12px; box-shadow:0 30px 60px rgba(0,0,0,0.6); position:relative; overflow:hidden;">
+    <div style="padding:40px 40px 24px 40px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+        <h2 style="margin:0; font-size:28px; font-weight:700; color:white;">Правило межсетевого экрана</h2>
+        <div style="cursor:pointer; color:rgba(255,255,255,0.5); padding:4px;" onclick="document.getElementById('modal-fw').style.display='none'">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </div>
       </div>
+      <p style="margin:0; color:rgba(255,255,255,0.5); font-size:14px; line-height:1.6;">Выберите действие, которое нужно выполнить для входящих пакетов, и укажите условия, при которых это действие должно быть выполнено.</p>
     </div>
-    <div style="padding:24px; max-height:65vh; overflow-y:auto;">
-      <p style="margin:0 0 20px 0; color:var(--kg-text-dim); font-size:13px; line-height:1.5;">Выберите действие, которое нужно выполнить для входящих пакетов, и укажите условия, при которых это действие должно быть выполнено.</p>
-      
-      <input type="hidden" id="fw-m-id">
-      
-      <label style="display:flex; align-items:center; gap:10px; margin-bottom:20px; cursor:pointer;">
-        <input type="checkbox" id="fw-m-enabled" checked style="width:16px;height:16px; accent-color:var(--kg-blue);">
-        <span style="color:white; font-size:14px;">Включить правило</span>
+    
+    <div style="padding:0 40px 40px 40px; max-height:70vh; overflow-y:auto;">
+      <label style="display:flex; align-items:center; gap:12px; margin-bottom:32px; cursor:pointer;">
+        <input type="checkbox" id="fw-m-enabled" checked style="width:20px;height:20px; accent-color:var(--kg-blue); cursor:pointer;">
+        <span style="color:white; font-size:16px;">Включить правило</span>
       </label>
       
-      <div class="kn-field"><label>Имя</label><input id="fw-m-name" placeholder="Например: Блокировка ICMP"></div>
+      <div class="kn-field" style="margin-bottom:32px;">
+        <label>Имя</label>
+        <input id="fw-m-name" placeholder="Например: Блокировка ICMP">
+      </div>
       
-      <div class="kn-field"><label>Действие</label>
+      <div class="kn-field">
+        <label>Действие</label>
         <select id="fw-m-action">
           <option value="allow">Разрешить</option>
           <option value="deny">Запретить</option>
@@ -683,15 +688,13 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         </select>
       </div>
       
-      <div style="height:1px; background:var(--kg-border); margin:20px 0; opacity:0.5;"></div>
-      
       <div class="kn-field" id="kn-srcip-box">
         <label>IP-адрес источника</label>
         <select id="fw-m-srcip-sel" onchange="fwOnCustomChange(this, 'fw-m-srcip-val')">
           <option value="any">Любой</option>
           <option value="custom">Указать IP или подсеть...</option>
         </select>
-        <input id="fw-m-srcip-val" style="display:none; margin-top:5px; border-top:1px dashed var(--kg-border);" placeholder="например: 10.8.0.0/24">
+        <input id="fw-m-srcip-val" style="display:none; margin-top:10px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px;" placeholder="например: 10.8.0.0/24">
       </div>
       
       <div class="kn-field" id="kn-dstip-box">
@@ -700,7 +703,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <option value="any">Любой</option>
           <option value="custom">Указать IP или подсеть...</option>
         </select>
-        <input id="fw-m-dstip-val" style="display:none; margin-top:5px; border-top:1px dashed var(--kg-border);" placeholder="например: 1.1.1.1">
+        <input id="fw-m-dstip-val" style="display:none; margin-top:10px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px;" placeholder="например: 1.1.1.1">
       </div>
       
       <div class="kn-field" id="kn-srcport-box">
@@ -709,10 +712,11 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <option value="any">Любой</option>
           <option value="custom">Указать порт или диапазон...</option>
         </select>
-        <input id="fw-m-srcport-val" style="display:none; margin-top:5px; border-top:1px dashed var(--kg-border);" placeholder="например: 80 или 3000:4000">
+        <input id="fw-m-srcport-val" style="display:none; margin-top:10px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px;" placeholder="например: 80 или 3000:4000">
       </div>
       
-      <div class="kn-field"><label>Протокол</label>
+      <div class="kn-field">
+        <label>Протокол</label>
         <select id="fw-m-proto">
           <option value="tcp">TCP</option>
           <option value="udp">UDP</option>
@@ -727,16 +731,16 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <option value="any">Любой</option>
           <option value="custom">Указать порт или диапазон...</option>
         </select>
-        <input id="fw-m-dstport-val" style="display:none; margin-top:5px; border-top:1px dashed var(--kg-border);" placeholder="например: 443 или 8000:9000">
+        <input id="fw-m-dstport-val" style="display:none; margin-top:10px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px;" placeholder="например: 443 или 8000:9000">
       </div>
       
-      <div style="height:1px; background:var(--kg-border); margin:20px 0; opacity:0.5;"></div>
-      
-      <div class="kn-field"><label>Интерфейс</label>
+      <div class="kn-field">
+        <label>Интерфейс</label>
         <select id="fw-m-iface"></select>
       </div>
       
-      <div class="kn-field"><label>Переместить в</label>
+      <div class="kn-field">
+        <label>Переместить в</label>
         <select id="fw-m-prio">
           <option value="10">Начало списка</option>
           <option value="50">Середина списка</option>
@@ -744,18 +748,19 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         </select>
       </div>
       
-      <div class="kn-field"><label>Расписание работы</label>
+      <div class="kn-field" style="margin-bottom:0;">
+        <label>Расписание работы</label>
         <select id="fw-m-schedule">
           <option value="always">Работает постоянно</option>
         </select>
       </div>
     </div>
-    <div style="padding:24px; border-top:1px solid var(--kg-border); display:flex; gap:15px;">
-      <button class="btn btn-p" style="flex:1" onclick="fwSaveModal()">Сохранить</button>
-      <button class="btn" style="flex:1; background:transparent; border:1px solid var(--kg-border); color:white;" onclick="document.getElementById('modal-fw').style.display='none'">Отменить</button>
+    
+    <div style="padding:0 40px 40px 40px; display:flex; gap:16px;">
+      <button class="btn" style="flex:1.5; height:50px; background:var(--kg-blue); color:white; border:none; border-radius:8px; font-weight:600; font-size:16px; cursor:pointer;" onclick="fwSaveModal()">Сохранить</button>
+      <button class="btn" style="flex:1; height:50px; background:rgba(255,255,255,0.05); color:var(--kg-blue); border:1px solid rgba(0,161,228,0.3); border-radius:8px; font-weight:600; font-size:16px; cursor:pointer;" onclick="document.getElementById('modal-fw').style.display='none'">Отменить</button>
     </div>
   </div>
-</div>
 
 
 <!-- SYSTEM -->
