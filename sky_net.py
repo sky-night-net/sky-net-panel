@@ -1412,5 +1412,5 @@ if __name__ == "__main__":
                 ssl_ctx = (s_cert[0], s_key[0])
                 log.info(f"SSL enabled: {s_mode[0]} mode")
 
-    log.info(f"Sky-Net started on port {PORT} (SSL DISABLED FOR DEBUG)")
-    app.run(host="0.0.0.0", port=PORT, debug=False, threaded=True)
+    log.info(f"Sky-Net started on port {PORT}")
+    app.run(host="0.0.0.0", port=PORT, debug=False, threaded=True, ssl_context=ssl_ctx)
