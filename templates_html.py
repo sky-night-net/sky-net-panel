@@ -1004,7 +1004,10 @@ function changeTheme(t){
 // Nav
 const loadSettings = async () => {};
 
-function switchPage(page) {
+function switchPage(page, noPush=false) {
+  if(!noPush && window.location.pathname !== '/panel/' + page) {
+    window.history.pushState({page: page}, '', '/panel/' + page);
+  }
   document.querySelectorAll('.sidebar nav a').forEach(a=>{
     a.classList.remove('active');
     if(a.dataset.page===page) a.classList.add('active');
@@ -1024,7 +1027,12 @@ function switchPage(page) {
 
 document.querySelectorAll('.sidebar nav a').forEach(a=>{
   a.addEventListener('click',e=>{e.preventDefault(); switchPage(a.dataset.page);})});
-const initPage='{{page}}';if(initPage){switchPage(initPage);}
+
+window.addEventListener('popstate', (e) => {
+  if(e.state && e.state.page) switchPage(e.state.page, true);
+});
+
+const initPage='{{page}}';if(initPage){switchPage(initPage, true);}
 
 // Logs & CLI
 async function applyLogSettings() {
