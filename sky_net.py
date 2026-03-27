@@ -1259,40 +1259,12 @@ def api_traffic_history():
 def page_dashboard():
     return render_template_string(MAIN_HTML, page="dashboard")
 
-@app.route("/inbounds")
+@app.route("/<page>")
 @login_required
-def page_inbounds():
-    return render_template_string(MAIN_HTML, page="inbounds")
-
-@app.route("/clients")
-@login_required
-def page_clients():
-    return render_template_string(MAIN_HTML, page="clients")
-
-@app.route("/settings")
-@login_required
-def page_settings():
-    return render_template_string(MAIN_HTML, page="settings")
-
-@app.route("/firewall")
-@login_required
-def page_firewall():
-    return render_template_string(MAIN_HTML, page="firewall")
-
-@app.route("/system")
-@login_required
-def page_system():
-    return render_template_string(MAIN_HTML, page="system")
-
-@app.route("/logs")
-@login_required
-def page_logs():
-    return render_template_string(MAIN_HTML, page="logs")
-
-@app.route("/instructions")
-@login_required
-def page_instructions():
-    return render_template_string(MAIN_HTML, page="instructions")
+def page_dynamic(page):
+    if "." in page:
+        abort(404)
+    return render_template_string(MAIN_HTML, page=page)
 
 # ─── HTML Templates (embedded) ──────────────────────────────────────────────
 # Will be defined in templates file and imported
