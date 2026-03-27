@@ -908,6 +908,14 @@ def _apply_firewall_rules():
     try:
         # Reset UFW to clear all rules before re-applying from DB
         subprocess.run(["ufw", "--force", "reset"], capture_output=True)
+        
+        # ─── Safety Failsafes (Always Allow) ────────────────────────
+        # Allow SSH and Panel Ports immediately to prevent lockout
+        subprocess.run(["ufw", "allow", "22/tcp"], capture_output=True)
+        subprocess.run(["ufw", "allow", f"{PORT}/tcp"], capture_output=True)
+        subprocess.run(["ufw", "allow", f"{HTTPS_PORT}/tcp"], capture_output=True)
+        
+        # Set defaults
         subprocess.run(["ufw", "default", "deny", "incoming"], capture_output=True)
         subprocess.run(["ufw", "default", "allow", "outgoing"], capture_output=True)
         subprocess.run(["ufw", "default", "allow", "forwarded"], capture_output=True)
@@ -916,11 +924,13 @@ def _apply_firewall_rules():
             rules = db.execute("SELECT * FROM firewall_rules WHERE enabled=1 ORDER BY priority ASC").fetchall()
             
         for rule in rules:
+            # Skip if it's already covered by failsafe to avoid redundancy
+            if rule["dst_port"] in [str(22), str(PORT), str(HTTPS_PORT)]:
+                continue
+                
             action = rule["action"].lower()
             if action not in ["allow", "deny", "reject"]: action = "allow"
             
-            # Detect if it's a routing (FWD) rule based on comment or missing dst_ip
-            # In our sync, we mark FWD rules in the comment
             is_route = "FWD" in (rule["comment"] or "")
             
             cmd = ["ufw"]
@@ -948,6 +958,9 @@ def _apply_firewall_rules():
         
         subprocess.run(["ufw", "--force", "enable"], capture_output=True)
         return True
+    except Exception as e:
+        log.error(f"Firewall apply failed: {e}")
+        return False
     except Exception as e:
         log.error(f"Firewall apply failed: {e}")
         return False
