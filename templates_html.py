@@ -619,13 +619,14 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   <div class="card" style="background:transparent; padding:0; border:none; box-shadow:none;">
     <div style="margin-bottom:20px;">
       <h2 style="margin:0 0 10px; font-size:22px; font-weight:600; color:white;" data-i18n="fw_title">Межсетевой экран</h2>
-      <p style="margin:0; font-size:13px; color:var(--kg-text-dim); line-height:1.5;">
-        Чтобы добавить правило межсетевого экрана, выберите из списка интерфейс, на котором будет отслеживаться входящий трафик, и нажмите <b>Добавить правило</b>.<br>
-        Правила применяются в том порядке, в каком они расположены в списке (по Приоритету).<br>
-        <span id="fw-status-badge" class="badge" style="margin-top:10px;display:inline-block;">--</span>
-        <button class="btn btn-o btn-sm" onclick="fwToggle(true)" style="margin-left:10px;">Включить UFW</button>
-        <button class="btn btn-d btn-sm" onclick="fwToggle(false)">Выключить UFW</button>
+      <p style="margin:0; font-size:13px; color:var(--kg-text-dim); line-height:1.5;" data-i18n="fw_desc">
+        Чтобы добавить правило межсетевого экрана, выберите из списка интерфейс, на котором будет отслеживаться входящий трафик, и нажмите <b>Добавить правило</b>.
       </p>
+      <div style="margin-top:10px;">
+        <span id="fw-status-badge" class="badge" style="display:inline-block;">--</span>
+        <button class="btn btn-o btn-sm" onclick="fwToggle(true)" style="margin-left:10px;" data-i18n="enable">Включить UFW</button>
+        <button class="btn btn-d btn-sm" onclick="fwToggle(false)" data-i18n="disable">Выключить UFW</button>
+      </div>
     </div>
     
     <div id="fw-tabs-container" style="display:flex; gap:20px; border-bottom:1px solid var(--kg-border); margin-bottom:20px; overflow-x:auto;">
@@ -644,15 +645,15 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <thead>
           <tr style="border-bottom:1px solid var(--kg-border); color:var(--kg-text-dim); font-size:12px;">
             <th style="padding:12px; font-weight:500; width:40px;"></th>
-            <th style="padding:12px; font-weight:500; width:60px;">Приор.</th>
-            <th style="padding:12px; font-weight:500;">Действие</th>
-            <th style="padding:12px; font-weight:500;">Протокол</th>
-            <th style="padding:12px; font-weight:500;">Интерфейс</th>
-            <th style="padding:12px; font-weight:500;">Источник</th>
-            <th style="padding:12px; font-weight:500;">Порт ист.</th>
-            <th style="padding:12px; font-weight:500;">Назначение</th>
-            <th style="padding:12px; font-weight:500;">Порт назн.</th>
-            <th style="padding:12px; font-weight:500;">Имя / Комментарий</th>
+            <th style="padding:12px; font-weight:500; width:60px;" data-i18n="fw_prio_col">Приор.</th>
+            <th style="padding:12px; font-weight:500;" data-i18n="fw_action_col">Действие</th>
+            <th style="padding:12px; font-weight:500;" data-i18n="fw_proto_col">Протокол</th>
+            <th style="padding:12px; font-weight:500;" data-i18n="fw_iface_col">Интерфейс</th>
+            <th style="padding:12px; font-weight:500;" data-i18n="fw_src_col">Источник</th>
+            <th style="padding:12px; font-weight:500;" data-i18n="fw_srcp_col">Порт ист.</th>
+            <th style="padding:12px; font-weight:500;" data-i18n="fw_dst_col">Назначение</th>
+            <th style="padding:12px; font-weight:500;" data-i18n="fw_dstp_col">Порт назн.</th>
+            <th style="padding:12px; font-weight:500;" data-i18n="fw_name_col">Имя / Комментарий</th>
             <th style="padding:12px; width:40px;"></th>
           </tr>
         </thead>
@@ -684,7 +685,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       </label>
       
       <div class="kn-field" style="margin-bottom:32px;">
-        <label>Имя</label>
+        <label data-i18n="name">Имя</label>
         <input id="fw-m-name" placeholder="Например: Блокировка ICMP">
       </div>
       
@@ -781,8 +782,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <div class="card-header"><h3 data-i18n="sys_time">УСТРОЙСТВО И ВРЕМЯ</h3></div>
     <div style="padding:25px;">
       <div class="fr">
-        <div class="fg"><label>Имя устройства</label><input id="sys-hostname" placeholder="sky-net"></div>
-        <div class="fg"><label>Часовой пояс</label>
+        <div class="fg"><label data-i18n="hostname_lbl">Имя устройства</label><input id="sys-hostname" placeholder="sky-net"></div>
+        <div class="fg"><label data-i18n="tz_lbl">Часовой пояс</label>
           <select id="sys-tz">
             <option value="UTC">UTC</option>
             <option value="Europe/Moscow">Europe/Moscow (UTC+3)</option>
@@ -812,50 +813,50 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         </div>
       </div>
       <div style="margin-top:5px; display:flex; gap:10px; align-items:center; font-size:12px; color:var(--kg-text-dim);">
-        <span>Текущее время сервера:</span>
+        <span data-i18n="current_server_time">Текущее время сервера:</span>
         <span id="server-clock" style="font-family:monospace; color:var(--kg-green);">—</span>
       </div>
       <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:15px;">
-        <button class="btn btn-o" onclick="saveHostname()">Сохранить имя</button>
-        <button class="btn btn-o" onclick="saveTimezone()">Сохранить часовой пояс</button>
-        <button class="btn btn-o" onclick="setupService()">Настроить Автозапуск</button>
+        <button class="btn btn-o" onclick="saveHostname()" data-i18n="save">Сохранить имя</button>
+        <button class="btn btn-o" onclick="saveTimezone()" data-i18n="save">Сохранить часовой пояс</button>
+        <button class="btn btn-o" onclick="setupService()" data-i18n="sec_setup_auto">Настроить Автозапуск</button>
       </div>
     </div>
   </div>
 
   <!-- Block 2: Security (Credentials + Port + Fail2Ban) -->
   <div class="card no-blue">
-    <div class="card-header"><h3>БЕЗОПАСНОСТЬ</h3></div>
+    <div class="card-header"><h3 data-i18n="sec_title">БЕЗОПАСНОСТЬ</h3></div>
     <div style="padding:25px;">
       <div style="margin-bottom:20px;">
-        <h4 style="margin:0 0 12px; font-size:13px; text-transform:uppercase; color:var(--kg-text-dim);">Смена логина и пароля</h4>
+        <h4 style="margin:0 0 12px; font-size:13px; text-transform:uppercase; color:var(--kg-text-dim);" data-i18n="sec_login_pw">Смена логина и пароля</h4>
         <div class="fr">
-          <div class="fg"><label>Новый логин</label><input id="new-login" placeholder="admin"></div>
-          <div class="fg"><label>Новый пароль</label><input id="new-password" type="password" placeholder="минимум 6 символов"></div>
-          <div class="fg"><label>Подтверждение</label><input id="confirm-password" type="password" placeholder="повторите пароль"></div>
+          <div class="fg"><label data-i18n="sec_new_login">Новый логин</label><input id="new-login" placeholder="admin"></div>
+          <div class="fg"><label data-i18n="sec_new_pw">Новый пароль</label><input id="new-password" type="password" placeholder="минимум 6 символов"></div>
+          <div class="fg"><label data-i18n="sec_confirm">Подтверждение</label><input id="confirm-password" type="password" placeholder="повторите пароль"></div>
         </div>
-        <button class="btn btn-p" style="margin-top:10px;" onclick="changeCredentials()">Обновить данные входа</button>
+        <button class="btn btn-p" style="margin-top:10px;" onclick="changeCredentials()" data-i18n="save">Обновить данные входа</button>
       </div>
       <hr style="border-color:var(--kg-border); margin:20px 0;">
       <div style="margin-bottom:20px;">
-        <h4 style="margin:0 0 12px; font-size:13px; text-transform:uppercase; color:var(--kg-text-dim);">Порты веб-панели</h4>
+        <h4 style="margin:0 0 12px; font-size:13px; text-transform:uppercase; color:var(--kg-text-dim);" data-i18n="sys_params">Порты веб-панели</h4>
         <div class="fr">
           <div class="fg"><label>HTTP Порт (1024-65535)</label><input id="new-panel-port" type="number" placeholder="4466"></div>
           <div class="fg"><label>HTTPS Порт (1024-65535)</label><input id="new-panel-port-https" type="number" placeholder="4466"></div>
           <div class="fg" style="align-self:flex-end;">
-            <button class="btn btn-p" onclick="changePanelPort()">Применить порты</button>
+            <button class="btn btn-p" onclick="changePanelPort()" data-i18n="sec_apply_ports">Применить порты</button>
           </div>
         </div>
-        <p style="font-size:11px; color:var(--kg-orange); margin:5px 0 0;">Внимание: панель перезапустится на новых портах.</p>
+        <p style="font-size:11px; color:var(--kg-orange); margin:5px 0 0;" data-i18n="sec_restart_warn">Внимание: панель перезапустится на новых портах.</p>
       </div>
       <hr style="border-color:var(--kg-border); margin:20px 0;">
       <div>
         <h4 style="margin:0 0 12px; font-size:13px; text-transform:uppercase; color:var(--kg-text-dim);">Fail2Ban — защита от брутфорса</h4>
         <p style="font-size:12px; color:var(--kg-text-dim); margin:0 0 10px;">Автоматически блокирует IP-адреса, которые пытаются подобрать пароль к SSH или панели.</p>
         <div style="display:flex; gap:10px; align-items:center;">
-          <span id="f2b-status" class="badge badge-off">Не установлен</span>
-          <button class="btn btn-o" onclick="installFail2Ban()">Установить Fail2Ban</button>
-          <button class="btn btn-o btn-sm" onclick="checkFail2Ban()">Проверить статус</button>
+          <span id="f2b-status" class="badge badge-off" data-i18n="disconnected">Не установлен</span>
+          <button class="btn btn-o" onclick="installFail2Ban()" data-i18n="save">Установить Fail2Ban</button>
+          <button class="btn btn-o btn-sm" onclick="checkFail2Ban()" data-i18n="status">Проверить статус</button>
         </div>
       </div>
     </div>
@@ -866,23 +867,23 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <div class="card-header"><h3 data-i18n="sys_ssl">SSL / HTTPS</h3></div>
     <div style="padding:25px;">
       <div class="fr" style="margin-bottom:15px;">
-        <div class="fg"><label>Домен (например: sky-night.net)</label><input id="ssl-domain" placeholder="sky-night.net"></div>
-        <div class="fg"><label>Режим SSL</label>
+        <div class="fg"><label data-i18n="server">Домен (например: sky-night.net)</label><input id="ssl-domain" placeholder="sky-night.net"></div>
+        <div class="fg"><label data-i18n="protocol">Режим SSL</label>
           <select id="ssl-mode">
             <option value="off">HTTP (без SSL)</option>
-            <option value="self-signed">Self-Signed HTTPS (без домена)</option>
-            <option value="letsencrypt">Let's Encrypt HTTPS (нужен домен)</option>
+            <option value="self-signed" data-i18n="paused">Self-Signed HTTPS (без домена)</option>
+            <option value="letsencrypt" data-i18n="running">Let's Encrypt HTTPS (нужен домен)</option>
           </select>
         </div>
       </div>
-      <p style="font-size:11px; color:var(--kg-text-dim); margin:0 0 15px;">Self-Signed: браузер предупредит — это нормально. Let's Encrypt: бесплатный доверенный сертификат, требует домен.</p>
+      <p style="font-size:11px; color:var(--kg-text-dim); margin:0 0 15px;" data-i18n="instr_ssl_p">Self-Signed: браузер предупредит — это нормально. Let's Encrypt: бесплатный доверенный сертификат, требует домен.</p>
       <div id="ssl-status-box" style="margin-top:20px; padding:15px; background:rgba(0,0,0,0.2); border-radius:8px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-          <span style="font-size:12px; color:var(--kg-text-dim);">Текущий режим:</span>
-          <span id="ssl-badge" class="badge">Загрузка...</span>
+          <span style="font-size:12px; color:var(--kg-text-dim);" data-i18n="status">Текущий режим:</span>
+          <span id="ssl-badge" class="badge" data-i18n="loading">Загрузка...</span>
         </div>
         <div id="ssl-details" style="font-size:12px; line-height:1.5;">
-          <div style="color:var(--kg-text-dim); margin-bottom:4px;">SSL сертификат: <span id="ssl-cert-state" style="color:white;">--</span></div>
+          <div style="color:var(--kg-text-dim); margin-bottom:4px;" data-i18n="sys_ssl">SSL сертификат: <span id="ssl-cert-state" style="color:white;">--</span></div>
           <div id="ssl-restart-warn" style="display:none; color:#f59e0b; font-weight:600; margin-top:10px;">⚠️ Требуется перезапуск панели для активации HTTPS</div>
           <div id="ssl-active-info" style="display:none; color:var(--kg-green); font-weight:600; margin-top:10px;"></div>
         </div>
@@ -898,13 +899,13 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   <div class="card no-blue">
     <div class="card-header"><h3 data-i18n="sys_tg">TELEGRAM УПРАВЛЕНИЕ</h3></div>
     <div style="padding:25px;">
-      <p style="font-size:12px; color:var(--kg-text-dim); margin:0 0 15px;">Создайте бота через @BotFather и введите токен. Управляйте VPN прямо из Telegram.</p>
+      <p style="font-size:12px; color:var(--kg-text-dim); margin:0 0 15px;" data-i18n="instr_tg_p">Создайте бота через @BotFather и введите токен. Управляйте VPN прямо из Telegram.</p>
       <div class="fr">
-        <div class="fg" style="flex:2"><label>Bot Token (@BotFather)</label><input id="tg-token" placeholder="123456789:ABCdef..."></div>
-        <div class="fg"><label>Ваш Telegram ID</label><input id="tg-allowed-ids" placeholder="123456789"></div>
+        <div class="fg" style="flex:2"><label data-i18n="tg_token_lbl">Bot Token (@BotFather)</label><input id="tg-token" placeholder="123456789:ABCdef..."></div>
+        <div class="fg"><label data-i18n="tg_id_lbl">Ваш Telegram ID</label><input id="tg-allowed-ids" placeholder="123456789"></div>
       </div>
-      <button class="btn btn-p" style="margin-top:10px;" onclick="saveTelegramSettings()">Сохранить и запустить бота</button>
-      <p style="font-size:11px; color:var(--kg-text-dim); margin:8px 0 0;">Команды бота: /status /servers /add_server /clients /add_client /get_config /logs /restart</p>
+      <button class="btn btn-p" style="margin-top:10px;" onclick="saveTelegramSettings()" data-i18n="save">Сохранить и запустить бота</button>
+      <p style="font-size:11px; color:var(--kg-text-dim); margin:8px 0 0;" data-i18n="instructions">Команды бота: /status /servers /add_server /clients /add_client /get_config /logs /restart</p>
     </div>
   </div>
 
@@ -1004,30 +1005,30 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <!-- INSTRUCTIONS -->
 <div class="page" id="page-instructions">
   <div class="card no-blue" style="grid-column: span 12;">
-    <div class="card-header"><h3>ИНСТРУКЦИИ ПО ИСПОЛЬЗОВАНИЮ</h3></div>
+    <div class="card-header"><h3 data-i18n="instr_title">ИНСТРУКЦИИ ПО ИСПОЛЬЗОВАНИЮ</h3></div>
     <div style="padding:40px;">
       <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:30px;">
         <div>
-          <h4 style="color:var(--kg-blue); margin-bottom:12px; font-size:18px;">1. Подключение к Telegram</h4>
-          <p style="color:var(--kg-text-dim); line-height:1.6;">Создайте бота через <a href="https://t.me/BotFather" target="_blank" style="color:var(--kg-blue)">@BotFather</a>, получите Token и введите его в разделе <strong>"Настройки системы"</strong>. После этого вы сможете управлять сервером через команды бота:</p>
+          <h4 style="color:var(--kg-blue); margin-bottom:12px; font-size:18px;" data-i18n="instr_tg_h">1. Подключение к Telegram</h4>
+          <p style="color:var(--kg-text-dim); line-height:1.6;" data-i18n="instr_tg_p">Создайте бота через <a href="https://t.me/BotFather" target="_blank" style="color:var(--kg-blue)">@BotFather</a>, получите Token и введите его в разделе <strong>"Настройки системы"</strong>. После этого вы сможете управлять сервером через команды бота:</p>
           <ul style="margin:10px 0 0 20px; color:var(--kg-text-dim); font-size:13px; line-height:1.8;">
-            <li><code>/status</code> — Состояние сервера</li>
-            <li><code>/servers</code> — Список VPN протоколов</li>
-            <li><code>/clients</code> — Список пользователей</li>
-            <li><code>/backup</code> — Создать и скачать бэкап</li>
+            <li data-i18n="instr_status"><code>/status</code> — Состояние сервера</li>
+            <li data-i18n="instr_servers"><code>/servers</code> — Список VPN протоколов</li>
+            <li data-i18n="instr_clients"><code>/clients</code> — Список пользователей</li>
+            <li data-i18n="instr_backup"><code>/backup</code> — Создать и скачать бэкап</li>
           </ul>
         </div>
         <div>
-          <h4 style="color:var(--kg-blue); margin-bottom:12px; font-size:18px;">2. Смена порта панели</h4>
-          <p style="color:var(--kg-text-dim); line-height:1.6;">Вы можете сменить основные порты управления (HTTP и HTTPS) на любые свободные. Панель автоматически откроет доступ в брандмауэре (UFW) и перезагрузится. <strong>Важно:</strong> после смены портов введите новый адрес в браузере вручную.</p>
+          <h4 style="color:var(--kg-blue); margin-bottom:12px; font-size:18px;" data-i18n="instr_port_h">2. Смена порта панели</h4>
+          <p style="color:var(--kg-text-dim); line-height:1.6;" data-i18n="instr_port_p">Вы можете сменить основные порты управления (HTTP и HTTPS) на любые свободные. Панель автоматически откроет доступ в брандмауэре (UFW) и перезагрузится. <strong>Важно:</strong> после смены портов введите новый адрес в браузере вручную.</p>
         </div>
         <div>
-          <h4 style="color:var(--kg-blue); margin-bottom:12px; font-size:18px;">3. Настройка SSL (HTTPS)</h4>
-          <p style="color:var(--kg-text-dim); line-height:1.6;">Для безопасного подключения используйте <strong>Let's Encrypt</strong> (требуется домен) или <strong>Самоподписанный сертификат</strong>. При использовании самоподписанного сертификата браузер покажет предупреждение — это нормально, трафик всё равно зашифрован.</p>
+          <h4 style="color:var(--kg-blue); margin-bottom:12px; font-size:18px;" data-i18n="instr_ssl_h">3. Настройка SSL (HTTPS)</h4>
+          <p style="color:var(--kg-text-dim); line-height:1.6;" data-i18n="instr_ssl_p">Для безопасного подключения используйте <strong>Let's Encrypt</strong> (требуется домен) или <strong>Самоподписанный сертификат</strong>. При использовании самоподписанного сертификата браузер покажет предупреждение — это нормально, трафик всё равно зашифрован.</p>
         </div>
         <div>
-          <h4 style="color:var(--kg-blue); margin-bottom:12px; font-size:18px;">4. Резервное копирование</h4>
-          <p style="color:var(--kg-text-dim); line-height:1.6;">Регулярно скачивайте бэкап в разделе <strong>"Бэкап и восстановление"</strong>. Файл содержит полную базу пользователей и все конфигурации VPN. В случае сбоя или переезда на другой сервер вы сможете восстановить всё за один клик.</p>
+          <h4 style="color:var(--kg-blue); margin-bottom:12px; font-size:18px;" data-i18n="instr_backup_h">4. Резервное копирование</h4>
+          <p style="color:var(--kg-text-dim); line-height:1.6;" data-i18n="instr_backup_p">Регулярно скачивайте бэкап в разделе <strong>"Бэкап и восстановление"</strong>. Файл содержит полную базу пользователей и все конфигурации VPN. В случае сбоя или переезда на другой сервер вы сможете восстановить всё за один клик.</p>
         </div>
       </div>
     </div>
@@ -1201,7 +1202,29 @@ const I18N = {
     "upd_desc":"Checking for new versions on GitHub and automatic installation.",
     "upd_check":"Check for Updates", "upd_apply":"Install Update",
     "search_clt":"Search clients...", "up_down":"Traffic (Up/Down)", "ip_addr":"IP Address",
-    "status":"Status", "actions":"Actions", "client":"Client", "server":"Server", "limit":"Limit"
+    "status":"Status", "actions":"Actions", "client":"Client", "server":"Server", "limit":"Limit",
+    "fw_active":"UFW: ACTIVE", "fw_inactive":"UFW: INACTIVE", "fw_name_col":"NAME / COMMENT",
+    "fw_prio_col":"PRIO.", "fw_action_col":"ACTION", "fw_proto_col":"PROTOCOL", "fw_iface_col":"INTERFACE",
+    "fw_src_col":"SOURCE", "fw_srcp_col":"SRC PORT", "fw_dst_col":"DESTINATION", "fw_dstp_col":"DST PORT",
+    "fw_desc":"To add a firewall rule, select an interface from the list where incoming traffic will be monitored and click Add Rule.",
+    "sec_title":"SECURITY", "sec_login_pw":"CHANGE LOGIN & PASSWORD", "sec_new_login":"new username",
+    "sec_new_pw":"new password", "sec_confirm":"CONFIRMATION", "sec_repeat_pw":"repeat password",
+    "sec_setup_auto":"Setup Autostart", "sec_apply_ports":"Apply Ports",
+    "sec_restart_warn":"Note: the panel will restart on the new ports.",
+    "instr_title":"INSTRUCTIONS FOR USE", "instr_tg_h":"1. Connect to Telegram",
+    "instr_tg_p":"Create a bot via @BotFather, get the Token and enter it in the \"System Settings\" section. After that, you can control the server through bot commands:",
+    "instr_status":"— Server Status", "instr_servers":"— List of VPN protocols",
+    "instr_clients":"— List of users", "instr_backup":"— Create and download backup",
+    "instr_port_h":"2. Change Panel Port",
+    "instr_port_p":"You can change the main management ports (HTTP and HTTPS) to any free ones. The panel will automatically open access in the firewall (UFW) and restart. Important: after changing ports, enter the new address in the browser manually.",
+    "instr_ssl_h":"3. SSL Configuration (HTTPS)",
+    "instr_ssl_p":"For a secure connection, use Let's Encrypt (domain required) or a Self-signed certificate. When using a self-signed certificate, the browser will show a warning — this is normal, the traffic is still encrypted.",
+    "instr_backup_h":"4. Backup",
+    "instr_backup_p":"Regularly download backups in the \"Backup and Restore\" section. The file contains a complete user database and all VPN configurations. In case of failure or moving to another server, you can restore everything in one click.",
+    "allow":"Allow", "deny":"Deny", "any":"Any", "protocol":"Protocol", "name":"Name", "port":"Port",
+    "adv_params":"Advanced parameters (MTU, DNS, Subnet)", "create":"Create", "reset":"Reset",
+    "done":"Done", "qr_title":"Client Configuration", "qr_copy":"Copy", "qr_down": "Download .conf", "qr_close":"Close",
+    "widget_title":"Tile Layout"
   }
 };
 function changeLang(lang) {
@@ -1222,7 +1245,9 @@ function changeLang(lang) {
     "Поиск клиентов...": "search_clt",
     "Юнит (напр. skynet)": "log_unit_ph",
     "Например: Блокировка ICMP": "fw_name_ph",
-    "например: 10.8.0.0/24": "fw_ip_ph"
+    "например: 10.8.0.0/24": "fw_ip_ph",
+    "минимум 6 символов": "sec_new_pw",
+    "повторите пароль": "sec_repeat_pw"
   };
   document.querySelectorAll('input[placeholder]').forEach(el => {
     const key = placeholders[el.placeholder];
@@ -1239,9 +1264,12 @@ function changeLang(lang) {
        ['РЕЗЕРВНОЕ КОПИРОВАНИЕ', 'BACKUP & RESTORE'], ['ОБНОВЛЕНИЕ ПАНЕЛИ', 'UPDATE MANAGEMENT'],
        ['ДОБАВИТЬ ПРАВИЛО', 'ADD RULE'], ['УПРАВЛЕНИЕ СИСТЕМОЙ', 'SYSTEM MANAGEMENT'],
        ['ПАРАМЕТРЫ ПАНЕЛИ', 'PANEL SETTINGS'], ['ЖУРНАЛ СОБЫТИЙ', 'SYSTEM LOG'],
-       ['КОМАНДНАЯ СТРОКА', 'COMMAND LINE']
+       ['КОМАНДНАЯ СТРОКА', 'COMMAND LINE'], ['БЕЗОПАСНОСТЬ', 'SECURITY'],
+       ['ИНСТРУКЦИИ ПО ИСПОЛЬЗОВАНИЮ', 'INSTRUCTIONS FOR USE'],
+       ['СМЕНА ЛОГИНА И ПАРОЛЯ', 'CHANGE LOGIN & PASSWORD'],
+       ['ПОРТЫ ВЕБ-ПАНЕЛИ', 'PANEL PORTS'], ['Добавить VPN подключение', 'Add VPN Connection']
     ];
-    document.querySelectorAll('h3, h2').forEach(el => {
+    document.querySelectorAll('h3, h2, h4, .modal-header').forEach(el => {
        const mapped = textNodes.find(t => el.textContent.trim().includes(t[0]));
        if(mapped) {
           const svg = el.querySelector('svg');
@@ -1258,9 +1286,12 @@ function changeLang(lang) {
       ['Скачать', 'Download'], ['Запустить Web SSH', 'Start Web SSH'], ['Выключить', 'Disable'],
       ['Включить', 'Enable'], ['Удалить', 'Delete'], ['Перезагрузка', 'Reboot'],
       ['Проверить обновления', 'Check Updates'], ['Установить обновление', 'Install Update'],
-      ['Скачать бэкап', 'Download Backup'], ['Восстановить из файла', 'Restore from file']
+      ['Скачать бэкап', 'Download Backup'], ['Восстановить из файла', 'Restore from file'],
+      ['Применить порты', 'Apply Ports'], ['Настроить Автозапуск', 'Setup Autostart'],
+      ['Копировать', 'Copy'], ['Скачать .conf', 'Download .conf'], ['Закрыть', 'Close'],
+      ['Настроить Автозапуск', 'Setup Autostart']
     ];
-    document.querySelectorAll('button, .btn').forEach(el => {
+    document.querySelectorAll('button, .btn, summary').forEach(el => {
       const mapped = btnNodes.find(t => el.textContent.trim().includes(t[0]));
       if(mapped) {
         const svg = el.querySelector('svg');
@@ -1278,10 +1309,19 @@ function changeLang(lang) {
       ['Базовый путь', 'Base Path'], ['Ваш Telegram ID', 'Your Telegram ID'],
       ['Текущий коммит', 'Current Commit'], ['Последний на GitHub', 'Latest on GitHub'],
       ['Действие', 'Action'], ['Интерфейс', 'Interface'], ['Источник', 'Source'],
-      ['Порт ист.', 'Src Port'], ['Назначение', 'Destination'], ['Порт назн.', 'Dst Port']
+      ['Порт ист.', 'Src Port'], ['Назначение', 'Destination'], ['Порт назн.', 'Dst Port'],
+      ['Имя / Комментарий', 'Name / Comment'], ['ИМЯ / КОММЕНТАРИЙ', 'NAME / COMMENT'],
+      ['новый логин', 'new username'], ['новый пароль', 'new password'],
+      ['ПОДТВЕРЖДЕНИЕ', 'CONFIRMATION'], ['Имя', 'Name'], ['Порт', 'Port'],
+      ['Включить правило', 'Enable rule'], ['Переместить в', 'Move to'],
+      ['Расписание работы', 'Schedule'], ['Имя устройства', 'Hostname'], ['Часовой пояс', 'Timezone']
     ];
-    document.querySelectorAll('.k-lbl, th, label').forEach(el => {
-      const mapped = spanNodes.find(t => el.textContent.trim() === t[0]);
+    document.querySelectorAll('.k-lbl, th, label, td, span').forEach(el => {
+      const txt = el.textContent.trim();
+      if(txt === 'Разрешить') el.textContent = 'Allow';
+      if(txt === 'Запретить') el.textContent = 'Deny';
+      if(txt === 'Любой') el.textContent = 'Any';
+      const mapped = spanNodes.find(t => txt === t[0]);
       if(mapped) el.textContent = mapped[1];
     });
 
@@ -1291,9 +1331,13 @@ function changeLang(lang) {
       ['Создайте бота через @BotFather', 'Create a bot via @BotFather and enter the token.'],
       ['Полная копия базы данных', 'Full copy of database and configs in one ZIP.'],
       ['При восстановлении панель перезапустится', 'Restart required after restoration.'],
-      ['Проверка наличия новых версий', 'Checking for updates on GitHub...']
+      ['Проверка наличия новых версий', 'Checking for updates on GitHub...'],
+      ['Внимание: панель перезапустится', 'Note: the panel will restart on the new ports.'],
+      ['чтобы добавить правило', 'To add a firewall rule, select an interface...'],
+      ['Правила применяются в том порядке', 'Rules are applied in the order they appear.'],
+      ['UFW: АКТИВЕН', 'UFW: ACTIVE'], ['UFW: ОТКЛЮЧЕН', 'UFW: INACTIVE']
     ];
-    document.querySelectorAll('p, span, div').forEach(el => {
+    document.querySelectorAll('p, span, div, li').forEach(el => {
       if(el.children.length > 0) return;
       const mapped = pNodes.find(t => el.textContent.trim().includes(t[0]));
       if(mapped) el.textContent = mapped[1];
