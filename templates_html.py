@@ -20,7 +20,7 @@ LOGIN_HTML = r"""<!DOCTYPE html>
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'Inter', sans-serif; height: 100vh; background: var(--bg); background-image: var(--bg-grad); display: flex; align-items: center; justify-content: center; color: #fff; overflow: hidden; }
-.login-card { background: var(--card); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 24px; padding: 50px; width: 100%; max-width: 420px; box-shadow: 0 25px 50px rgba(0,0,0,0.3); text-align: center; }
+.login-card { background: var(--card); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 24px; padding: 50px; width: 100%; max-width: 420px; box-shadow: 0 25px 50px rgba(0,0,0,0.3); text-align: center; position: relative; }
 .logo { font-size: 28px; font-weight: 900; color: var(--blue); letter-spacing: 3px; margin-bottom: 40px; }
 .fg { margin-bottom: 20px; text-align: left; }
 .fg label { display: block; font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
@@ -29,16 +29,40 @@ body { font-family: 'Inter', sans-serif; height: 100vh; background: var(--bg); b
 .btn { width: 100%; background: var(--blue); color: #fff; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; margin-top: 20px; }
 .btn:hover { transform: translateY(-1px); opacity: 0.9; }
 .error { color: #f43f5e; background: rgba(244, 63, 94, 0.1); padding: 10px; border-radius: 8px; font-size: 14px; margin-bottom: 20px; }
+.lang-toggle { position: absolute; top: 20px; right: 25px; display: flex; gap: 10px; font-size: 12px; font-weight: 700; color: #94a3b8; cursor: pointer; }
+.lang-toggle span { transition: 0.2s; }
+.lang-toggle span.active { color: var(--blue); }
 </style></head><body>
 <div class="login-card">
+  <div class="lang-toggle">
+    <span id="lang-ru" onclick="setL('ru')">RU</span>
+    <span style="opacity:0.3">|</span>
+    <span id="lang-en" onclick="setL('en')">EN</span>
+  </div>
   <div class="logo">SKY-NET</div>
   {% if error %}<div class="error">{{ error }}</div>{% endif %}
   <form method="POST">
-    <div class="fg"><label>Имя пользователя</label><input name="username" required></div>
-    <div class="fg"><label>Пароль</label><input name="password" type="password" required></div>
-    <button class="btn" type="submit">ВОЙТИ В ПАНЕЛЬ</button>
+    <div class="fg"><label data-i18n="sec_new_login">Имя пользователя</label><input name="username" required></div>
+    <div class="fg"><label data-i18n="sec_new_pw">Пароль</label><input name="password" type="password" required></div>
+    <button class="btn" type="submit" data-i18n="login_btn">ВОЙТИ В ПАНЕЛЬ</button>
   </form>
 </div>
+<script>
+const dict = {
+  en: { sec_new_login: "Username", sec_new_pw: "Password", login_btn: "LOGIN TO PANEL" },
+  ru: { sec_new_login: "Имя пользователя", sec_new_pw: "Пароль", login_btn: "ВОЙТИ В ПАНЕЛЬ" }
+};
+function setL(l){
+  localStorage.setItem('lang', l);
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if(dict[l][k]) el.innerText = dict[l][k];
+  });
+  document.getElementById('lang-ru').className = (l==='ru'?'active':'');
+  document.getElementById('lang-en').className = (l==='en'?'active':'');
+}
+setL(localStorage.getItem('lang') || 'ru');
+</script>
 </body></html>"""
 
 
@@ -384,8 +408,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
       <span data-i18n="nav_instr">Инструкции</span>
     </a>
-    <a href="#" data-page="logs" style="display:none"><span>Журнал событий</span></a>
-    <a href="#" data-page="settings" style="display:none"><span>Параметры панели</span></a>
+    <a href="#" data-page="logs" style="display:none"><span data-i18n="sys_log">Журнал событий</span></a>
+    <a href="#" data-page="settings" style="display:none"><span data-i18n="sys_params">Параметры панели</span></a>
   </nav>
 </div>
 
@@ -395,13 +419,13 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <div class="hamburger" onclick="toggleSidebarCol()">
           <div></div><div></div><div></div>
         </div>
-        <h1 id="page-title-text" style="display:none">Системный монитор</h1>
+        <h1 id="page-title-text" style="display:none" data-i18n="nav_dash">Системный монитор</h1>
       </div>
       <div class="header-right">
         <svg fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" viewBox="0 0 24 24" class="sys-menu-btn" onclick="toggleSysMenu()"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         <svg fill="none" stroke="currentColor" stroke-width="2" width="22" height="22" viewBox="0 0 24 24" class="sys-menu-btn" onclick="toggleSysMenu()"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
         <div class="user-info hide-mobile" onclick="toggleSysMenu()">
-          <span style="opacity:0.5">Пользователь:</span>
+          <span style="opacity:0.5" data-i18n="user_lbl">Пользователь:</span>
           <strong>{{ session.get('username', 'admin') }}</strong>
         </div>
         
@@ -480,7 +504,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
             </svg>
             <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:16px; font-weight:800; color:#fff;" id="disk-val">0%</div>
           </div>
-          <div style="font-size:11px; color:var(--kg-text-dim); text-transform:uppercase; font-weight:700; margin-top:8px; letter-spacing:1px;">ДИСК</div>
+          <div style="font-size:11px; color:var(--kg-text-dim); text-transform:uppercase; font-weight:700; margin-top:8px; letter-spacing:1px;" data-i18n="disk_lbl">ДИСК</div>
           <div style="font-size:10px; color:var(--kg-text-dim); margin-top:2px;" id="disk-detail"></div>
         </div>
       </div>
@@ -518,28 +542,28 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <div class="stat-item">
           <div style="display:flex; align-items:center; gap:10px;">
             <svg fill="none" stroke="var(--kg-blue)" stroke-width="2" width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            <span class="k-lbl" style="margin:0;">Время сервера</span>
+            <span class="k-lbl" style="margin:0;" data-i18n="current_server_time">Время сервера</span>
           </div>
           <span class="k-val" id="d-time" style="font-family:'JetBrains Mono',monospace; color:#fff;">--</span>
         </div>
         <div class="stat-item">
           <div style="display:flex; align-items:center; gap:10px;">
             <svg fill="none" stroke="var(--kg-green)" stroke-width="2" width="16" height="16" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
-            <span class="k-lbl" style="margin:0;">Версия</span>
+            <span class="k-lbl" style="margin:0;" data-i18n="nav_sys">Версия</span>
           </div>
           <span class="k-val" id="d-version" style="font-size:12px; font-weight:700;">--</span>
         </div>
         <div class="stat-item">
           <div style="display:flex; align-items:center; gap:10px;">
             <svg fill="none" stroke="#f59e0b" stroke-width="2" width="16" height="16" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-            <span class="k-lbl" style="margin:0;">HTTPS Порт</span>
+            <span class="k-lbl" style="margin:0;" data-i18n="port">HTTPS Порт</span>
           </div>
           <span class="k-val" id="d-https-port" style="font-size:12px; font-weight:700;">--</span>
         </div>
         <div class="stat-item">
           <div style="display:flex; align-items:center; gap:10px;">
             <svg fill="none" stroke="#10b981" stroke-width="2" width="16" height="16" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-            <span class="k-lbl" style="margin:0;">SSL Статус</span>
+            <span class="k-lbl" style="margin:0;" data-i18n="sys_ssl">SSL Статус</span>
           </div>
           <span class="k-val" id="d-ssl-status" style="font-size:12px; font-weight:700; color:var(--kg-green);">Проверка...</span>
         </div>
@@ -558,14 +582,16 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <div id="dash-clients-list" style="padding: 0 0 10px 0;">
         <!-- Active clients will be rendered here as stat-items -->
         <div style="padding:40px 25px; text-align:center; color:var(--kg-text-dim); font-size:13px;">
-          Нет активных сессий
+          <div style="padding:40px 25px; text-align:center; color:var(--kg-text-dim); font-size:13px;" data-i18n="no_active_sessions">
+            Нет активных сессий
+          </div>
         </div>
       </div>
     </div>
 
     <!-- BLOCK 4: СЕТЕВЫЕ ИНТЕРФЕЙСЫ -->
     <div class="card" id="block-interfaces" style="display:none;">
-      <div class="card-header"><h3>СЕТЕВЫЕ ИНТЕРФЕЙСЫ</h3></div>
+      <div class="card-header"><h3 data-i18n="nav_ifaces">СЕТЕВЫЕ ИНТЕРФЕЙСЫ</h3></div>
       <div id="net-ifaces" class="card-padd"></div>
     </div>
   </div> <!-- end grid -->
@@ -573,7 +599,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   <div style="text-align: center; margin-top: 30px; margin-bottom: 20px;">
     <button class="btn btn-o" onclick="openWidgetSettings()" style="display:flex; align-items:center; gap:8px; margin: 0 auto; background:transparent; border:none; color:var(--kg-blue); font-size:14px; font-weight:600;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-      Редактировать системный монитор
+      <span data-i18n="widget_title">Редактировать системный монитор</span>
     </button>
   </div>
 </div>
@@ -581,7 +607,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <!-- INBOUNDS -->
 <div class="page" id="page-inbounds">
   <div class="card no-blue">
-    <div class="card-header"><h3 data-i18n="nav_vpns">VPN ПОДКЛЮЧЕНИЯ</h3><button class="btn btn-p" onclick="openAddInbound()">Добавить подключение</button></div>
+    <div class="card-header"><h3 data-i18n="nav_vpns">VPN ПОДКЛЮЧЕНИЯ</h3><button class="btn btn-p" onclick="openAddInbound()" data-i18n="ib_add_title">Добавить подключение</button></div>
     <div id="inbounds-list">
       <!-- Inbounds will be rendered as horizontal rows here -->
     </div>
@@ -841,8 +867,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <div style="margin-bottom:20px;">
         <h4 style="margin:0 0 12px; font-size:13px; text-transform:uppercase; color:var(--kg-text-dim);" data-i18n="sys_params">Порты веб-панели</h4>
         <div class="fr">
-          <div class="fg"><label>HTTP Порт (1024-65535)</label><input id="new-panel-port" type="number" placeholder="4466"></div>
-          <div class="fg"><label>HTTPS Порт (1024-65535)</label><input id="new-panel-port-https" type="number" placeholder="4466"></div>
+          <div class="fg"><label data-i18n="port">HTTP Порт (1024-65535)</label><input id="new-panel-port" type="number" placeholder="4466"></div>
+          <div class="fg"><label data-i18n="port">HTTPS Порт (1024-65535)</label><input id="new-panel-port-https" type="number" placeholder="4466"></div>
           <div class="fg" style="align-self:flex-end;">
             <button class="btn btn-p" onclick="changePanelPort()" data-i18n="sec_apply_ports">Применить порты</button>
           </div>
@@ -851,11 +877,11 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       </div>
       <hr style="border-color:var(--kg-border); margin:20px 0;">
       <div>
-        <h4 style="margin:0 0 12px; font-size:13px; text-transform:uppercase; color:var(--kg-text-dim);">Fail2Ban — защита от брутфорса</h4>
-        <p style="font-size:12px; color:var(--kg-text-dim); margin:0 0 10px;">Автоматически блокирует IP-адреса, которые пытаются подобрать пароль к SSH или панели.</p>
+        <h4 style="margin:0 0 12px; font-size:13px; text-transform:uppercase; color:var(--kg-text-dim);" data-i18n="f2b_title">Fail2Ban — защита от брутфорса</h4>
+        <p style="font-size:12px; color:var(--kg-text-dim); margin:0 0 10px;" data-i18n="f2b_desc">Автоматически блокирует IP-адреса, которые пытаются подобрать пароль к SSH или панели.</p>
         <div style="display:flex; gap:10px; align-items:center;">
-          <span id="f2b-status" class="badge badge-off" data-i18n="disconnected">Не установлен</span>
-          <button class="btn btn-o" onclick="installFail2Ban()" data-i18n="save">Установить Fail2Ban</button>
+          <span id="f2b-status" class="badge badge-off" data-i18n="f2b_not_installed">Не установлен</span>
+          <button class="btn btn-o" onclick="installFail2Ban()" data-i18n="f2b_install">Установить Fail2Ban</button>
           <button class="btn btn-o btn-sm" onclick="checkFail2Ban()" data-i18n="status">Проверить статус</button>
         </div>
       </div>
@@ -867,14 +893,16 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <div class="card-header"><h3 data-i18n="sys_ssl">SSL / HTTPS</h3></div>
     <div style="padding:25px;">
       <div class="fr" style="margin-bottom:15px;">
-        <div class="fg"><label data-i18n="server">Домен (например: sky-night.net)</label><input id="ssl-domain" placeholder="sky-night.net"></div>
+      <div class="fr" style="margin-bottom:15px;">
+        <div class="fg"><label data-i18n="ext_ip_lbl">Домен (например: sky-night.net)</label><input id="ssl-domain" placeholder="sky-night.net" data-i18n-ph="ext_ip_lbl"></div>
         <div class="fg"><label data-i18n="protocol">Режим SSL</label>
           <select id="ssl-mode">
-            <option value="off">HTTP (без SSL)</option>
-            <option value="self-signed" data-i18n="paused">Self-Signed HTTPS (без домена)</option>
-            <option value="letsencrypt" data-i18n="running">Let's Encrypt HTTPS (нужен домен)</option>
+            <option value="off" data-i18n="ssl_off_opt">HTTP (без SSL)</option>
+            <option value="self-signed">Self-Signed HTTPS</option>
+            <option value="letsencrypt">Let's Encrypt HTTPS</option>
           </select>
         </div>
+      </div>
       </div>
       <p style="font-size:11px; color:var(--kg-text-dim); margin:0 0 15px;" data-i18n="instr_ssl_p">Self-Signed: браузер предупредит — это нормально. Let's Encrypt: бесплатный доверенный сертификат, требует домен.</p>
       <div id="ssl-status-box" style="margin-top:20px; padding:15px; background:rgba(0,0,0,0.2); border-radius:8px;">
@@ -889,8 +917,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         </div>
       </div>
       <div style="display:flex; gap:10px; margin-top:15px;">
-        <button class="btn btn-p" style="flex:1;" onclick="applySSL()">Применить настройки SSL</button>
-        <button class="btn btn-o" style="flex:0.5; border-color:#f59e0b; color:#f59e0b;" onclick="restartPanel()">Перезапуск</button>
+        <button class="btn btn-p" style="flex:1;" onclick="applySSL()" data-i18n="ssl_apply_btn">Применить настройки SSL</button>
+        <button class="btn btn-o" style="flex:0.5; border-color:#f59e0b; color:#f59e0b;" onclick="restartPanel()" data-i18n="restart_btn">Перезапуск</button>
       </div>
     </div>
   </div>
@@ -913,15 +941,15 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   <div class="card no-blue">
     <div class="card-header"><h3 data-i18n="sys_backup">РЕЗЕРВНОЕ КОПИРОВАНИЕ</h3></div>
     <div style="padding:25px;">
-      <p style="font-size:12px; color:var(--kg-text-dim); margin:0 0 15px;">Полная копия базы данных и всех конфигураций VPN в одном ZIP-архиве.</p>
+      <p style="font-size:12px; color:var(--kg-text-dim); margin:0 0 15px;" data-i18n="instr_backup_p">Полная копия базы данных и всех конфигураций VPN в одном ZIP-архиве.</p>
       <div style="display:flex; gap:10px; margin-top:20px;">
-        <button class="btn btn-o" onclick="downloadBackup()">Скачать бэкап</button>
+        <button class="btn btn-o" onclick="downloadBackup()" data-i18n="qr_down">Скачать бэкап</button>
         <div style="position:relative;">
-          <button class="btn btn-p" onclick="document.getElementById('restore-file').click()">Восстановить из файла</button>
+          <button class="btn btn-p" onclick="document.getElementById('restore-file').click()" data-i18n="import">Восстановить из файла</button>
           <input type="file" id="restore-file" style="display:none;" onchange="uploadRestore(this)">
         </div>
       </div>
-      <p style="font-size:11px; color:var(--kg-orange); margin:10px 0 0;">При восстановлении панель перезапустится автоматически.</p>
+      <p style="font-size:11px; color:var(--kg-orange); margin:10px 0 0;" data-i18n="sec_restart_warn">При восстановлении панель перезапустится автоматически.</p>
     </div>
   </div>
 
@@ -1079,8 +1107,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       </div>
     </div>
     <div class="modal-footer" style="justify-content: flex-end;">
-      <button class="btn btn-o" onclick="resetWidgets()">Сброс</button>
-      <button class="btn btn-p" onclick="closeModal('widgetSettingsModal')">Готово</button>
+      <button class="btn btn-o" onclick="resetWidgets()" data-i18n="reset">Сброс</button>
+      <button class="btn btn-p" onclick="closeModal('widgetSettingsModal')" data-i18n="done">Готово</button>
     </div>
   </div>
 </div>
@@ -1095,9 +1123,9 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <textarea id="qrConfigText" readonly style="width:100%;height:150px;font-family:monospace;font-size:12px;background:#111419;color:#00a8e8;border:1px solid #30363d;padding:10px;border-radius:4px"></textarea>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-o" onclick="copyConfig()">Копировать</button>
-      <button class="btn btn-s" id="downloadBtn">Скачать .conf</button>
-      <button class="btn btn-o" onclick="closeModal('qrModal')">Закрыть</button>
+      <button class="btn btn-o" onclick="copyConfig()" data-i18n="qr_copy">Копировать</button>
+      <button class="btn btn-s" id="downloadBtn" data-i18n="qr_down">Скачать .conf</button>
+      <button class="btn btn-o" onclick="closeModal('qrModal')" data-i18n="qr_close">Закрыть</button>
     </div>
   </div>
 </div>
@@ -1182,38 +1210,6 @@ function fmtDate(ts){if(!ts||ts===0)return'Никогда';return new Date(ts*10
 function closeModal(id){document.getElementById(id).classList.remove('show')}
 
 // Locale & Theme
-const I18N = {
-  en: {
-    "nav_dash":"System Monitor", "nav_vpns":"VPN Servers", "nav_clients":"Connected Clients",
-    "nav_fw":"Firewall", "nav_sys":"System Settings", "nav_instr":"Instructions",
-    "lang_lbl":"Language", "theme_lbl":"Theme", "sys_log":"System Log", "cli":"Command Line",
-    "reboot":"Reboot", "logout":"Logout", "cli_title":"COMMAND LINE",
-    "sys_info":"SYSTEM INFO", "sys_sessions":"ACTIVE SESSIONS & TRAFFIC", "sys_ifaces":"NETWORK INTERFACES",
-    "sys_time":"DEVICE & TIME", "sys_ssl":"SSL / HTTPS", "sys_tg":"TELEGRAM MANAGEMENT",
-    "sys_backup":"BACKUP & RESTORE", "sys_update":"UPDATE MANAGEMENT", "sys_params":"PANEL SETTINGS",
-    "fw_title":"Firewall (UFW)", "add_rule":"Add Rule", "refresh":"Refresh", "save":"Save",
-    "cancel":"Cancel", "delete":"Delete", "enable":"Enable", "disable":"Disable",
-    "loading":"Loading...", "connected":"CONNECTED", "disconnected":"DISCONNECTED",
-    "running":"Running", "paused":"Paused", "no_sessions":"No active sessions",
-    "user_lbl":"User", "hostname_lbl":"Hostname", "tz_lbl":"Timezone", "port_lbl":"Panel Port",
-    "basepath_lbl":"Base Path", "tg_token_lbl":"Bot Token (@BotFather)", "tg_id_lbl":"Your Telegram ID",
-    "bkp_desc":"Full copy of database and all VPN configs in one ZIP archive.",
-    "bkp_down":"Download Backup", "bkp_rest":"Restore from file", "bkp_warn":"Panel will restart automatically after restoration.",
-    "upd_desc":"Checking for new versions on GitHub and automatic installation.",
-    "upd_check":"Check for Updates", "upd_apply":"Install Update",
-    "search_clt":"Search clients...", "up_down":"Traffic (Up/Down)", "ip_addr":"IP Address",
-    "status":"Status", "actions":"Actions", "client":"Client", "server":"Server", "limit":"Limit",
-    "fw_active":"UFW: ACTIVE", "fw_inactive":"UFW: INACTIVE", "fw_name_col":"NAME / COMMENT",
-    "fw_prio_col":"PRIO.", "fw_action_col":"ACTION", "fw_proto_col":"PROTOCOL", "fw_iface_col":"INTERFACE",
-    "fw_src_col":"SOURCE", "fw_srcp_col":"SRC PORT", "fw_dst_col":"DESTINATION", "fw_dstp_col":"DST PORT",
-    "fw_desc":"To add a firewall rule, select an interface from the list where incoming traffic will be monitored and click Add Rule.",
-    "sec_title":"SECURITY", "sec_login_pw":"CHANGE LOGIN & PASSWORD", "sec_new_login":"new username",
-    "sec_new_pw":"new password", "sec_confirm":"CONFIRMATION", "sec_repeat_pw":"repeat password",
-    "sec_setup_auto":"Setup Autostart", "sec_apply_ports":"Apply Ports",
-    "sec_restart_warn":"Note: the panel will restart on the new ports.",
-    "instr_title":"INSTRUCTIONS FOR USE", "instr_tg_h":"1. Connect to Telegram",
-    "instr_tg_p":"Create a bot via @BotFather, get the Token and enter it in the \"System Settings\" section. After that, you can control the server through bot commands:",
-    "instr_status":"— Server Status", "instr_servers":"— List of VPN protocols",
     "instr_clients":"— List of users", "instr_backup":"— Create and download backup",
     "instr_port_h":"2. Change Panel Port",
     "instr_port_p":"You can change the main management ports (HTTP and HTTPS) to any free ones. The panel will automatically open access in the firewall (UFW) and restart. Important: after changing ports, enter the new address in the browser manually.",
@@ -1224,9 +1220,65 @@ const I18N = {
     "allow":"Allow", "deny":"Deny", "any":"Any", "protocol":"Protocol", "name":"Name", "port":"Port",
     "adv_params":"Advanced parameters (MTU, DNS, Subnet)", "create":"Create", "reset":"Reset",
     "done":"Done", "qr_title":"Client Configuration", "qr_copy":"Copy", "qr_down": "Download .conf", "qr_close":"Close",
-    "widget_title":"Tile Layout"
+    "widget_title":"Tile Layout", "nav_ifaces":"Network Interfaces", "login_btn":"LOGIN TO PANEL", "disk_lbl":"DISK",
+    "active_lbl":"ACTIVE", "offline_lbl":"OFFLINE", "no_limit":"No limit", "on_lbl":"On", "off_lbl":"Off",
+    "running_lbl":"Running", "paused_lbl":"Paused", "disable_act":"Disable", "enable_act":"Enable",
+    "logs_act":"Logs", "add_client_act":"+ Client", "delete_act":"Delete", "rename_hint":"Click to rename",
+    "internet_lbl":"INTERNET", "traffic_total_lbl":"Total Traffic", "no_active_sessions":"No active sessions",
+    "sys_device_time":"DEVICE & TIME", "current_server_time":"Current server time:",
+    "f2b_installed_active":"Installed & Active", "f2b_not_installed":"Not installed", "status_disabled":"DISABLED",
+    "ssl_apply_btn":"Apply SSL Settings", "restart_btn":"Restart", "ssl_off_opt":"HTTP (no SSL)",
+    "all_rules_tab":"All Rules", "fw_active_lbl":"UFW: ACTIVE", "fw_inactive_lbl":"UFW: INACTIVE",
+    "adv_params_lbl":"Advanced parameters (MTU, DNS, Subnet)", "dns_lbl":"DNS (COMMA SEPARATED)",
+    "subnet_lbl":"VPN SUBNET", "ext_ip_lbl":"EXTERNAL SERVER IP (OPTIONAL)",
+    "junk_lbl":"JUNK PACKETS (JUNK)", "padding_lbl":"PACKET PADDING (PADDING)", "headers_lbl":"HEADERS",
+    "fw_sync_confirm":"Import current rules from system to panel? (Original priorities will not be preserved)",
+    "fw_no_rules_p1":"No rules for interface", "obfs_pw":"Obfuscation Password", "obfs_bypass":"Bypassing routes",
+    "f2b_install":"Install Fail2Ban", "f2b_confirm":"Install Fail2Ban?", "ssl_confirm":"Apply SSL settings and restart panel?",
+    "f2b_title":"Fail2Ban — Brute-force protection", "f2b_desc":"Automatically blocks IP addresses trying to brute-force SSH or panel passwords.",
+    "sys_device_time_h":"DEVICE & TIME", "sec_title_h":"SECURITY", "ib_add_title":"Add VPN Connection",
+    "waiting_lbl":"WAITING", "ssl_cert_found":"Certificate file found", "ssl_cert_not_found":"Certificate file not found",
+    "ssl_restart_needed":"⚠️ Panel restart required to activate HTTPS (port ",
+    "tg_save_success":"Telegram settings saved. Restart the panel.", "error_lbl":"Error", "no_logs":"No logs",
+    "ssl_domain_err":"Specify a domain for Let's Encrypt",
+    "ssl_ip_err":"Let's Encrypt requires a domain (e.g., sky-net.io). For IP address use \"Self-Signed\".",
+    "restart_confirm":"Restart management panel?", "del_client_confirm":"Delete client?", "del_ib_confirm":"Delete this server and all clients?",
+    "add_clt_prompt":"Enter username:", "rename_prompt":"Enter new name for ",
+    "sec_login_pw":"Change Login & Password", "sec_new_login":"New login", "sec_new_pw":"New password",
+    "sec_confirm":"Confirm Password", "sys_params":"Web Panel Ports", "sec_apply_ports":"Apply Ports",
+    "sec_restart_warn":"Attention: panel will restart on new ports.", "import":"Restore from file",
+    "tg_token_lbl":"Bot Token (@BotFather)", "user_lbl":"User:", "lang_lbl":"Select Language",
+    "theme_lbl":"Visual Theme", "logout":"Logout", "reboot":"Reboot"
   }
 };
+function _T(key) {
+  const lang = localStorage.getItem('lang') || 'ru';
+  if(lang === 'ru') return {
+    "active_lbl":"АКТИВЕН", "offline_lbl":"ОФФЛАЙН", "no_limit":"Без лимита", "on_lbl":"Вкл", "off_lbl":"Выкл",
+    "running_lbl":"Работает", "paused_lbl":"Пауза", "disable_act":"Выключить", "enable_act":"Включить",
+    "logs_act":"Журнал", "add_client_act":"+ Клиент", "delete_act":"Удалить", "rename_hint":"Нажмите, чтобы переименовать",
+    "internet_lbl":"ИНТЕРНЕТ", "traffic_total_lbl":"Трафик (Всего)", "no_active_sessions":"Нет активных сессий",
+    "nav_ifaces":"СЕТЕВЫЕ ИНТЕРФЕЙСЫ", "login_btn":"ВОЙТИ В ПАНЕЛЬ", "disk_lbl":"ДИСК", "widget_title":"Расположение плиток",
+    "current_server_time":"Текущее время сервера:", "f2b_installed_active":"Установлен и активен",
+    "f2b_not_installed":"Не установлен", "status_disabled":"ОТКЛЮЧЕН", "all_rules_tab":"Все правила",
+    "obfs_pw":"Пароль обфускации", "obfs_bypass":"Маршруты для обхода (bypassing)",
+    "junk_lbl":"Мусорные пакеты (Junk)", "padding_lbl":"Паддинг пакетов (Padding)", "headers_lbl":"Заголовки (Headers)",
+    "fw_no_rules_p1":"Нет правил для интерфейса", "f2b_confirm":"Установить Fail2Ban?",
+    "f2b_title":"Fail2Ban — защита от брутфорса", "f2b_desc":"Автоматически блокирует IP-адреса, которые пытаются подобрать пароль к SSH или панели.",
+    "waiting_lbl":"ОЖИДАНИЕ", "ssl_cert_found":"Файл сертификата найден", "ssl_cert_not_found":"Файлы не найдены",
+    "ssl_restart_needed":"⚠️ Требуется перезапуск панели для активации HTTPS (порт ",
+    "tg_save_success":"Настройки Telegram сохранены. Перезапустите панель.", "error_lbl":"Ошибка", "no_logs":"Нет логов",
+    "ssl_domain_err":"Укажите домен для Let's Encrypt", "restart_confirm":"Перезапустить панель управления?",
+    "del_client_confirm":"Удалить клиента?", "del_ib_confirm":"Удалить этот сервер и всех клиентов?",
+    "add_clt_prompt":"Введите имя пользователя:", "rename_prompt":"Введите новое имя для ",
+    "sec_login_pw":"Смена логина и пароля", "sec_new_login":"Новый логин", "sec_new_pw":"Новый пароль",
+    "sec_confirm":"Подтверждение", "sys_params":"Порты веб-панели", "sec_apply_ports":"Применить порты",
+    "sec_restart_warn":"Внимание: панель перезапустится на новых портах.", "import":"Восстановить из файла",
+    "tg_token_lbl":"Bot Token (@BotFather)", "user_lbl":"Пользователь:", "lang_lbl":"Выберите язык",
+    "theme_lbl":"Стиль оформления", "logout":"Выйти", "reboot":"Перезагрузка"
+  }[key] || key;
+  return (I18N[lang] && I18N[lang][key]) ? I18N[lang][key] : key;
+}
 function changeLang(lang) {
   localStorage.setItem('lang', lang);
   if(lang === 'ru') { location.reload(); return; }
@@ -1234,10 +1286,19 @@ function changeLang(lang) {
   // 1. Data-i18n elements
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
-    if(I18N[lang] && I18N[lang][key]) {
-       if(el.tagName === 'INPUT' && el.type === 'placeholder') el.placeholder = I18N[lang][key];
-       else el.textContent = I18N[lang][key];
-    }
+    const val = _T(key);
+    if(el.tagName === 'INPUT') el.placeholder = val;
+    else el.textContent = val;
+  });
+  
+  // 2. Data-i18n-ph (Placeholders)
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    el.placeholder = _T(el.getAttribute('data-i18n-ph'));
+  });
+
+  // 3. Data-i18n-title (Tooltips)
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.title = _T(el.getAttribute('data-i18n-title'));
   });
   
   // 2. Placeholder translation
@@ -1501,7 +1562,7 @@ function resetWidgets() {
 
 function renameInterface(iface) {
   const current = localStorage.getItem('iface_name_' + iface) || 'Sky-Net Interface';
-  const newName = prompt('Введите новое имя для ' + iface + ':', current);
+  const newName = prompt(_T('rename_prompt') + iface + ':', current);
   if (newName !== null) {
      localStorage.setItem('iface_name_' + iface, newName.trim() || 'Sky-Net Interface');
      loadDashboard();
@@ -1538,7 +1599,7 @@ async function loadDashboard(){
   if(d_time && st.server_time) d_time.textContent = new Date(st.server_time * 1000).toLocaleString('ru-RU');
   if(d_version) d_version.textContent = st.panel_version || 'v3.0';
   if(d_https) {
-    d_https.textContent = st.https_status || 'Отключен';
+    d_https.textContent = st.https_status === 'Активен' ? _T('running_lbl') : _T('status_disabled');
     d_https.style.color = (st.https_status === 'Активен') ? 'var(--kg-green)' : 'var(--kg-red)';
   }
   
@@ -1583,21 +1644,21 @@ async function loadDashboard(){
       if(!cardEl) {
         const html = `<div class="card" id="${id}" style="${isHidden?'display:none;':''}">
           <div class="card-header" style="cursor:grab">
-            <h3 style="margin:0; text-transform:uppercase;">ИНТЕРНЕТ (${i.name})</h3>
+            <h3 style="margin:0; text-transform:uppercase;">${_T('internet_lbl')} (${i.name})</h3>
             <svg fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" viewBox="0 0 24 24" style="color:var(--kg-text-dim);"><path d="M4 8h16M4 16h16"></path></svg>
           </div>
-          <div class="k-conn-block">
-            <div class="k-conn-left">
-              <div class="k-toggle ${i.is_up?'on':''}" id="tgl-${i.name}"></div>
-              <div>
-                <div class="k-conn-title" onclick="renameInterface('${i.name}')" style="cursor:pointer; border-bottom:1px dashed rgba(255,255,255,0.3); display:inline-block; padding-bottom:1px;" title="Нажмите, чтобы переименовать" id="title-${i.name}">${savedName}</div>
-                <div class="k-conn-subtitle">${i.name}</div>
-                <div class="k-badge">
-                  <div class="dot ${i.is_up?'dot-green':'dot-blue'}" style="width:5px;height:5px;" id="updot-${i.name}"></div>
-                  <span style="margin-left:5px" id="upbadge-${i.name}">${i.is_up?'ПОДКЛЮЧЕНО '+fmtUp(st.uptime||0):'ОТКЛЮЧЕНО'}</span>
+              <div class="k-k-conn-block">
+              <div class="k-conn-left">
+                <div class="k-toggle ${i.is_up?'on':''}" id="tgl-${i.name}"></div>
+                <div>
+                  <div class="k-conn-title" onclick="renameInterface('${i.name}')" style="cursor:pointer; border-bottom:1px dashed rgba(255,255,255,0.3); display:inline-block; padding-bottom:1px;" title="${_T('rename_hint')}" id="title-${i.name}">${savedName}</div>
+                  <div class="k-conn-subtitle">${i.name}</div>
+                  <div class="k-badge">
+                    <div class="dot ${i.is_up?'dot-green':'dot-blue'}" style="width:5px;height:5px;" id="updot-${i.name}"></div>
+                    <span style="margin-left:5px" id="upbadge-${i.name}">${i.is_up? _T('connected_lbl') + ' '+fmtUp(st.uptime||0) : _T('disconnected_lbl')}</span>
+                  </div>
                 </div>
               </div>
-            </div>
             <div class="k-btn-group">
               <button class="k-icon-btn" id="btn-chart-${i.name}" style="transition:0.2s; ${chartBtnStyle}" onclick="toggleIfaceView('${i.name}', 'chart')" title="Показать/скрыть график"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 16l4-4 4 4 4-4"/></svg></button>
               <button class="k-icon-btn" id="btn-grid-${i.name}" style="transition:0.2s; ${gridBtnStyle}" onclick="toggleIfaceView('${i.name}', 'grid')" title="Показать/скрыть детали"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h4v4H4zM16 4h4v4h-4zM4 16h4v4H4zM16 16h4v4h-4z"/></svg></button>
@@ -1737,17 +1798,17 @@ async function loadDashboard(){
               </div>
               <div style="text-align:right; margin-right:20px;">
                 <div style="font-size:12px; font-weight:600; color:#fff;">↑ ${fmtB(c.up)} / ↓ ${fmtB(c.down)}</div>
-                <div style="font-size:10px; color:var(--kg-text-dim);">Трафик (Всего)</div>
+                <div style="font-size:10px; color:var(--kg-text-dim);">${_T('traffic_total_lbl')}</div>
               </div>
               <div>
-                <span class="badge ${isActive?'badge-on':'badge-off'}" style="min-width:80px; text-align:center; font-weight:700;">${isActive?'АКТИВЕН':'ОФФЛАЙН'}</span>
+                <span class="badge ${isActive?'badge-on':'badge-off'}" style="min-width:80px; text-align:center; font-weight:700;">${isActive? _T('active_lbl') : _T('offline_lbl')}</span>
               </div>
             </div>`;
         }
       })
     });
     if(totalC === 0 && clt) {
-      clt.innerHTML = `<div style="padding:40px 25px; text-align:center; color:var(--kg-text-dim); font-size:13px;">Нет активных сессий</div>`;
+      clt.innerHTML = `<div style="padding:40px 25px; text-align:center; color:var(--kg-text-dim); font-size:13px;">${_T('no_active_sessions')}</div>`;
     }
   }
 }
@@ -1763,15 +1824,15 @@ async function loadInbounds(){
         <div class="ib-icon-box">${ib.protocol.includes('wg')?'W':'O'}</div>
         <div class="ib-details">
           <h4>${ib.remark}</h4>
-          <p>${PL[ib.protocol]} • Порт: ${ib.port} • Клиентов: ${(ib.clients||[]).length}</p>
+          <p>${PL[ib.protocol]} • ${_T('port')}: ${ib.port} • ${_T('nav_clients')}: ${(ib.clients||[]).length}</p>
         </div>
       </div>
       <div class="ib-actions">
-        <span class="badge ${ib.enable?'badge-on':'badge-off'}">${ib.enable?'Работает':'Пауза'}</span>
-        <button class="btn btn-o btn-sm" onclick="toggleInbound(${ib.id})">${ib.enable?'Выключить':'Включить'}</button>
-        <button class="btn btn-p btn-sm" onclick="showInboundLogs(${ib.id})" style="background:var(--kg-blue); border-color:var(--kg-blue);">Журнал</button>
-        <button class="btn btn-p btn-sm" onclick="openAddClient(${ib.id})">+ Клиент</button>
-        <button class="btn btn-d btn-sm" onclick="deleteInbound(${ib.id})">Удалить</button>
+        <span class="badge ${ib.enable?'badge-on':'badge-off'}">${ib.enable? _T('running_lbl') : _T('paused_lbl')}</span>
+        <button class="btn btn-o btn-sm" onclick="toggleInbound(${ib.id})">${ib.enable? _T('disable_act') : _T('enable_act')}</button>
+        <button class="btn btn-p btn-sm" onclick="showInboundLogs(${ib.id})" style="background:var(--kg-blue); border-color:var(--kg-blue);">${_T('logs_act')}</button>
+        <button class="btn btn-p btn-sm" onclick="openAddClient(${ib.id})">${_T('add_client_act')}</button>
+        <button class="btn btn-d btn-sm" onclick="deleteInbound(${ib.id})">${_T('delete_act')}</button>
       </div>
     </div>`
   })}
@@ -1844,11 +1905,11 @@ async function loadAllClients(){
       <td><span class="badge badge-proto">${PL[ib.protocol]}</span></td>
       <td><code>${c.allowed_ips}</code></td>
       <td>${fmtB(c.up)} / ${fmtB(c.down)}</td>
-      <td>${c.total_limit?fmtB(c.total_limit):'Без лимита'}</td>
-      <td><span class="badge ${c.enable?'badge-on':'badge-off'}">${c.enable?'Вкл':'Выкл'}</span></td>
+      <td>${c.total_limit?fmtB(c.total_limit): _T('no_limit')}</td>
+      <td><span class="badge ${c.enable?'badge-on':'badge-off'}">${c.enable? _T('on_lbl') : _T('off_lbl')}</span></td>
       <td>
         <button class="btn btn-o btn-sm" onclick="showQR(${c.id}, '${c.username}', '${ib.protocol}')">QR</button>
-        <button class="btn btn-d btn-sm" onclick="deleteClient(${c.id})">Удалить</button>
+        <button class="btn btn-d btn-sm" onclick="deleteClient(${c.id})">${_T('delete_act')}</button>
       </td></tr>`})});
   document.getElementById('clientSearch').oninput=function(){const q=this.value.toLowerCase();
     tb.querySelectorAll('tr').forEach(tr=>{tr.style.display=tr.textContent.toLowerCase().includes(q)?'':'none'})}
@@ -1877,36 +1938,36 @@ document.addEventListener('click', function(e) {
 });
 function openAddInbound(){document.getElementById('addInboundModal').classList.add('show');updateObfsFields()}
 function openAddClient(id){
-  const user = prompt('Введите имя пользователя:');
+  const user = prompt(_T('add_clt_prompt'));
   if(user) POST('/panel/api/inbounds/addClient',{inbound_id:id,username:user,total_limit:0,expiry_time:0}).then(()=>loadInbounds());
 }
 async function toggleInbound(id){await POST(`/panel/api/inbounds/toggle/${id}`,{});loadInbounds()}
-async function deleteInbound(id){if(!confirm('Удалить этот сервер и всех клиентов?'))return;await POST(`/panel/api/inbounds/del/${id}`,{});loadInbounds()}
+async function deleteInbound(id){if(!confirm(_T('del_ib_confirm')))return;await POST(`/panel/api/inbounds/del/${id}`,{});loadInbounds()}
 function updateObfsFields(){const p=document.getElementById('ib-protocol').value;const c=document.getElementById('obfs-fields');
   const addr = document.getElementById('ib-address');
   if(p==='openvpn_xor'){
     if(addr) addr.value = '10.9.0.1/24';
     c.innerHTML=`
-    <div class="fg"><label>Пароль обфускации</label><input id="obfs-scramble" value=""></div>
+    <div class="fg"><label>${_T('obfs_pw')}</label><input id="obfs-scramble" value=""></div>
     <div class="fg" style="flex-direction:row;align-items:center;gap:10px;margin-top:10px">
       <input type="checkbox" id="obfs-bypass" style="width:20px;height:20px">
-      <label style="margin:0">Маршруты для обхода (bypassing)</label>
+      <label style="margin:0">${_T('obfs_bypass')}</label>
     </div>`}
   else{
     if(addr) addr.value = '10.8.0.1/24';
     const v2=p==='amneziawg_v2';
     let html = `
       <div class="modal-section">
-        <div class="section-title">Мусорные пакеты (Junk)</div>
+        <div class="section-title">${_T('junk_lbl')}</div>
         <div class="grid-3">
-          <div class="fg"><label title="Количество мусорных пакетов">Jc</label><input id="obfs-Jc" type="number" value="5"></div>
-          <div class="fg"><label title="Мин. размер мусора">Jmin</label><input id="obfs-Jmin" type="number" value="50"></div>
-          <div class="fg"><label title="Макс. размер мусора">Jmax</label><input id="obfs-Jmax" type="number" value="1000"></div>
+          <div class="fg"><label title="Number of junk packets">Jc</label><input id="obfs-Jc" type="number" value="5"></div>
+          <div class="fg"><label title="Min junk size">Jmin</label><input id="obfs-Jmin" type="number" value="50"></div>
+          <div class="fg"><label title="Max junk size">Jmax</label><input id="obfs-Jmax" type="number" value="1000"></div>
         </div>
       </div>
       
       <div class="modal-section">
-        <div class="section-title">Паддинг пакетов (Padding)</div>
+        <div class="section-title">${_T('padding_lbl')}</div>
         <div class="grid-4">
           <div class="fg"><label title="Init Padding">S1</label><input id="obfs-S1" type="number" value="69"></div>
           <div class="fg"><label title="Response Padding">S2</label><input id="obfs-S2" type="number" value="115"></div>
@@ -1918,7 +1979,7 @@ function updateObfsFields(){const p=document.getElementById('ib-protocol').value
       </div>
 
       <div class="modal-section">
-        <div class="section-title">Заголовки (Headers)</div>
+        <div class="section-title">${_T('headers_lbl')}</div>
         <div class="fr">
           <div class="fg"><label>H1 (Init)</label><input id="obfs-H1" type="text" value="924883749"></div>
           <div class="fg"><label>H2 (Resp)</label><input id="obfs-H2" type="text" value="16843009"></div>
@@ -2003,7 +2064,7 @@ async function showQR(cid, username, proto){
   document.getElementById('qrModal').classList.add('show')}
 
 function copyConfig(){const t=document.getElementById('qrConfigText');t.select();document.execCommand('copy')}
-async function deleteClient(id){if(!confirm('Удалить клиента?'))return;await POST(`/panel/api/inbounds/delClient/${id}`,{});loadAllClients()}
+async function deleteClient(id){if(!confirm(_T('del_client_confirm')))return;await POST(`/panel/api/inbounds/delClient/${id}`,{});loadAllClients()}
 
 let currentFwIface = 'any';
 let fwRulesData = [];
@@ -2017,13 +2078,13 @@ async function loadFirewall() {
   
   const b = document.getElementById('fw-status-badge');
   if(b) {
-    b.textContent = r.active ? 'UFW: АКТИВЕН' : 'UFW: НЕАКТИВЕН';
+    b.textContent = r.active ? _T('fw_active_lbl') : _T('fw_inactive_lbl');
     b.className = 'badge ' + (r.active ? 'badge-on' : 'badge-off');
   }
   
   const tc = document.getElementById('fw-tabs-container');
   if(tc) {
-    tc.innerHTML = `<div class="fw-tab ${currentFwIface==='any'?'active':''}" onclick="fwSwitchTab('any')">Все правила</div>`;
+    tc.innerHTML = `<div class="fw-tab ${currentFwIface==='any'?'active':''}" onclick="fwSwitchTab('any')">${_T('all_rules_tab')}</div>`;
     (r.interfaces || []).sort().forEach(iface => {
       tc.innerHTML += `<div class="fw-tab ${currentFwIface===iface?'active':''}" onclick="fwSwitchTab('${iface}')">${iface}</div>`;
     });
@@ -2031,7 +2092,7 @@ async function loadFirewall() {
   
   const ms = document.getElementById('fw-m-iface');
   if(ms) {
-    ms.innerHTML = '<option value="any">Любой</option>';
+    ms.innerHTML = `<option value="any">${_T('any')}</option>`;
     (r.interfaces || []).sort().forEach(iface => {
       ms.innerHTML += `<option value="${iface}">${iface}</option>`;
     });
@@ -2049,7 +2110,7 @@ function fwSwitchTab(iface) {
 }
 
 async function fwSync() {
-  if(!confirm('Импортировать текущие правила из системы в панель? (Оригинальные приоритеты не сохранятся)')) return;
+  if(!confirm(_T('fw_sync_confirm') || 'Import current rules from system?')) return;
   const r = await POST('/panel/api/firewall/sync');
   if(r.success) {
     loadFirewall();
@@ -2070,7 +2131,7 @@ function renderFwRules() {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td colspan="11" style="padding:40px; text-align:center; color:var(--kg-text-dim); font-size:14px;">
       <div style="margin-bottom:10px;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.3"><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"></path><path d="M12 8V12"></path><path d="M12 16H12.01"></path></svg></div>
-      Нет правил для интерфейса ${currentFwIface==='any'?'Любой':currentFwIface}
+      ${_T('fw_no_rules_p1') || 'No rules for interface'} ${currentFwIface==='any'? _T('any') : currentFwIface}
     </td>`;
     tbody.appendChild(tr);
     return;
@@ -2082,9 +2143,9 @@ function renderFwRules() {
     tr.innerHTML = `
       <td style="padding:12px;"><input type="checkbox" ${rule.enabled?'checked':''} onchange="fwFastToggle(${rule.id}, this.checked)"></td>
       <td style="padding:12px;">${rule.priority}</td>
-      <td style="padding:12px;"><span class="badge ${rule.action==='allow'?'badge-on':(rule.action==='deny'?'badge-off':'badge-warn')}">${rule.action==='allow'?'Разрешить':(rule.action==='deny'?'Запретить':'Отбросить')}</span></td>
+      <td style="padding:12px;"><span class="badge ${rule.action==='allow'?'badge-on':(rule.action==='deny'?'badge-off':'badge-warn')}">${rule.action==='allow'? _T('allow'):(rule.action==='deny'? _T('deny'): _T('reject'))}</span></td>
       <td style="padding:12px;">${rule.protocol.toUpperCase()}</td>
-      <td style="padding:12px; color:var(--kg-text-dim);">${rule.interface==='any'?'Любой':rule.interface}</td>
+      <td style="padding:12px; color:var(--kg-text-dim);">${rule.interface==='any'? _T('any') : rule.interface}</td>
       <td style="padding:12px;">${rule.src_ip}</td>
       <td style="padding:12px;">${rule.src_port}</td>
       <td style="padding:12px;">${rule.dst_ip}</td>
@@ -2358,21 +2419,21 @@ async function changePanelPort(){
 }
 
 // Fail2Ban
-async function installFail2Ban(){if(!confirm('Установить Fail2Ban?'))return;const r=await POST('/panel/api/system/install-fail2ban',{});alert(r.msg)}
+async function installFail2Ban(){if(!confirm(_T('f2b_confirm')))return;const r=await POST('/panel/api/system/install-fail2ban',{});alert(r.msg)}
 async function checkFail2Ban(){
   const r=await API('/panel/api/system/fail2ban-status');
   const el=document.getElementById('f2b-status');
-  if(el){el.textContent=r.installed?'Установлен и активен':'Не установлен';el.className='badge '+(r.installed?'badge-on':'badge-off');}
+  if(el){el.textContent=r.installed? _T('f2b_installed_active') : _T('f2b_not_installed');el.className='badge '+(r.installed?'badge-on':'badge-off');}
 }
 
 // SSL
 async function applySSL(){
   const mode=document.getElementById('ssl-mode').value;
   const domain=document.getElementById('ssl-domain').value.trim();
-  if(mode==='letsencrypt'&&!domain)return alert('Укажите домен для Let\'s Encrypt');
+  if(mode==='letsencrypt'&&!domain)return alert(_T('ssl_domain_err'));
   // Small hint: Let's Encrypt doesn't work with bare IPs
   if(mode==='letsencrypt' && /^(\d{1,3}\.){3}\d{1,3}$/.test(domain)){
-      return alert('Let\'s Encrypt требует домен (например: sky-net.io). Для IP-адреса используйте "Self-Signed".');
+      return alert(_T('ssl_ip_err'));
   }
   const r=await POST('/panel/api/system/set-ssl',{mode,domain});
   alert(r.msg);
@@ -2380,7 +2441,7 @@ async function applySSL(){
 }
 
 async function restartPanel(){
-  if(!confirm('Перезапустить панель управления?')) return;
+  if(!confirm(_T('restart_confirm'))) return;
   const r=await POST('/panel/api/system/restart',{});
   alert(r.msg);
   setTimeout(()=>window.location.reload(), 3000);
@@ -2390,14 +2451,14 @@ async function restartPanel(){
 async function saveTelegramSettings(){
   const token=document.getElementById('tg-token').value.trim();
   const ids=document.getElementById('tg-allowed-ids').value.trim();
-  if(!token)return alert('Укажите Telegram Bot Token');
+  if(!token)return alert(_T('tg_token_lbl'));
   const r=await POST('/panel/api/settings',{telegram_bot_token:token,telegram_allowed_ids:ids});
-  alert(r.success?'Настройки Telegram сохранены. Перезапустите панель.':'Ошибка');
+  alert(r.success? _T('tg_save_success') : _T('error_lbl'));
 }
 
 async function loadLogs(){const unit=document.getElementById('log-unit').value;
   const r=await API(`/panel/api/system/logs?lines=100&unit=${unit}`);
-  document.getElementById('log-output').textContent=r.logs||'Нет логов'}
+  document.getElementById('log-output').textContent=r.logs|| _T('no_logs')}
 
 async function issueSSL(){const d=document.getElementById('ssl-domain').value;if(!d)return alert('Укажите домен');const r=await POST('/panel/api/system/set-ssl',{mode:'letsencrypt',domain:d});alert(r.msg)}
 
@@ -2412,21 +2473,21 @@ async function checkSSLStatus(){
   const activeInfo = document.getElementById('ssl-active-info');
   
   if(badge) {
-      badge.textContent = r.mode === 'off' ? 'ОТКЛЮЧЕН' : r.mode.toUpperCase();
+      badge.textContent = r.mode === 'off' ? _T('status_disabled') : r.mode.toUpperCase();
       badge.className = 'badge ' + (r.mode === 'off' ? 'badge-off' : 'badge-on');
   }
   
   if(dSslStatus) {
-      dSslStatus.textContent = r.active ? 'АКТИВЕН' : (r.mode==='off'?'ВЫКЛЮЧЕН':'ОЖИДАНИЕ');
+      dSslStatus.textContent = r.active ? _T('active_lbl') : (r.mode==='off'? _T('off_lbl') : _T('waiting_lbl'));
       dSslStatus.style.color = r.active ? 'var(--kg-green)' : (r.mode==='off'?'var(--kg-text-dim)':'#f59e0b');
   }
   
-  if(certState) certState.textContent = r.cert_path ? 'Файл сертификата найден' : 'Файлы не найдены';
+  if(certState) certState.textContent = r.cert_path ? _T('ssl_cert_found') : _T('ssl_cert_not_found');
   
   if(restartWarn && activeInfo) {
       if (r.mode !== 'off' && !r.active) {
           restartWarn.style.display = 'block';
-          restartWarn.innerHTML = `⚠️ Требуется перезапуск панели для активации HTTPS (порт ${st.panel_port_https})`;
+          restartWarn.innerHTML = _T('ssl_restart_needed') + st.panel_port_https + ')';
           activeInfo.style.display = 'none';
       } else if (r.active) {
           restartWarn.style.display = 'none';
