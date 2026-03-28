@@ -891,7 +891,6 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <button class="btn btn-p" style="flex:1;" onclick="applySSL()">Применить настройки SSL</button>
         <button class="btn btn-o" style="flex:0.5; border-color:#f59e0b; color:#f59e0b;" onclick="restartPanel()">Перезапуск</button>
       </div>
-      </div>
     </div>
   </div>
 
