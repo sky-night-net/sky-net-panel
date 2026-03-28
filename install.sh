@@ -18,21 +18,50 @@ LOCAL_IP=$(hostname -I | awk '{print $1}')
 # Detect External IP
 EXT_IP=$(curl -s ifconfig.me || echo "unknown")
 
-echo -n -e "${BLUE}Enter HTTP Panel Port [default 4467]: ${NC}"
-read PANEL_PORT < /dev/tty
-PANEL_PORT=${PANEL_PORT:-4467}
+# --- Input Validation ---
+while true; do
+  echo -n -e "${BLUE}Enter HTTP Panel Port [default 4467]: ${NC}"
+  read PANEL_PORT < /dev/tty
+  PANEL_PORT=${PANEL_PORT:-4467}
 
-echo -n -e "${BLUE}Enter HTTPS Panel Port [default 4466]: ${NC}"
-read PANEL_HTTPS_PORT < /dev/tty
-PANEL_HTTPS_PORT=${PANEL_HTTPS_PORT:-4466}
+  echo -n -e "${BLUE}Enter HTTPS Panel Port [default 4466]: ${NC}"
+  read PANEL_HTTPS_PORT < /dev/tty
+  PANEL_HTTPS_PORT=${PANEL_HTTPS_PORT:-4466}
+
+  if [[ "$PANEL_PORT" == "$PANEL_HTTPS_PORT" ]]; then
+    echo -e "${RED}Error: HTTP and HTTPS ports cannot be the same ($PANEL_PORT).${NC}"
+    continue
+  fi
+  if ! [[ "$PANEL_PORT" =~ ^[0-9]+$ ]] || [ "$PANEL_PORT" -lt 1024 ] || [ "$PANEL_PORT" -gt 65535 ]; then
+    echo -e "${RED}Error: HTTP port must be between 1024 and 65535.${NC}"
+    continue
+  fi
+  if ! [[ "$PANEL_HTTPS_PORT" =~ ^[0-9]+$ ]] || [ "$PANEL_HTTPS_PORT" -lt 1024 ] || [ "$PANEL_HTTPS_PORT" -gt 65535 ]; then
+    echo -e "${RED}Error: HTTPS port must be between 1024 and 65535.${NC}"
+    continue
+  fi
+  break
+done
 
 echo -n -e "${BLUE}Confirm Local IP [$LOCAL_IP]: ${NC}"
 read USER_LOCAL_IP < /dev/tty
 LOCAL_IP=${USER_LOCAL_IP:-$LOCAL_IP}
+# Sanitize Local IP
+LOCAL_IP=$(echo "$LOCAL_IP" | tr -cd '0-9.a-fA-F:')
 
-echo -n -e "${BLUE}Confirm External IP [$EXT_IP]: ${NC}"
-read USER_EXT_IP < /dev/tty
-EXT_IP=${USER_EXT_IP:-$EXT_IP}
+while true; do
+  echo -n -e "${BLUE}Confirm External IP [$EXT_IP]: ${NC}"
+  read USER_EXT_IP < /dev/tty
+  USER_EXT_IP=${USER_EXT_IP:-$EXT_IP}
+  # Sanitize: Strip any non-ASCII characters (e.g. Cyrillic typos)
+  EXT_IP=$(echo "$USER_EXT_IP" | tr -cd '0-9.a-fA-F:')
+  
+  if [ -z "$EXT_IP" ]; then
+    echo -e "${RED}Error: Invalid External IP address.${NC}"
+    continue
+  fi
+  break
+done
 
 echo -e "${BLUE}Using HTTP Port: $PANEL_PORT, HTTPS Port: $PANEL_HTTPS_PORT, Local IP: $LOCAL_IP, External IP: $EXT_IP${NC}"
 
