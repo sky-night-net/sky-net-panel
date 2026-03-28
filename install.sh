@@ -18,9 +18,13 @@ LOCAL_IP=$(hostname -I | awk '{print $1}')
 # Detect External IP
 EXT_IP=$(curl -s ifconfig.me || echo "unknown")
 
-echo -n -e "${BLUE}Enter Panel Port [default 9090]: ${NC}"
+echo -n -e "${BLUE}Enter HTTP Panel Port [default 4467]: ${NC}"
+read PANEL_PORT < /dev/tty
 PANEL_PORT=${PANEL_PORT:-4467}
-PANEL_HTTPS_PORT=4466
+
+echo -n -e "${BLUE}Enter HTTPS Panel Port [default 4466]: ${NC}"
+read PANEL_HTTPS_PORT < /dev/tty
+PANEL_HTTPS_PORT=${PANEL_HTTPS_PORT:-4466}
 
 echo -n -e "${BLUE}Confirm Local IP [$LOCAL_IP]: ${NC}"
 read USER_LOCAL_IP < /dev/tty
@@ -104,9 +108,11 @@ EOF
 
 systemctl daemon-reload
 systemctl enable skynet.service
+systemctl start skynet.service
 
 echo -e "${GREEN}=== Installation Complete! ===${NC}"
-echo -e "Panel is available at: http://$EXT_IP:$PANEL_PORT"
+echo -e "${GREEN}Sky-Net is now running and ready to use.${NC}"
+echo -e "HTTPS Address: https://$EXT_IP:$PANEL_HTTPS_PORT"
+echo -e "HTTP Address:  http://$EXT_IP:$PANEL_PORT"
 echo -e "Local Address: http://$LOCAL_IP:$PANEL_PORT"
-echo -e "Default login: admin / admin"
-echo -e "Run 'systemctl start skynet' to launch the panel."
+echo -e "Default login: ${BLUE}admin / admin${NC}"
