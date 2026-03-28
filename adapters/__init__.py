@@ -100,13 +100,18 @@ class ProtocolAdapter:
     def _get_external_iface(self) -> str:
         """Определить внешний сетевой интерфейс (с маршрутом по умолчанию)."""
         try:
-            # Query the interface used to reach the internet reliably
-            cmd = "ip route get 8.8.8.8 | awk '/dev/ {for(i=1;i<=NF;i++) if($i==\"dev\") print $(i+1)}' | head -n1"
-            res = self._run(["bash", "-c", cmd], check=False)
+            res = self._run(["ip", "route", "get", "8.8.8.8"], check=False)
             if not res:
-                cmd2 = "ip -4 route show default | awk '/dev/ {for(i=1;i<=NF;i++) if($i==\"dev\") print $(i+1)}' | head -n1"
-                res = self._run(["bash", "-c", cmd2], check=False)
-            return res.strip() or "eth0"
+                res = self._run(["ip", "-4", "route", "show", "default"], check=False)
+            if not res: return "eth0"
+            
+            # Typical output: "8.8.8.8 via 192.168.1.1 dev ens18 src 192.168.1.2 uid 1000"
+            parts = res.split()
+            if "dev" in parts:
+                idx = parts.index("dev")
+                if idx + 1 < len(parts):
+                    return parts[idx + 1]
+            return "eth0"
         except:
             return "eth0"
 
