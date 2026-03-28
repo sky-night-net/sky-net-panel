@@ -170,7 +170,7 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
             # Use a temporary file for the PSK to avoid shell complexities
             import tempfile
             with tempfile.NamedTemporaryFile(mode='w', delete=False) as tf:
-                tf.write(client['preshared_key'])
+                tf.write(client['preshared_key'] + '\n')
                 tf_path = tf.name
             try:
                 self._run(["awg", "set", iface, "peer", client["public_key"], 
