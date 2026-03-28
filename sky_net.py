@@ -89,9 +89,14 @@ def get_secret_key():
             return new_key
 
 app.secret_key = get_secret_key()
-# Load Port Settings from DB
-PORT = int(os.getenv("SKYNET_PORT", "9090"))
-HTTPS_PORT = 4467
+# Load Port Settings with Collision Protection
+# Priority: 1. Database settings, 2. Environment variables, 3. Hardcoded defaults
+DEFAULT_HTTP_PORT = 4467
+DEFAULT_HTTPS_PORT = 4466
+
+PORT = int(os.getenv("SKYNET_PORT", str(DEFAULT_HTTP_PORT)))
+HTTPS_PORT = int(os.getenv("SKYNET_HTTPS_PORT", str(DEFAULT_HTTPS_PORT)))
+
 with get_db() as db:
     p1 = db.execute("SELECT value FROM settings WHERE key='panel_port'").fetchone()
     if p1 and p1[0].isdigit():
@@ -99,6 +104,30 @@ with get_db() as db:
     p2 = db.execute("SELECT value FROM settings WHERE key='panel_port_https'").fetchone()
     if p2 and p2[0].isdigit():
         HTTPS_PORT = int(p2[0])
+
+# Prevent collision: If ports are same, shift the HTTP port
+if PORT == HTTPS_PORT:
+    log.warning(f"Port collision detected ({PORT}). Resolving...")
+    if HTTPS_PORT == 4466: PORT = 4467
+    else: PORT = HTTPS_PORT + 1
+    log.info(f"Resolved collision: HTTP={PORT}, HTTPS={HTTPS_PORT}")
+
+# Persistence: Save to DB if missing (crucial for clean installs)
+with get_db() as db:
+    r1 = db.execute("SELECT 1 FROM settings WHERE key='panel_port'").fetchone()
+    if not r1:
+        db.execute("INSERT INTO settings (key, value) VALUES ('panel_port', ?)", (str(PORT),))
+    r2 = db.execute("SELECT 1 FROM settings WHERE key='panel_port_https'").fetchone()
+    if not r2:
+        db.execute("INSERT INTO settings (key, value) VALUES ('panel_port_https', ?)", (str(HTTPS_PORT),))
+    
+    # Also persist EXT_IP if available in ENV but missing in DB
+    r3 = db.execute("SELECT 1 FROM settings WHERE key='panel_ext_ip'").fetchone()
+    if not r3:
+        env_ip = os.getenv("SKYNET_EXT_IP")
+        if env_ip:
+            db.execute("INSERT INTO settings (key, value) VALUES ('panel_ext_ip', ?)", (env_ip,))
+    db.commit()
 POLL_SEC = int(os.getenv("POLL_INTERVAL", "15"))
 
 # ─── Auth Decorator ──────────────────────────────────────────────────────────

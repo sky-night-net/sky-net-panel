@@ -841,7 +841,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <h4 style="margin:0 0 12px; font-size:13px; text-transform:uppercase; color:var(--kg-text-dim);">Порты веб-панели</h4>
         <div class="fr">
           <div class="fg"><label>HTTP Порт (1024-65535)</label><input id="new-panel-port" type="number" placeholder="4466"></div>
-          <div class="fg"><label>HTTPS Порт (1024-65535)</label><input id="new-panel-port-https" type="number" placeholder="4467"></div>
+          <div class="fg"><label>HTTPS Порт (1024-65535)</label><input id="new-panel-port-https" type="number" placeholder="4466"></div>
           <div class="fg" style="align-self:flex-end;">
             <button class="btn btn-p" onclick="changePanelPort()">Применить порты</button>
           </div>

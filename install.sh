@@ -19,8 +19,8 @@ LOCAL_IP=$(hostname -I | awk '{print $1}')
 EXT_IP=$(curl -s ifconfig.me || echo "unknown")
 
 echo -n -e "${BLUE}Enter Panel Port [default 9090]: ${NC}"
-read PANEL_PORT < /dev/tty
-PANEL_PORT=${PANEL_PORT:-9090}
+PANEL_PORT=${PANEL_PORT:-4467}
+PANEL_HTTPS_PORT=4466
 
 echo -n -e "${BLUE}Confirm Local IP [$LOCAL_IP]: ${NC}"
 read USER_LOCAL_IP < /dev/tty
@@ -30,7 +30,7 @@ echo -n -e "${BLUE}Confirm External IP [$EXT_IP]: ${NC}"
 read USER_EXT_IP < /dev/tty
 EXT_IP=${USER_EXT_IP:-$EXT_IP}
 
-echo -e "${BLUE}Using Port: $PANEL_PORT, Local IP: $LOCAL_IP, External IP: $EXT_IP${NC}"
+echo -e "${BLUE}Using HTTP Port: $PANEL_PORT, HTTPS Port: $PANEL_HTTPS_PORT, Local IP: $LOCAL_IP, External IP: $EXT_IP${NC}"
 
 # ─── Installation ──────────────────────────────────────────────────────────
 
@@ -76,6 +76,7 @@ cd $INSTALL_DIR
 echo -e "${BLUE}Configuring UFW...${NC}"
 ufw allow 22/tcp
 ufw allow $PANEL_PORT/tcp
+ufw allow $PANEL_HTTPS_PORT/tcp
 ufw --force enable
 
 # Create Systemd Service
@@ -94,6 +95,7 @@ Restart=always
 RestartSec=5
 Environment=PYTHONUNBUFFERED=1
 Environment=SKYNET_PORT=$PANEL_PORT
+Environment=SKYNET_HTTPS_PORT=$PANEL_HTTPS_PORT
 Environment=SKYNET_EXT_IP=$EXT_IP
 
 [Install]
