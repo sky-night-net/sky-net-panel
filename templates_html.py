@@ -1472,7 +1472,16 @@ function changeTheme(t){
 })();
 
 // Nav
-const loadSettings = async () => {};
+const loadSettings = async () => {
+  const input = document.getElementById('public-ip-override');
+  if(!input) return;
+  try {
+      const data = await API('/panel/api/system/settings');
+      if(data && data.public_ip_override) {
+          input.value = data.public_ip_override;
+      }
+  } catch(e) { console.error("Settings load fail", e); }
+};
 
 function switchPage(page, noPush=false) {
   let targetUrl = page === 'dashboard' ? '/' : '/' + page;
@@ -2564,18 +2573,6 @@ function savePublicIP() {
     else alert('Error: ' + res.msg);
   });
 }
-function loadSettings() {
-  const input = document.getElementById('public-ip-override');
-  if(!input) return;
-  fetch('/panel/api/system/settings').then(r=>r.json()).then(data => {
-      if(data.public_ip_override) input.value = data.public_ip_override;
-  });
-}
-// Listen for page changes to load settings
-document.querySelectorAll('[data-page="settings"]').forEach(el => {
-    el.addEventListener('click', () => { setTimeout(loadSettings, 100); });
-});
-
 // Backup & Restore
 async function downloadBackup(){
   window.location.href='/panel/api/system/backup';
