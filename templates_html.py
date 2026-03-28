@@ -694,12 +694,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   <div id="modal-fw-content" style="background:#1a222f; width:100%; max-width:480px; border-radius:12px; box-shadow:0 30px 60px rgba(0,0,0,0.6); position:relative; overflow:hidden; animation: modalIn 0.3s ease-out; margin: auto;">
     <div style="padding:40px 40px 24px 40px;">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
-        <h2 style="margin:0; font-size:28px; font-weight:700; color:white;">Правило межсетевого экрана</h2>
+        <h2 style="margin:0; font-size:28px; font-weight:700; color:white;" data-i18n="fw_modal_title">Правило межсетевого экрана</h2>
         <div style="cursor:pointer; color:rgba(255,255,255,0.5); padding:4px;" onclick="document.getElementById('modal-fw').style.display='none'">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </div>
       </div>
-      <p style="margin:0; color:rgba(255,255,255,0.5); font-size:14px; line-height:1.6;">Выберите действие, которое нужно выполнить для входящих пакетов, и укажите условия, при которых это действие должно быть выполнено.</p>
+      <p style="margin:0; color:rgba(255,255,255,0.5); font-size:14px; line-height:1.6;" data-i18n="fw_modal_desc">Выберите действие, которое нужно выполнить для входящих пакетов, и укажите условия, при которых это действие должно быть выполнено.</p>
     </div>
     
     <div style="padding:0 40px 40px 40px; max-height:70vh; overflow-y:auto;">
@@ -707,7 +707,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       
       <label style="display:flex; align-items:center; gap:12px; margin-bottom:32px; cursor:pointer;">
         <input type="checkbox" id="fw-m-enabled" checked style="width:20px;height:20px; accent-color:var(--kg-blue); cursor:pointer;">
-        <span style="color:white; font-size:16px;">Включить правило</span>
+        <span style="color:white; font-size:16px;" data-i18n="fw_enable_rule">Включить правило</span>
       </label>
       
       <div class="kn-field" style="margin-bottom:32px;">
@@ -716,85 +716,85 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       </div>
       
       <div class="kn-field">
-        <label>Действие</label>
+        <label data-i18n="fw_action_lbl">Действие</label>
         <select id="fw-m-action">
-          <option value="allow">Разрешить</option>
-          <option value="deny">Запретить</option>
-          <option value="reject">Отбросить</option>
+          <option value="allow" data-i18n="allow">Разрешить</option>
+          <option value="deny" data-i18n="deny">Запретить</option>
+          <option value="reject" data-i18n="fw_reject">Отбросить</option>
         </select>
       </div>
       
       <div class="kn-field" id="kn-srcip-box">
-        <label>IP-адрес источника</label>
+        <label data-i18n="fw_src_ip_lbl">IP-адрес источника</label>
         <select id="fw-m-srcip-sel" onchange="fwOnCustomChange(this, 'fw-m-srcip-val')">
-          <option value="any">Любой</option>
-          <option value="custom">Указать IP или подсеть...</option>
+          <option value="any" data-i18n="any">Любой</option>
+          <option value="custom" data-i18n="fw_custom_ip">Указать IP или подсеть...</option>
         </select>
         <input id="fw-m-srcip-val" style="display:none; margin-top:10px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px;" placeholder="например: 10.8.0.0/24">
       </div>
       
       <div class="kn-field" id="kn-dstip-box">
-        <label>IP-адрес назначения</label>
+        <label data-i18n="fw_dst_ip_lbl">IP-адрес назначения</label>
         <select id="fw-m-dstip-sel" onchange="fwOnCustomChange(this, 'fw-m-dstip-val')">
-          <option value="any">Любой</option>
-          <option value="custom">Указать IP или подсеть...</option>
+          <option value="any" data-i18n="any">Любой</option>
+          <option value="custom" data-i18n="fw_custom_ip">Указать IP или подсеть...</option>
         </select>
         <input id="fw-m-dstip-val" style="display:none; margin-top:10px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px;" placeholder="например: 1.1.1.1">
       </div>
       
       <div class="kn-field" id="kn-srcport-box">
-        <label>Номер порта источника</label>
+        <label data-i18n="fw_src_port_lbl">Номер порта источника</label>
         <select id="fw-m-srcport-sel" onchange="fwOnCustomChange(this, 'fw-m-srcport-val')">
-          <option value="any">Любой</option>
-          <option value="custom">Указать порт или диапазон...</option>
+          <option value="any" data-i18n="any">Любой</option>
+          <option value="custom" data-i18n="fw_custom_port">Указать порт или диапазон...</option>
         </select>
         <input id="fw-m-srcport-val" style="display:none; margin-top:10px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px;" placeholder="например: 80 или 3000:4000">
       </div>
       
       <div class="kn-field">
-        <label>Протокол</label>
+        <label data-i18n="protocol">Протокол</label>
         <select id="fw-m-proto">
           <option value="tcp">TCP</option>
           <option value="udp">UDP</option>
-          <option value="any">Любой</option>
+          <option value="any" data-i18n="any">Любой</option>
           <option value="icmp">ICMP</option>
         </select>
       </div>
       
       <div class="kn-field" id="kn-dstport-box">
-        <label>Номер порта назначения</label>
+        <label data-i18n="fw_dst_port_lbl">Номер порта назначения</label>
         <select id="fw-m-dstport-sel" onchange="fwOnCustomChange(this, 'fw-m-dstport-val')">
-          <option value="any">Любой</option>
-          <option value="custom">Указать порт или диапазон...</option>
+          <option value="any" data-i18n="any">Любой</option>
+          <option value="custom" data-i18n="fw_custom_port">Указать порт или диапазон...</option>
         </select>
         <input id="fw-m-dstport-val" style="display:none; margin-top:10px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px;" placeholder="например: 443 или 8000:9000">
       </div>
       
       <div class="kn-field">
-        <label>Интерфейс</label>
+        <label data-i18n="fw_iface_lbl">Интерфейс</label>
         <select id="fw-m-iface"></select>
       </div>
       
       <div class="kn-field">
-        <label>Переместить в</label>
+        <label data-i18n="fw_prio_lbl">Переместить в</label>
         <select id="fw-m-prio">
-          <option value="10">Начало списка</option>
-          <option value="50">Середина списка</option>
-          <option value="100" selected>Конец (текущая позиция)</option>
+          <option value="10" data-i18n="fw_prio_start">Начало списка</option>
+          <option value="50" data-i18n="fw_prio_mid">Середина списка</option>
+          <option value="100" selected data-i18n="fw_prio_end">Конец (текущая позиция)</option>
         </select>
       </div>
       
       <div class="kn-field" style="margin-bottom:0;">
-        <label>Расписание работы</label>
+        <label data-i18n="fw_schedule_lbl">Расписание работы</label>
         <select id="fw-m-schedule">
-          <option value="always">Работает постоянно</option>
+          <option value="always" data-i18n="fw_always">Работает постоянно</option>
         </select>
       </div>
     </div>
     
     <div style="padding:0 40px 40px 40px; display:flex; gap:16px;">
-      <button class="btn" style="flex:1.5; height:50px; background:var(--kg-blue); color:white; border:none; border-radius:8px; font-weight:600; font-size:16px; cursor:pointer;" onclick="fwSaveModal()">Сохранить</button>
-      <button class="btn" style="flex:1; height:50px; background:rgba(255,255,255,0.05); color:var(--kg-blue); border:1px solid rgba(0,161,228,0.3); border-radius:8px; font-weight:600; font-size:16px; cursor:pointer;" onclick="document.getElementById('modal-fw').style.display='none'">Отменить</button>
+      <button class="btn" style="flex:1.5; height:50px; background:var(--kg-blue); color:white; border:none; border-radius:8px; font-weight:600; font-size:16px; cursor:pointer;" onclick="fwSaveModal()" data-i18n="fw_save">Сохранить</button>
+      <button class="btn" style="flex:1; height:50px; background:rgba(255,255,255,0.05); color:var(--kg-blue); border:1px solid rgba(0,161,228,0.3); border-radius:8px; font-weight:600; font-size:16px; cursor:pointer;" onclick="document.getElementById('modal-fw').style.display='none'" data-i18n="fw_cancel">Отменить</button>
     </div>
   </div>
 </div>
@@ -1219,7 +1219,7 @@ const I18N = {
     "instr_ssl_p":"For a secure connection, use Let's Encrypt (domain required) or a Self-signed certificate. When using a self-signed certificate, the browser will show a warning — this is normal, the traffic is still encrypted.",
     "instr_backup_h":"4. Backup",
     "instr_backup_p":"Regularly download backups in the \"Backup and Restore\" section. The file contains a complete user database and all VPN configurations. In case of failure or moving to another server, you can restore everything in one click.",
-    "allow":"Allow", "deny":"Deny", "any":"Any", "protocol":"Protocol", "name":"Name", "port":"Port",
+    "allow":"Allow", "deny":"Deny", "reject":"Reject", "any":"Any", "protocol":"Protocol", "name":"Name", "port":"Port",
     "adv_params":"Advanced parameters (MTU, DNS, Subnet)", "create":"Create", "reset":"Reset",
     "done":"Done", "qr_title":"Client Configuration", "qr_copy":"Copy", "qr_down": "Download .conf", "qr_close":"Close",
     "widget_title":"Tile Layout", "nav_ifaces":"Network Interfaces", "login_btn":"LOGIN TO PANEL", "disk_lbl":"DISK",
@@ -1250,7 +1250,23 @@ const I18N = {
     "sec_confirm":"Confirm Password", "sys_params":"Web Panel Ports", "sec_apply_ports":"Apply Ports",
     "sec_restart_warn":"Attention: panel will restart on new ports.", "import":"Restore from file",
     "tg_token_lbl":"Bot Token (@BotFather)", "user_lbl":"User:", "lang_lbl":"Select Language",
-    "theme_lbl":"Visual Theme", "logout":"Logout", "reboot":"Reboot"
+    "theme_lbl":"Visual Theme", "logout":"Logout", "reboot":"Reboot",
+    "enable":"Enable UFW", "disable":"Disable UFW", "add_rule":"Add Rule",
+    "fw_title":"Firewall", "fw_desc":"To add a firewall rule, select an interface to monitor incoming traffic and click Add Rule.",
+    "fw_modal_title":"Firewall Rule", "fw_modal_desc":"Choose the action for incoming packets and specify conditions.",
+    "fw_enable_rule":"Enable rule", "fw_action_lbl":"Action", "fw_reject":"Reject",
+    "fw_src_ip_lbl":"Source IP address", "fw_dst_ip_lbl":"Destination IP address",
+    "fw_src_port_lbl":"Source port", "fw_dst_port_lbl":"Destination port",
+    "fw_custom_ip":"Specify IP or subnet...", "fw_custom_port":"Specify port or range...",
+    "fw_iface_lbl":"Interface", "fw_prio_lbl":"Move to",
+    "fw_prio_start":"Top of list", "fw_prio_mid":"Middle of list", "fw_prio_end":"End (current position)",
+    "fw_schedule_lbl":"Schedule", "fw_always":"Always active",
+    "fw_save":"Save", "fw_cancel":"Cancel",
+    "fw_del_confirm":"Delete rule?", "fw_apply_confirm":"Apply all settings to the system?",
+    "fw_sync_done":"Import completed!", "fw_name_ph":"e.g.: Block ICMP",
+    "fw_prio_col":"Prio.", "fw_action_col":"Action", "fw_proto_col":"Protocol",
+    "fw_iface_col":"Interface", "fw_src_col":"Source", "fw_srcp_col":"Src Port",
+    "fw_dst_col":"Destination", "fw_dstp_col":"Dst Port", "fw_name_col":"Name / Comment"
   }
 };
 function _T(key) {
@@ -1277,7 +1293,23 @@ function _T(key) {
     "sec_confirm":"Подтверждение", "sys_params":"Порты веб-панели", "sec_apply_ports":"Применить порты",
     "sec_restart_warn":"Внимание: панель перезапустится на новых портах.", "import":"Восстановить из файла",
     "tg_token_lbl":"Bot Token (@BotFather)", "user_lbl":"Пользователь:", "lang_lbl":"Выберите язык",
-    "theme_lbl":"Стиль оформления", "logout":"Выйти", "reboot":"Перезагрузка"
+    "theme_lbl":"Стиль оформления", "logout":"Выйти", "reboot":"Перезагрузка",
+    "enable":"Включить UFW", "disable":"Выключить UFW", "add_rule":"Добавить правило",
+    "fw_title":"Межсетевой экран", "fw_desc":"Чтобы добавить правило, выберите интерфейс и нажмите Добавить правило.",
+    "fw_modal_title":"Правило межсетевого экрана",
+    "fw_modal_desc":"Выберите действие для входящих пакетов и укажите условия.",
+    "fw_enable_rule":"Включить правило", "fw_action_lbl":"Действие",
+    "allow":"Разрешить", "deny":"Запретить", "reject":"Отклонить", "fw_reject":"Отбросить",
+    "fw_src_ip_lbl":"IP-адрес источника", "fw_dst_ip_lbl":"IP-адрес назначения",
+    "fw_src_port_lbl":"Порт источника", "fw_dst_port_lbl":"Порт назначения",
+    "fw_custom_ip":"Указать IP или подсеть...", "fw_custom_port":"Указать порт или диапазон...",
+    "fw_iface_lbl":"Интерфейс", "fw_prio_lbl":"Переместить в",
+    "fw_prio_start":"Начало списка", "fw_prio_mid":"Середина списка", "fw_prio_end":"Конец (текущая позиция)",
+    "fw_schedule_lbl":"Расписание работы", "fw_always":"Работает постоянно",
+    "fw_save":"Сохранить", "fw_cancel":"Отменить",
+    "fw_del_confirm":"Удалить правило?", "fw_apply_confirm":"Применить все настройки в систему?",
+    "fw_sync_done":"Импорт завершен!", "fw_sync_confirm":"Импортировать текущие правила из системы?",
+    "any":"Любой", "protocol":"Протокол", "name":"Имя"
   }[key] || key;
   return (I18N[lang] && I18N[lang][key]) ? I18N[lang][key] : key;
 }
@@ -2073,8 +2105,7 @@ let fwRulesData = [];
 let fwInterfacesData = [];
 
 async function loadFirewall() {
-  // Auto-sync with system on load
-  await POST('/panel/api/firewall/sync', {});
+  // Rules are loaded from DB, sync only on explicit button click
   const r = await API('/panel/api/firewall');
   if(!r.success) return;
   
@@ -2116,9 +2147,9 @@ async function fwSync() {
   const r = await POST('/panel/api/firewall/sync');
   if(r.success) {
     loadFirewall();
-    alert('Импорт завершен!');
+    alert(_T('fw_sync_done') || 'Импорт завершен!');
   } else {
-    alert('Ошибка: ' + r.msg);
+    alert((_T('error_lbl') || 'Ошибка') + ': ' + r.msg);
   }
 }
 
@@ -2211,7 +2242,7 @@ function fwOpenModal(id = null) {
   
   // Clear interfaces list and re-populate
   const ifaceSel = document.getElementById('fw-m-iface');
-  ifaceSel.innerHTML = '<option value="any">Любой</option>';
+  ifaceSel.innerHTML = '<option value="any">' + _T('any') + '</option>';
   fwInterfacesData.forEach(iface => {
     const opt = document.createElement('option');
     opt.value = iface;
@@ -2280,7 +2311,7 @@ async function fwSaveModal() {
 }
 
 async function fwDelete(id) {
-  if(!confirm('Удалить правило?')) return;
+  if(!confirm(_T('fw_del_confirm') || 'Удалить правило?')) return;
   const r = await POST('/panel/api/firewall/delete', {id});
   if(r.success) {
       await POST('/panel/api/firewall/apply', {});
@@ -2289,7 +2320,7 @@ async function fwDelete(id) {
 }
 
 async function fwApply() {
-  if(!confirm('Применить все настройки в систему? Все текущие правила UFW будут сброшены и переписаны из базы.')) return;
+  if(!confirm(_T('fw_apply_confirm') || 'Применить все настройки в систему?')) return;
   const r = await POST('/panel/api/firewall/apply', {});
   alert(r.msg);
   loadFirewall();

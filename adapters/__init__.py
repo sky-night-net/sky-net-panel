@@ -110,35 +110,64 @@ class ProtocolAdapter:
             return "eth0"
 
     def _setup_nat(self, subnet: str):
-        """Настроить NAT (MASQUERADE) и пересылку (FORWARD) для указанной подсети."""
+        """Настроить NAT (MASQUERADE) и пересылку (FORWARD) для указанной подсети.
+        Rules are applied both at runtime (iptables) AND persistently (ufw before.rules).
+        """
         iface = self._get_external_iface()
         log.info(f"[{self.PROTOCOL_NAME}] Setting up NAT for {subnet} via {iface}")
         try:
             # Enable IP Forwarding
             self._run(["sysctl", "-w", "net.ipv4.ip_forward=1"], check=False)
-            
+
             # FORWARD rules (Insert at top to bypass UFW if needed)
-            # Accept traffic from VPN subnet to internet
             self._run(["iptables", "-I", "FORWARD", "-s", subnet, "-j", "ACCEPT"], check=False)
-            # Accept established/related traffic back to VPN subnet
             self._run(["iptables", "-I", "FORWARD", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"], check=False)
-            
+
             # NAT rule (append if not exists)
-            # We check if it exists first to avoid duplicates
             check_cmd = ["iptables", "-t", "nat", "-C", "POSTROUTING", "-s", subnet, "-o", iface, "-j", "MASQUERADE"]
             res = subprocess.run(check_cmd, capture_output=True)
             if res.returncode != 0:
                 self._run(["iptables", "-t", "nat", "-A", "POSTROUTING", "-s", subnet, "-o", iface, "-j", "MASQUERADE"], check=False)
-            
+
             # UFW Route Allowance (if UFW exists)
             res_ufw = subprocess.run(["which", "ufw"], capture_output=True)
             if res_ufw.returncode == 0:
                 self._run(["ufw", "route", "allow", "from", subnet, "to", "any"], check=False)
 
-            # TCP MSS Clamping to avoid MTU issues (common in VPNs)
+            # TCP MSS Clamping to avoid MTU issues
             self._run(["iptables", "-t", "mangle", "-I", "FORWARD", "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--clamp-mss-to-pmtu"], check=False)
+
+            # ─── Persistent NAT: write to /etc/ufw/before.rules ─────
+            self._persist_nat_rule(subnet, iface)
         except Exception as e:
             log.error(f"[{self.PROTOCOL_NAME}] NAT setup error: {e}")
+
+    def _persist_nat_rule(self, subnet: str, iface: str):
+        """Add a NAT MASQUERADE rule to /etc/ufw/before.rules for persistence."""
+        before_rules = "/etc/ufw/before.rules"
+        tag = f"# SKYNET-NAT-{subnet}"
+        nat_block = (
+            f"\n{tag}\n"
+            f"*nat\n"
+            f":POSTROUTING ACCEPT [0:0]\n"
+            f"-A POSTROUTING -s {subnet} -o {iface} -j MASQUERADE\n"
+            f"COMMIT\n"
+            f"{tag}-END\n"
+        )
+        try:
+            if not os.path.exists(before_rules):
+                return
+            with open(before_rules, "r") as f:
+                content = f.read()
+            # Don't duplicate
+            if tag in content:
+                return
+            # Append before the last COMMIT or at end
+            with open(before_rules, "a") as f:
+                f.write(nat_block)
+            log.info(f"[{self.PROTOCOL_NAME}] Persistent NAT written to {before_rules} for {subnet}")
+        except Exception as e:
+            log.warning(f"[{self.PROTOCOL_NAME}] Failed to persist NAT rule: {e}")
 
     def _cleanup_nat(self, subnet: str):
         """Удалить правила NAT и FORWARD для указанной подсети."""
@@ -148,13 +177,44 @@ class ProtocolAdapter:
             self._run(["iptables", "-D", "FORWARD", "-s", subnet, "-j", "ACCEPT"], check=False)
             self._run(["iptables", "-t", "nat", "-D", "POSTROUTING", "-s", subnet, "-o", iface, "-j", "MASQUERADE"], check=False)
             self._run(["iptables", "-D", "INPUT", "-s", subnet, "-j", "ACCEPT"], check=False)
-            
+
             # UFW Cleanup
             res_ufw = subprocess.run(["which", "ufw"], capture_output=True)
             if res_ufw.returncode == 0:
                 self._run(["ufw", "route", "delete", "allow", "from", subnet, "to", "any"], check=False)
+
+            # Remove persistent NAT rule from before.rules
+            self._remove_persist_nat_rule(subnet)
         except Exception as e:
             log.debug(f"[{self.PROTOCOL_NAME}] NAT cleanup error (expected if rules gone): {e}")
+
+    def _remove_persist_nat_rule(self, subnet: str):
+        """Remove the tagged NAT block from /etc/ufw/before.rules."""
+        before_rules = "/etc/ufw/before.rules"
+        tag_start = f"# SKYNET-NAT-{subnet}"
+        tag_end = f"{tag_start}-END"
+        try:
+            if not os.path.exists(before_rules):
+                return
+            with open(before_rules, "r") as f:
+                lines = f.readlines()
+            # Filter out the tagged block
+            new_lines = []
+            skip = False
+            for line in lines:
+                if tag_start in line and tag_end not in line:
+                    skip = True
+                    continue
+                if tag_end in line:
+                    skip = False
+                    continue
+                if not skip:
+                    new_lines.append(line)
+            with open(before_rules, "w") as f:
+                f.writelines(new_lines)
+            log.info(f"[{self.PROTOCOL_NAME}] Removed persistent NAT for {subnet}")
+        except Exception as e:
+            log.warning(f"[{self.PROTOCOL_NAME}] Failed to remove persistent NAT rule: {e}")
 
 
 class AdapterFactory:

@@ -539,14 +539,27 @@ def api_inbound_add():
                 adapter.start(ib_dict)
             except Exception as e: log.error(f"Failed to start inbound: {e}")
     
-    # Auto-allow port in UFW
+    # Auto-allow port in UFW AND register in firewall_rules DB
     import subprocess
     try:
-        # Extract proto from settings if available
-        settings_dict = request.get_json(silent=True).get("settings", {})
-        proto_cfg = settings_dict.get("proto", "tcp" if "openvpn" in protocol else "udp")
+        proto_cfg = "tcp" if "openvpn" in protocol else "udp"
         subprocess.run(["ufw", "allow", f"{port}/{proto_cfg}"], check=False)
-    except: pass
+        # Also register in DB so _apply_firewall_rules() preserves it
+        with get_db() as db:
+            existing = db.execute(
+                "SELECT id FROM firewall_rules WHERE dst_port=? AND protocol=? AND comment LIKE 'VPN:%'",
+                (str(port), proto_cfg)
+            ).fetchone()
+            if not existing:
+                max_prio = db.execute("SELECT COALESCE(MAX(priority),0) FROM firewall_rules").fetchone()[0]
+                db.execute(
+                    "INSERT INTO firewall_rules (enabled,priority,action,protocol,src_ip,src_port,dst_ip,dst_port,interface,comment) "
+                    "VALUES (1,?,?,?,?,?,?,?,?,?)",
+                    (max_prio + 10, "allow", proto_cfg, "any", "any", "any", str(port), "any", f"VPN: {remark}")
+                )
+                db.commit()
+    except Exception as e:
+        log.warning(f"Auto-register VPN port rule failed: {e}")
 
     return jsonify({"success": True, "msg": "Inbound создан"})
 
@@ -556,10 +569,19 @@ def api_inbound_del(ib_id):
     with get_db() as db:
         ib = db.execute("SELECT * FROM inbounds WHERE id=?", (ib_id,)).fetchone()
         if ib:
+             proto_cfg = 'tcp' if 'openvpn' in ib['protocol'] else 'udp'
+             port = ib['port']
              # Auto-delete port in UFW
              import subprocess
              try:
-                 subprocess.run(["ufw", "delete", "allow", f"{ib['port']}/{'tcp' if 'openvpn' in ib['protocol'] else 'udp'}"], check=False)
+                 subprocess.run(["ufw", "delete", "allow", f"{port}/{proto_cfg}"], check=False)
+             except: pass
+             # Also remove from firewall_rules DB
+             try:
+                 db.execute(
+                     "DELETE FROM firewall_rules WHERE dst_port=? AND protocol=? AND comment LIKE 'VPN:%'",
+                     (str(port), proto_cfg)
+                 )
              except: pass
              try: AdapterFactory.get(ib["protocol"]).stop(dict(ib))
              except Exception as e: log.error(f"Failed to stop inbound {ib_id}: {e}")
@@ -968,63 +990,91 @@ def api_firewall_get():
     })
 
 def _apply_firewall_rules():
+    """Apply firewall rules from DB to UFW WITHOUT resetting (preserves iptables NAT)."""
     import subprocess
+    import re
     try:
-        # Reset UFW to clear all rules before re-applying from DB
-        subprocess.run(["ufw", "--force", "reset"], capture_output=True)
-        
-        # ─── Safety Failsafes (Always Allow) ────────────────────────
-        # Allow SSH and Panel Ports immediately to prevent lockout
+        # ─── Step 1: Delete existing UFW rules (in reverse to keep numbering stable) ─
+        # This approach preserves iptables -t nat rules (MASQUERADE etc.)
+        result = subprocess.run(["ufw", "status", "numbered"], capture_output=True, text=True)
+        if result.returncode == 0:
+            lines = result.stdout.strip().split("\n")
+            # Extract rule numbers in reverse order
+            rule_nums = []
+            for line in lines:
+                m = re.match(r'^\[\s*(\d+)\]', line)
+                if m:
+                    rule_nums.append(int(m.group(1)))
+            # Delete in reverse order so numbering stays correct
+            for num in sorted(rule_nums, reverse=True):
+                subprocess.run(["ufw", "--force", "delete", str(num)], capture_output=True)
+
+        # ─── Step 2: Set defaults ────────────────────────────────────
+        subprocess.run(["ufw", "default", "deny", "incoming"], capture_output=True)
+        subprocess.run(["ufw", "default", "allow", "outgoing"], capture_output=True)
+        subprocess.run(["ufw", "default", "allow", "routed"], capture_output=True)
+
+        # ─── Step 3: Safety Failsafes (Always Allow) ─────────────────
         subprocess.run(["ufw", "allow", "22/tcp"], capture_output=True)
         subprocess.run(["ufw", "allow", f"{PORT}/tcp"], capture_output=True)
         subprocess.run(["ufw", "allow", f"{HTTPS_PORT}/tcp"], capture_output=True)
-        
-        # Set defaults
-        subprocess.run(["ufw", "default", "deny", "incoming"], capture_output=True)
-        subprocess.run(["ufw", "default", "allow", "outgoing"], capture_output=True)
-        subprocess.run(["ufw", "default", "allow", "forwarded"], capture_output=True)
-        
+
+        # ─── Step 4: Apply all DB rules ──────────────────────────────
         with get_db() as db:
             rules = db.execute("SELECT * FROM firewall_rules WHERE enabled=1 ORDER BY priority ASC").fetchall()
-            
+
         for rule in rules:
-            # Skip if it's already covered by failsafe to avoid redundancy
-            if rule["dst_port"] in [str(22), str(PORT), str(HTTPS_PORT)]:
+            # Skip if already covered by failsafe
+            if rule["dst_port"] in [str(22), str(PORT), str(HTTPS_PORT)] and rule["action"] == "allow":
                 continue
-                
+
             action = rule["action"].lower()
             if action not in ["allow", "deny", "reject"]: action = "allow"
-            
+
             is_route = "FWD" in (rule["comment"] or "")
-            
+
             cmd = ["ufw"]
             if is_route: cmd.append("route")
             cmd.append(action)
-            
+
             if rule["interface"] and rule["interface"] != "any":
                 if is_route:
                     cmd += ["on", rule["interface"]]
                 else:
                     cmd += ["in", "on", rule["interface"]]
-            
+
             if rule["protocol"] and rule["protocol"] != "any":
                 cmd += ["proto", rule["protocol"]]
-                
+
             cmd += ["from", rule["src_ip"] if rule["src_ip"] else "any"]
             if rule["src_port"] and rule["src_port"] != "any":
                 cmd += ["port", str(rule["src_port"])]
-                
+
             cmd += ["to", rule["dst_ip"] if rule["dst_ip"] else "any"]
             if rule["dst_port"] and rule["dst_port"] != "any":
                 cmd += ["port", str(rule["dst_port"])]
-            
+
             subprocess.run(cmd, capture_output=True)
-        
+
+        # ─── Step 5: Re-apply NAT for all running VPN inbounds ──────
+        # This ensures MASQUERADE rules are restored after UFW changes
+        with get_db() as db:
+            inbounds = db.execute("SELECT * FROM inbounds WHERE enable=1").fetchall()
+        for ib in inbounds:
+            try:
+                import json as _json
+                settings = _json.loads(ib["settings"] or "{}")
+                subnet = settings.get("address", "10.8.0.0/24")
+                import ipaddress
+                net = ipaddress.ip_network(subnet, strict=False)
+                subnet = str(net)
+                adapter = AdapterFactory.get(ib["protocol"])
+                adapter._setup_nat(subnet)
+            except Exception as e:
+                log.warning(f"NAT re-apply for inbound {ib['id']}: {e}")
+
         subprocess.run(["ufw", "--force", "enable"], capture_output=True)
         return True
-    except Exception as e:
-        log.error(f"Firewall apply failed: {e}")
-        return False
     except Exception as e:
         log.error(f"Firewall apply failed: {e}")
         return False

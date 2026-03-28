@@ -110,6 +110,9 @@ echo -e "${BLUE}Configuring UFW...${NC}"
 ufw allow 22/tcp
 ufw allow $PANEL_PORT/tcp
 ufw allow $PANEL_HTTPS_PORT/tcp
+# CRITICAL: Allow forwarded/routed traffic for VPN
+ufw default allow routed
+sed -i 's/DEFAULT_FORWARD_POLICY="DROP"/DEFAULT_FORWARD_POLICY="ACCEPT"/' /etc/default/ufw
 ufw --force enable
 
 # Create Systemd Service
