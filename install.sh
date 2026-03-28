@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Sky-Net Panel Auto-Installer
-# Optimized for Ubuntu 24.04 LTS
+# Optimized for Ubuntu 24.04 LTS (Update 2026-03-28 11:15)
 
 set -e
 
