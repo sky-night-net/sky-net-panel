@@ -100,11 +100,12 @@ class ProtocolAdapter:
     def _get_external_iface(self) -> str:
         """Определить внешний сетевой интерфейс (с маршрутом по умолчанию)."""
         try:
-            # Query the interface used to reach the internet (Google DNS)
-            res = self._run(["bash", "-c", "ip route get 8.8.8.8 | grep -oP 'dev \K\S+'"], check=False)
+            # Query the interface used to reach the internet reliably
+            cmd = "ip route get 8.8.8.8 | awk '/dev/ {for(i=1;i<=NF;i++) if($i==\"dev\") print $(i+1)}' | head -n1"
+            res = self._run(["bash", "-c", cmd], check=False)
             if not res:
-                # Fallback to general default route
-                res = self._run(["bash", "-c", "ip route | grep default | grep -oP 'dev \K\S+' | head -n1"], check=False)
+                cmd2 = "ip -4 route show default | awk '/dev/ {for(i=1;i<=NF;i++) if($i==\"dev\") print $(i+1)}' | head -n1"
+                res = self._run(["bash", "-c", cmd2], check=False)
             return res.strip() or "eth0"
         except:
             return "eth0"
