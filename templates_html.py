@@ -382,7 +382,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <div class="sidebar-sep"></div>
     <a href="#" data-page="instructions">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-      <span>Инструкции</span>
+      <span data-i18n="nav_instr">Инструкции</span>
     </a>
     <a href="#" data-page="logs" style="display:none"><span>Журнал событий</span></a>
     <a href="#" data-page="settings" style="display:none"><span>Параметры панели</span></a>
@@ -442,7 +442,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <!-- BLOCK 2: О СИСТЕМЕ -->
     <div class="card" id="block-system">
       <div class="card-header">
-        <h3 style="margin:0">О СИСТЕМЕ</h3>
+        <h3 style="margin:0" data-i18n="sys_info">О СИСТЕМЕ</h3>
         <svg fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" viewBox="0 0 24 24" style="color:var(--kg-text-dim);"><path d="M4 8h16M4 16h16"></path></svg>
       </div>
       
@@ -490,21 +490,21 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <div class="stat-item">
           <div style="display:flex; align-items:center; gap:10px;">
             <svg fill="none" stroke="var(--kg-blue)" stroke-width="2" width="16" height="16" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-            <span class="k-lbl" style="margin:0;">Хост</span>
+            <span class="k-lbl" style="margin:0;" data-i18n="hostname_lbl">Хост</span>
           </div>
           <span class="k-val" id="d-host" style="font-family:'JetBrains Mono',monospace;">--</span>
         </div>
         <div class="stat-item">
           <div style="display:flex; align-items:center; gap:10px;">
             <svg fill="none" stroke="var(--kg-green)" stroke-width="2" width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            <span class="k-lbl" style="margin:0;">Аптайм</span>
+            <span class="k-lbl" style="margin:0;" data-i18n="uptime_lbl">Аптайм</span>
           </div>
           <span class="k-val" id="uptime-val" style="font-family:'JetBrains Mono',monospace; color:var(--kg-green);">--</span>
         </div>
         <div class="stat-item">
           <div style="display:flex; align-items:center; gap:10px;">
             <svg fill="none" stroke="#f59e0b" stroke-width="2" width="16" height="16" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-            <span class="k-lbl" style="margin:0;">Система</span>
+            <span class="k-lbl" style="margin:0;" data-i18n="sys_info">Система</span>
           </div>
           <span class="k-val" id="d-os" style="font-size:12px;">--</span>
         </div>
@@ -553,7 +553,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <div class="card" style="grid-column: span 12;" id="block-clients">
       <div class="card-header">
         <svg fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" viewBox="0 0 24 24" style="color:var(--kg-text-dim); margin-right:4px;"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-        <h3>АКТИВНЫЕ СЕССИИ И ТРАФИК</h3>
+        <h3 data-i18n="sys_sessions">АКТИВНЫЕ СЕССИИ И ТРАФИК</h3>
       </div>
       <div id="dash-clients-list" style="padding: 0 0 10px 0;">
         <!-- Active clients will be rendered here as stat-items -->
@@ -581,7 +581,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <!-- INBOUNDS -->
 <div class="page" id="page-inbounds">
   <div class="card no-blue">
-    <div class="card-header"><h3>VPN ПОДКЛЮЧЕНИЯ</h3><button class="btn btn-p" onclick="openAddInbound()">Добавить подключение</button></div>
+    <div class="card-header"><h3 data-i18n="nav_vpns">VPN ПОДКЛЮЧЕНИЯ</h3><button class="btn btn-p" onclick="openAddInbound()">Добавить подключение</button></div>
     <div id="inbounds-list">
       <!-- Inbounds will be rendered as horizontal rows here -->
     </div>
@@ -592,20 +592,20 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <div class="page" id="page-clients">
   <div class="card no-blue">
     <div class="card-header" style="justify-content: space-between;">
-      <h3>ПОДКЛЮЧЕННЫЕ КЛИЕНТЫ</h3>
+      <h3 data-i18n="nav_clients">ПОДКЛЮЧЕННЫЕ КЛИЕНТЫ</h3>
       <div class="fg" style="margin:0"><input id="clientSearch" placeholder="Поиск клиентов..." style="width: 250px;"></div>
     </div>
     <div class="table-container">
       <table>
         <thead>
           <tr>
-            <th>Клиент</th>
-            <th>Сервер</th>
-            <th>IP адрес</th>
-            <th>Трафик (↑/↓)</th>
-            <th>Лимит</th>
-            <th>Статус</th>
-            <th>Действия</th>
+            <th data-i18n="client">Клиент</th>
+            <th data-i18n="server">Сервер</th>
+            <th data-i18n="ip_addr">IP адрес</th>
+            <th data-i18n="up_down">Трафик (↑/↓)</th>
+            <th data-i18n="limit">Лимит</th>
+            <th data-i18n="status">Статус</th>
+            <th data-i18n="actions">Действия</th>
           </tr>
         </thead>
         <tbody id="clients-table"></tbody>
@@ -618,7 +618,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <div class="page" id="page-firewall">
   <div class="card" style="background:transparent; padding:0; border:none; box-shadow:none;">
     <div style="margin-bottom:20px;">
-      <h2 style="margin:0 0 10px; font-size:22px; font-weight:600; color:white;">Межсетевой экран</h2>
+      <h2 style="margin:0 0 10px; font-size:22px; font-weight:600; color:white;" data-i18n="fw_title">Межсетевой экран</h2>
       <p style="margin:0; font-size:13px; color:var(--kg-text-dim); line-height:1.5;">
         Чтобы добавить правило межсетевого экрана, выберите из списка интерфейс, на котором будет отслеживаться входящий трафик, и нажмите <b>Добавить правило</b>.<br>
         Правила применяются в том порядке, в каком они расположены в списке (по Приоритету).<br>
@@ -635,7 +635,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <div style="margin-bottom:20px;">
       <button class="btn btn-o" onclick="fwOpenModal()" style="display:flex; align-items:center; gap:6px;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-        Добавить правило
+        <span data-i18n="add_rule">Добавить правило</span>
       </button>
     </div>
     
@@ -778,7 +778,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
   <!-- Block 1: Hostname & Timezone -->
   <div class="card no-blue">
-    <div class="card-header"><h3>УСТРОЙСТВО И ВРЕМЯ</h3></div>
+    <div class="card-header"><h3 data-i18n="sys_time">УСТРОЙСТВО И ВРЕМЯ</h3></div>
     <div style="padding:25px;">
       <div class="fr">
         <div class="fg"><label>Имя устройства</label><input id="sys-hostname" placeholder="sky-net"></div>
@@ -863,7 +863,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
   <!-- Block 3: SSL / HTTPS -->
   <div class="card no-blue">
-    <div class="card-header"><h3>SSL / HTTPS</h3></div>
+    <div class="card-header"><h3 data-i18n="sys_ssl">SSL / HTTPS</h3></div>
     <div style="padding:25px;">
       <div class="fr" style="margin-bottom:15px;">
         <div class="fg"><label>Домен (например: sky-night.net)</label><input id="ssl-domain" placeholder="sky-night.net"></div>
@@ -896,7 +896,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
   <!-- Block 4: Telegram -->
   <div class="card no-blue">
-    <div class="card-header"><h3>TELEGRAM УПРАВЛЕНИЕ</h3></div>
+    <div class="card-header"><h3 data-i18n="sys_tg">TELEGRAM УПРАВЛЕНИЕ</h3></div>
     <div style="padding:25px;">
       <p style="font-size:12px; color:var(--kg-text-dim); margin:0 0 15px;">Создайте бота через @BotFather и введите токен. Управляйте VPN прямо из Telegram.</p>
       <div class="fr">
@@ -910,7 +910,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
   <!-- Block 5: Backup & Restore -->
   <div class="card no-blue">
-    <div class="card-header"><h3>РЕЗЕРВНОЕ КОПИРОВАНИЕ</h3></div>
+    <div class="card-header"><h3 data-i18n="sys_backup">РЕЗЕРВНОЕ КОПИРОВАНИЕ</h3></div>
     <div style="padding:25px;">
       <p style="font-size:12px; color:var(--kg-text-dim); margin:0 0 15px;">Полная копия базы данных и всех конфигураций VPN в одном ZIP-архиве.</p>
       <div style="display:flex; gap:10px; margin-top:20px;">
@@ -926,7 +926,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
   <!-- Block 6: Update Management -->
   <div class="card no-blue" id="block-update">
-    <div class="card-header"><h3>ОБНОВЛЕНИЕ ПАНЕЛИ</h3></div>
+    <div class="card-header"><h3 data-i18n="sys_update">ОБНОВЛЕНИЕ ПАНЕЛИ</h3></div>
     <div style="padding:25px;">
       <p style="font-size:12px; color:var(--kg-text-dim); margin:0 0 15px;">Проверка наличия новых версий на GitHub и автоматическая установка.</p>
       <div class="fr">
@@ -1184,31 +1184,65 @@ function closeModal(id){document.getElementById(id).classList.remove('show')}
 const I18N = {
   en: {
     "nav_dash":"System Monitor", "nav_vpns":"VPN Servers", "nav_clients":"Connected Clients",
-    "nav_fw":"Firewall", "nav_sys":"System Settings", "lang_lbl":"Language",
-    "theme_lbl":"Theme", "sys_log":"System Log", "cli":"Command Line",
-    "reboot":"Reboot", "logout":"Logout", "cli_title":"COMMAND LINE"
+    "nav_fw":"Firewall", "nav_sys":"System Settings", "nav_instr":"Instructions",
+    "lang_lbl":"Language", "theme_lbl":"Theme", "sys_log":"System Log", "cli":"Command Line",
+    "reboot":"Reboot", "logout":"Logout", "cli_title":"COMMAND LINE",
+    "sys_info":"SYSTEM INFO", "sys_sessions":"ACTIVE SESSIONS & TRAFFIC", "sys_ifaces":"NETWORK INTERFACES",
+    "sys_time":"DEVICE & TIME", "sys_ssl":"SSL / HTTPS", "sys_tg":"TELEGRAM MANAGEMENT",
+    "sys_backup":"BACKUP & RESTORE", "sys_update":"UPDATE MANAGEMENT", "sys_params":"PANEL SETTINGS",
+    "fw_title":"Firewall (UFW)", "add_rule":"Add Rule", "refresh":"Refresh", "save":"Save",
+    "cancel":"Cancel", "delete":"Delete", "enable":"Enable", "disable":"Disable",
+    "loading":"Loading...", "connected":"CONNECTED", "disconnected":"DISCONNECTED",
+    "running":"Running", "paused":"Paused", "no_sessions":"No active sessions",
+    "user_lbl":"User", "hostname_lbl":"Hostname", "tz_lbl":"Timezone", "port_lbl":"Panel Port",
+    "basepath_lbl":"Base Path", "tg_token_lbl":"Bot Token (@BotFather)", "tg_id_lbl":"Your Telegram ID",
+    "bkp_desc":"Full copy of database and all VPN configs in one ZIP archive.",
+    "bkp_down":"Download Backup", "bkp_rest":"Restore from file", "bkp_warn":"Panel will restart automatically after restoration.",
+    "upd_desc":"Checking for new versions on GitHub and automatic installation.",
+    "upd_check":"Check for Updates", "upd_apply":"Install Update",
+    "search_clt":"Search clients...", "up_down":"Traffic (Up/Down)", "ip_addr":"IP Address",
+    "status":"Status", "actions":"Actions", "client":"Client", "server":"Server", "limit":"Limit"
   }
 };
 function changeLang(lang) {
   localStorage.setItem('lang', lang);
   if(lang === 'ru') { location.reload(); return; }
+  
+  // 1. Data-i18n elements
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
-    if(I18N[lang] && I18N[lang][key]) el.textContent = I18N[lang][key];
+    if(I18N[lang] && I18N[lang][key]) {
+       if(el.tagName === 'INPUT' && el.type === 'placeholder') el.placeholder = I18N[lang][key];
+       else el.textContent = I18N[lang][key];
+    }
   });
   
+  // 2. Placeholder translation
+  const placeholders = {
+    "Поиск клиентов...": "search_clt",
+    "Юнит (напр. skynet)": "log_unit_ph",
+    "Например: Блокировка ICMP": "fw_name_ph",
+    "например: 10.8.0.0/24": "fw_ip_ph"
+  };
+  document.querySelectorAll('input[placeholder]').forEach(el => {
+    const key = placeholders[el.placeholder];
+    if(key && I18N[lang][key]) el.placeholder = I18N[lang][key];
+  });
+
   if(lang === 'en') {
+    // 3. Brute-force H3 headers
     const textNodes = [
        ['О СИСТЕМЕ', 'SYSTEM INFO'], ['АКТИВНЫЕ СЕССИИ И ТРАФИК', 'ACTIVE SESSIONS & TRAFFIC'],
        ['СЕТЕВЫЕ ИНТЕРФЕЙСЫ', 'NETWORK INTERFACES'], ['VPN ПОДКЛЮЧЕНИЯ', 'VPN CONNECTIONS'],
        ['ПОДКЛЮЧЕННЫЕ КЛИЕНТЫ', 'CONNECTED CLIENTS'], ['МЕЖСЕТЕВОЙ ЭКРАН', 'FIREWALL (UFW)'],
+       ['УСТРОЙСТВО И ВРЕМЯ', 'DEVICE & TIME'], ['TELEGRAM УПРАВЛЕНИЕ', 'TELEGRAM MANAGEMENT'],
+       ['РЕЗЕРВНОЕ КОПИРОВАНИЕ', 'BACKUP & RESTORE'], ['ОБНОВЛЕНИЕ ПАНЕЛИ', 'UPDATE MANAGEMENT'],
        ['ДОБАВИТЬ ПРАВИЛО', 'ADD RULE'], ['УПРАВЛЕНИЕ СИСТЕМОЙ', 'SYSTEM MANAGEMENT'],
-       ['ИМЯ УСТРОЙСТВА', 'HOSTNAME'], ['ЧАСОВОЙ ПОЯС', 'TIMEZONE'],
        ['ПАРАМЕТРЫ ПАНЕЛИ', 'PANEL SETTINGS'], ['ЖУРНАЛ СОБЫТИЙ', 'SYSTEM LOG'],
        ['КОМАНДНАЯ СТРОКА', 'COMMAND LINE']
     ];
-    document.querySelectorAll('h3').forEach(el => {
-       const mapped = textNodes.find(t => el.textContent.includes(t[0]));
+    document.querySelectorAll('h3, h2').forEach(el => {
+       const mapped = textNodes.find(t => el.textContent.trim().includes(t[0]));
        if(mapped) {
           const svg = el.querySelector('svg');
           el.textContent = mapped[1] + (svg ? ' ' : '');
@@ -1216,24 +1250,52 @@ function changeLang(lang) {
        }
     });
     
+    // 4. Buttons
     const btnNodes = [
       ['Добавить подключение', 'Add Connection'], ['Обновить', 'Refresh'], ['Создать', 'Create'],
       ['Отмена', 'Cancel'], ['Добавить правило', 'Add Rule'], ['Готово', 'Done'],
       ['Сброс', 'Reset'], ['Сохранить изменения', 'Save Changes'], ['Сохранить', 'Save'],
       ['Скачать', 'Download'], ['Запустить Web SSH', 'Start Web SSH'], ['Выключить', 'Disable'],
-      ['Включить', 'Enable'], ['Удалить', 'Delete']
+      ['Включить', 'Enable'], ['Удалить', 'Delete'], ['Перезагрузка', 'Reboot'],
+      ['Проверить обновления', 'Check Updates'], ['Установить обновление', 'Install Update'],
+      ['Скачать бэкап', 'Download Backup'], ['Восстановить из файла', 'Restore from file']
     ];
-    document.querySelectorAll('button').forEach(el => {
-      const mapped = btnNodes.find(t => el.textContent.includes(t[0]));
-      if(mapped) el.textContent = mapped[1];
+    document.querySelectorAll('button, .btn').forEach(el => {
+      const mapped = btnNodes.find(t => el.textContent.trim().includes(t[0]));
+      if(mapped) {
+        const svg = el.querySelector('svg');
+        el.textContent = mapped[1];
+        if(svg) el.prepend(svg);
+      }
     });
     
+    // 5. Labels and Table Headers
     const spanNodes = [
       ['Имя устройства', 'Hostname'], ['Версия системы', 'OS Version'], ['Время работы', 'Uptime'],
-      ['Пользователь', 'User'], ['Протокол', 'Protocol'], ['Трафик', 'Traffic'], ['Статус', 'Status']
+      ['Пользователь', 'User'], ['Протокол', 'Protocol'], ['Трафик', 'Traffic'], ['Статус', 'Status'],
+      ['Клиент', 'Client'], ['Сервер', 'Server'], ['IP адрес', 'IP Address'], ['Лимит', 'Limit'],
+      ['Действия', 'Actions'], ['Часовой пояс', 'Timezone'], ['Порт панели', 'Panel Port'],
+      ['Базовый путь', 'Base Path'], ['Ваш Telegram ID', 'Your Telegram ID'],
+      ['Текущий коммит', 'Current Commit'], ['Последний на GitHub', 'Latest on GitHub'],
+      ['Действие', 'Action'], ['Интерфейс', 'Interface'], ['Источник', 'Source'],
+      ['Порт ист.', 'Src Port'], ['Назначение', 'Destination'], ['Порт назн.', 'Dst Port']
     ];
-    document.querySelectorAll('.k-lbl, th').forEach(el => {
-      const mapped = spanNodes.find(t => el.textContent.includes(t[0]));
+    document.querySelectorAll('.k-lbl, th, label').forEach(el => {
+      const mapped = spanNodes.find(t => el.textContent.trim() === t[0]);
+      if(mapped) el.textContent = mapped[1];
+    });
+
+    // 6. Paragraphs and spans
+    const pNodes = [
+      ['Нет активных сессий', 'No active sessions'],
+      ['Создайте бота через @BotFather', 'Create a bot via @BotFather and enter the token.'],
+      ['Полная копия базы данных', 'Full copy of database and configs in one ZIP.'],
+      ['При восстановлении панель перезапустится', 'Restart required after restoration.'],
+      ['Проверка наличия новых версий', 'Checking for updates on GitHub...']
+    ];
+    document.querySelectorAll('p, span, div').forEach(el => {
+      if(el.children.length > 0) return;
+      const mapped = pNodes.find(t => el.textContent.trim().includes(t[0]));
       if(mapped) el.textContent = mapped[1];
     });
   }
