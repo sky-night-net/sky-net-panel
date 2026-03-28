@@ -2105,7 +2105,11 @@ let fwRulesData = [];
 let fwInterfacesData = [];
 
 async function loadFirewall() {
-  // Rules are loaded from DB, sync only on explicit button click
+  // First load on clean install: if DB has no rules yet, auto-import from UFW
+  const preCheck = await API('/panel/api/firewall');
+  if(preCheck.success && (!preCheck.rules || preCheck.rules.length === 0)) {
+    await POST('/panel/api/firewall/sync', {});
+  }
   const r = await API('/panel/api/firewall');
   if(!r.success) return;
   
