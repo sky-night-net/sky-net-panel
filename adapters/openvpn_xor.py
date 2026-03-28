@@ -299,9 +299,10 @@ mssfix 1350
         return True
 
     def is_running(self, inbound: dict) -> bool:
+        container_name = f"openvpn_xor_{inbound['id']}"
         try:
-            res = self._run(["systemctl", "is-active", f"openvpn@server_{inbound['id']}"])
-            return res == "active"
+            res = self._run(["docker", "inspect", "-f", "{{.State.Running}}", container_name], check=False)
+            return res.strip() == "true"
         except: return False
 
 # Регистрация

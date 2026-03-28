@@ -143,7 +143,7 @@ class ProtocolAdapter:
             log.error(f"[{self.PROTOCOL_NAME}] NAT setup error: {e}")
 
     def _persist_nat_rule(self, subnet: str, iface: str):
-        """Add a NAT MASQUERADE rule to /etc/ufw/before.rules for persistence."""
+        """Add a NAT MASQUERADE rule and FORWARD allows to /etc/ufw/before.rules for persistence."""
         before_rules = "/etc/ufw/before.rules"
         tag = f"# SKYNET-NAT-{subnet}"
         nat_block = (
@@ -151,6 +151,10 @@ class ProtocolAdapter:
             f"*nat\n"
             f":POSTROUTING ACCEPT [0:0]\n"
             f"-A POSTROUTING -s {subnet} -o {iface} -j MASQUERADE\n"
+            f"COMMIT\n"
+            f"*filter\n"
+            f"-A ufw-before-forward -s {subnet} -j ACCEPT\n"
+            f"-A ufw-before-forward -d {subnet} -j ACCEPT\n"
             f"COMMIT\n"
             f"{tag}-END\n"
         )

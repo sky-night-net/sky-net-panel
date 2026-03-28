@@ -82,7 +82,7 @@ echo -e "${BLUE}Installing VPN protocols (AmneziaWG, OpenVPN, Docker)...${NC}"
 DEBIAN_FRONTEND=noninteractive add-apt-repository ppa:amnezia/ppa -y || true
 apt-get update
 # AmneziaWG-tools is usually needed for awg-quick
-apt-get install -y amneziawg amneziawg-dkms amneziawg-tools wireguard-tools || echo "AmneziaWG installation from PPA failed"
+apt-get install -y linux-headers-generic amneziawg amneziawg-dkms amneziawg-tools amneziawg-go wireguard-tools || echo "AmneziaWG installation from PPA failed"
 apt-get install -y openvpn easy-rsa
 
 # Install Docker (needed for OpenVPN XOR)
