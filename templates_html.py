@@ -1210,6 +1210,8 @@ function fmtDate(ts){if(!ts||ts===0)return'Никогда';return new Date(ts*10
 function closeModal(id){document.getElementById(id).classList.remove('show')}
 
 // Locale & Theme
+const I18N = {
+  en: {
     "instr_clients":"— List of users", "instr_backup":"— Create and download backup",
     "instr_port_h":"2. Change Panel Port",
     "instr_port_p":"You can change the main management ports (HTTP and HTTPS) to any free ones. The panel will automatically open access in the firewall (UFW) and restart. Important: after changing ports, enter the new address in the browser manually.",
