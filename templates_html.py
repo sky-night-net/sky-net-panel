@@ -1279,6 +1279,7 @@ function _T(key) {
     "nav_ifaces":"СЕТЕВЫЕ ИНТЕРФЕЙСЫ", "login_btn":"ВОЙТИ В ПАНЕЛЬ", "disk_lbl":"ДИСК", "widget_title":"Расположение плиток",
     "current_server_time":"Текущее время сервера:", "f2b_installed_active":"Установлен и активен",
     "f2b_not_installed":"Не установлен", "status_disabled":"ОТКЛЮЧЕН", "all_rules_tab":"Все правила",
+    "fw_active_lbl":"UFW: АКТИВЕН", "fw_inactive_lbl":"UFW: НЕАКТИВЕН",
     "obfs_pw":"Пароль обфускации", "obfs_bypass":"Маршруты для обхода (bypassing)",
     "junk_lbl":"Мусорные пакеты (Junk)", "padding_lbl":"Паддинг пакетов (Padding)", "headers_lbl":"Заголовки (Headers)",
     "fw_no_rules_p1":"Нет правил для интерфейса", "f2b_confirm":"Установить Fail2Ban?",

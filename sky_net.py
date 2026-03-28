@@ -121,12 +121,17 @@ with get_db() as db:
     if not r2:
         db.execute("INSERT INTO settings (key, value) VALUES ('panel_port_https', ?)", (str(HTTPS_PORT),))
     
-    # Also persist EXT_IP if available in ENV but missing in DB
-    r3 = db.execute("SELECT 1 FROM settings WHERE key='panel_ext_ip'").fetchone()
+    # Also persist server_ip if available in ENV or detected, but missing in DB
+    r3 = db.execute("SELECT 1 FROM settings WHERE key='server_ip'").fetchone()
     if not r3:
-        env_ip = os.getenv("SKYNET_EXT_IP")
-        if env_ip:
-            db.execute("INSERT INTO settings (key, value) VALUES ('panel_ext_ip', ?)", (env_ip,))
+        # Check for old key 'panel_ext_ip' for backward compat
+        old_r = db.execute("SELECT value FROM settings WHERE key='panel_ext_ip'").fetchone()
+        if old_r:
+            db.execute("INSERT INTO settings (key, value) VALUES ('server_ip', ?)", (old_r[0],))
+        else:
+            env_ip = os.getenv("SKYNET_EXT_IP") or get_public_ip()
+            if env_ip:
+                db.execute("INSERT INTO settings (key, value) VALUES ('server_ip', ?)", (env_ip,))
     db.commit()
 POLL_SEC = int(os.getenv("POLL_INTERVAL", "15"))
 
@@ -501,6 +506,11 @@ def api_inbound_add():
     with get_db() as db:
         res = db.execute("SELECT value FROM settings WHERE key='server_ip'").fetchone()
         server_ip = res["value"] if res and res["value"] else get_public_ip()
+        
+        # Fallback to current request host if still empty (likely local network)
+        if not server_ip:
+            server_ip = request.host.split(':')[0]
+            
         if server_ip and (not res or not res["value"]):
              db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('server_ip', ?)", (server_ip,))
              db.commit()
@@ -1431,7 +1441,7 @@ def api_change_port():
     old_port = PORT
     old_port_https = HTTPS_PORT
     
-    # Step 1: Open new ports FIRST to avoid lockout
+    # Step 1: Open new ports in UFW FIRST to avoid lockout
     subprocess.run(["ufw", "allow", f"{new_port}/tcp"], capture_output=True)
     subprocess.run(["ufw", "allow", f"{new_port_https}/tcp"], capture_output=True)
     
@@ -1439,15 +1449,45 @@ def api_change_port():
     with get_db() as db:
         db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('panel_port', ?)", (str(new_port),))
         db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('panel_port_https', ?)", (str(new_port_https),))
+        
+        # Also update firewall_rules DB so rules survive apply/sync
+        # Remove old panel port rules
+        db.execute("DELETE FROM firewall_rules WHERE comment LIKE '%Panel HTTP%' OR comment LIKE '%Panel HTTPS%'")
+        max_prio = db.execute("SELECT COALESCE(MAX(priority),0) FROM firewall_rules").fetchone()[0]
+        db.execute(
+            "INSERT INTO firewall_rules (enabled,priority,action,protocol,src_ip,src_port,dst_ip,dst_port,interface,comment) "
+            "VALUES (1,?,?,?,?,?,?,?,?,?)",
+            (max_prio + 10, "allow", "tcp", "any", "any", "any", str(new_port), "any", "Panel HTTP Failsafe")
+        )
+        db.execute(
+            "INSERT INTO firewall_rules (enabled,priority,action,protocol,src_ip,src_port,dst_ip,dst_port,interface,comment) "
+            "VALUES (1,?,?,?,?,?,?,?,?,?)",
+            (max_prio + 20, "allow", "tcp", "any", "any", "any", str(new_port_https), "any", "Panel HTTPS Failsafe")
+        )
         db.commit()
         
-    # Step 3: Close old ports (only if different)
+    # Step 3: Close old ports in UFW (only if different)
     if new_port != old_port:
         subprocess.run(["ufw", "delete", "allow", f"{old_port}/tcp"], capture_output=True)
     if new_port_https != old_port_https:
         subprocess.run(["ufw", "delete", "allow", f"{old_port_https}/tcp"], capture_output=True)
+    
+    # Step 4: Update systemd service environment so new process picks up correct ports
+    try:
+        service_path = "/etc/systemd/system/skynet.service"
+        if os.path.exists(service_path):
+            with open(service_path, "r") as f:
+                content = f.read()
+            import re as _re
+            content = _re.sub(r'Environment=SKYNET_PORT=\d+', f'Environment=SKYNET_PORT={new_port}', content)
+            content = _re.sub(r'Environment=SKYNET_HTTPS_PORT=\d+', f'Environment=SKYNET_HTTPS_PORT={new_port_https}', content)
+            with open(service_path, "w") as f:
+                f.write(content)
+            subprocess.run(["systemctl", "daemon-reload"], capture_output=True)
+    except Exception as e:
+        log.warning(f"Failed to update systemd service: {e}")
         
-    # Step 4: Schedule restart after response is sent
+    # Step 5: Schedule restart after response is sent
     def delayed_restart():
         import time; time.sleep(2)
         subprocess.Popen(["systemctl", "restart", "skynet"])

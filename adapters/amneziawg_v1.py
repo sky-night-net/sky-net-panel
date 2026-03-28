@@ -42,10 +42,19 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
 
     def generate_keypair(self) -> dict:
         """Генерация PrivateKey + PublicKey через awg."""
-        self.check_binaries(["awg"])
-        priv = self._run(["awg", "genkey"])
-        pub = self._run(["bash", "-c", f"echo '{priv}' | awg pubkey"])
-        psk = self._run(["awg", "genpsk"])
+        # Try finding awg in common paths
+        awg_bin = "awg"
+        for p in ["/usr/bin/awg", "/usr/local/bin/awg"]:
+            if os.path.exists(p):
+                awg_bin = p
+                break
+        
+        priv = self._run([awg_bin, "genkey"])
+        # Use subprocess directly to avoid shell injection and handle stdin properly
+        import subprocess
+        proc = subprocess.run([awg_bin, "pubkey"], input=priv, capture_output=True, text=True, check=True)
+        pub = proc.stdout.strip()
+        psk = self._run([awg_bin, "genpsk"])
         return {"private_key": priv, "public_key": pub, "preshared_key": psk}
 
     def _iface_name(self, inbound: dict) -> str:
@@ -231,14 +240,20 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
         except: return False
 
     def install(self, server_ip: str):
-        # Реализация установки уже была, просто приводим к стилю
+        # Попытка установки через PPA
+        self._run(["bash", "-c", "DEBIAN_FRONTEND=noninteractive add-apt-repository ppa:amnezia/ppa -y || true"])
         self._run(["apt-get", "update"])
-        self._run(["apt-get", "install", "-y", "git", "golang", "make"])
-        if not os.path.exists("/usr/local/bin/awg"):
-            self._run(["git", "clone", "https://github.com/amnezia-vpn/amneziawg-tools.git", "/tmp/awg-tools"])
-            self._run(["make", "-C", "/tmp/awg-tools/src"])
-            self._run(["cp", "/tmp/awg-tools/src/wg", "/usr/local/bin/awg"])
-            self._run(["cp", "/tmp/awg-tools/src/wg-quick/linux.bash", "/usr/local/bin/awg-quick"])
-            self._run(["chmod", "+x", "/usr/local/bin/awg", "/usr/local/bin/awg-quick"])
+        try:
+            self._run(["apt-get", "install", "-y", "amneziawg", "amneziawg-tools"])
+        except:
+            # Fallback to manual build if PPA fails
+            log.info(f"[{self.PROTOCOL_NAME}] PPA install failed, building from source...")
+            self._run(["apt-get", "install", "-y", "git", "golang", "make"])
+            if not os.path.exists("/usr/bin/awg"):
+                self._run(["git", "clone", "https://github.com/amnezia-vpn/amneziawg-tools.git", "/tmp/awg-tools"])
+                self._run(["make", "-C", "/tmp/awg-tools/src"])
+                self._run(["cp", "/tmp/awg-tools/src/wg", "/usr/bin/awg"])
+                self._run(["cp", "/tmp/awg-tools/src/wg-quick/linux.bash", "/usr/bin/awg-quick"])
+                self._run(["chmod", "+x", "/usr/bin/awg", "/usr/bin/awg-quick"])
 
 AdapterFactory.register("amneziawg_v1", AmneziaWGv1Adapter)
