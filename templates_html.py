@@ -865,6 +865,20 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       </div>
       <hr style="border-color:var(--kg-border); margin:20px 0;">
       <div style="margin-bottom:20px;">
+        <h4 style="margin:0 0 12px; font-size:13px; text-transform:uppercase; color:var(--kg-text-dim);" data-i18n="sys_ext_ip">Публичный IP / Домен</h4>
+        <div class="fr">
+          <div class="fg" style="flex:2">
+            <label data-i18n="ext_ip_lbl">IP или домен для VPN конфигов</label>
+            <input id="public-ip-override" placeholder="95.85.116.86" value="">
+          </div>
+          <div class="fg" style="align-self:flex-end;">
+            <button class="btn btn-o" onclick="savePublicIP()" data-i18n="save">Сохранить</button>
+          </div>
+        </div>
+        <p style="font-size:11px; color:var(--kg-text-dim); margin:5px 0 0;" data-i18n="sys_ext_ip_desc">Используется как Endpoint в конфигах клиентов. Если пусто — определяется автоматически.</p>
+      </div>
+      <hr style="border-color:var(--kg-border); margin:20px 0;">
+      <div style="margin-bottom:20px;">
         <h4 style="margin:0 0 12px; font-size:13px; text-transform:uppercase; color:var(--kg-text-dim);" data-i18n="sys_params">Порты веб-панели</h4>
         <div class="fr">
           <div class="fg"><label data-i18n="port">HTTP Порт (1024-65535)</label><input id="new-panel-port" type="number" placeholder="4466"></div>
@@ -1233,6 +1247,7 @@ const I18N = {
     "all_rules_tab":"All Rules", "fw_active_lbl":"UFW: ACTIVE", "fw_inactive_lbl":"UFW: INACTIVE",
     "adv_params_lbl":"Advanced parameters (MTU, DNS, Subnet)", "dns_lbl":"DNS (COMMA SEPARATED)",
     "subnet_lbl":"VPN SUBNET", "ext_ip_lbl":"EXTERNAL SERVER IP (OPTIONAL)",
+    "sys_ext_ip":"Public IP / Domain", "sys_ext_ip_desc":"Used as Endpoint in client configs. If empty, detected automatically.",
     "junk_lbl":"JUNK PACKETS (JUNK)", "padding_lbl":"PACKET PADDING (PADDING)", "headers_lbl":"HEADERS",
     "fw_sync_confirm":"Import current rules from system to panel? (Original priorities will not be preserved)",
     "fw_no_rules_p1":"No rules for interface", "obfs_pw":"Obfuscation Password", "obfs_bypass":"Bypassing routes",
@@ -1280,6 +1295,7 @@ function _T(key) {
     "current_server_time":"Текущее время сервера:", "f2b_installed_active":"Установлен и активен",
     "f2b_not_installed":"Не установлен", "status_disabled":"ОТКЛЮЧЕН", "all_rules_tab":"Все правила",
     "fw_active_lbl":"UFW: АКТИВЕН", "fw_inactive_lbl":"UFW: НЕАКТИВЕН",
+    "sys_ext_ip":"Публичный IP / Домен", "sys_ext_ip_desc":"Публичный адрес для конфигов VPN. Если пусто — определяется автоматически.",
     "obfs_pw":"Пароль обфускации", "obfs_bypass":"Маршруты для обхода (bypassing)",
     "junk_lbl":"Мусорные пакеты (Junk)", "padding_lbl":"Паддинг пакетов (Padding)", "headers_lbl":"Заголовки (Headers)",
     "fw_no_rules_p1":"Нет правил для интерфейса", "f2b_confirm":"Установить Fail2Ban?",
@@ -2537,6 +2553,28 @@ async function checkSSLStatus(){
       }
   }
 }
+
+function savePublicIP() {
+  const val = document.getElementById('public-ip-override').value;
+  fetch('/panel/api/system/save-public-ip', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({value: val})
+  }).then(r => r.json()).then(res => {
+    if(res.success) alert('Settings saved!');
+    else alert('Error: ' + res.msg);
+  });
+}
+function loadSettings() {
+  const input = document.getElementById('public-ip-override');
+  if(!input) return;
+  fetch('/panel/api/system/settings').then(r=>r.json()).then(data => {
+      if(data.public_ip_override) input.value = data.public_ip_override;
+  });
+}
+// Listen for page changes to load settings
+document.querySelectorAll('[data-page="settings"]').forEach(el => {
+    el.addEventListener('click', () => { setTimeout(loadSettings, 100); });
+});
 
 // Backup & Restore
 async function downloadBackup(){

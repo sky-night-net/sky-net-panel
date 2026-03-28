@@ -52,7 +52,8 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
         priv = self._run([awg_bin, "genkey"])
         # Use subprocess directly to avoid shell injection and handle stdin properly
         import subprocess
-        proc = subprocess.run([awg_bin, "pubkey"], input=priv, capture_output=True, text=True, check=True)
+        # Some versions of awg pubkey require the newline
+        proc = subprocess.run([awg_bin, "pubkey"], input=priv + "\n", capture_output=True, text=True, check=True)
         pub = proc.stdout.strip()
         psk = self._run([awg_bin, "genpsk"])
         return {"private_key": priv, "public_key": pub, "preshared_key": psk}
@@ -160,10 +161,23 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
     def add_client(self, client: dict, inbound: dict) -> bool:
         iface = self._iface_name(inbound)
         self.check_binaries(["awg"])
-        cmd = ["awg", "set", iface, "peer", client["public_key"], "allowed-ips", client.get("allowed_ips", "10.8.0.2/32")]
+        
+        allowed_ips = client.get("allowed_ips", "10.8.0.2/32")
+        # Full command to set everything at once
+        cmd = ["awg", "set", iface, "peer", client["public_key"], "allowed-ips", allowed_ips]
+        
         if client.get("preshared_key"):
-            # Для PSK используем временный файл или echo так как _run не поддерживает stdin напрямую в текущем виде
-            self._run(["bash", "-c", f"echo '{client['preshared_key']}' > /tmp/psk_{iface} && awg set {iface} peer {client['public_key']} preshared-key /tmp/psk_{iface} && rm /tmp/psk_{iface}"])
+            # Use a temporary file for the PSK to avoid shell complexities
+            import tempfile
+            with tempfile.NamedTemporaryFile(mode='w', delete=False) as tf:
+                tf.write(client['preshared_key'])
+                tf_path = tf.name
+            try:
+                self._run(["awg", "set", iface, "peer", client["public_key"], 
+                          "allowed-ips", allowed_ips, 
+                          "preshared-key", tf_path])
+            finally:
+                if os.path.exists(tf_path): os.remove(tf_path)
         else:
             self._run(cmd)
         return True

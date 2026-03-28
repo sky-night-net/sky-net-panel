@@ -330,7 +330,32 @@ def api_db_backup():
     except Exception as e:
         return jsonify({"success": False, "msg": str(e)})
 
+@app.route("/panel/api/system/save-public-ip", methods=["POST"])
+@login_required
+def api_system_save_public_ip():
+    data = request.json
+    val = data.get("value", "").strip()
+    with get_db() as db:
+        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('public_ip_override', ?)", (val,))
+        # Also sync to 'server_ip' for immediate effect in new inbounds
+        if val:
+            db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('server_ip', ?)", (val,))
+        db.commit()
+    return jsonify({"success": True})
+
+@app.route("/panel/api/system/settings", methods=["GET"])
+@login_required
+def api_system_get_settings():
+    with get_db() as db:
+        res = db.execute("SELECT key, value FROM settings").fetchall()
+        return jsonify({r["key"]: r["value"] for r in res})
+
 def get_public_ip():
+    with get_db() as db:
+        res = db.execute("SELECT value FROM settings WHERE key='public_ip_override'").fetchone()
+        if res and res["value"]:
+            return res["value"].strip()
+            
     env_ip = os.getenv("SKYNET_EXT_IP")
     if env_ip: return env_ip
     try:
