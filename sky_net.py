@@ -724,7 +724,7 @@ def api_client_add():
         else:
             # Start from the second address in the inbound's subnet (usually .2 since .1 is server)
             try:
-                settings = json.loads(ib.get("settings", "{}"))
+                settings = json.loads(dict(ib).get("settings", "{}"))
                 address = settings.get("address", "10.8.0.0/24")
                 import ipaddress
                 net = ipaddress.ip_network(address, strict=False)
@@ -735,7 +735,7 @@ def api_client_add():
                 else:
                     next_ip = "10.8.0.2/32"
             except Exception:
-                log.warning(f"Could not parse inbound address '{ib.get('settings')}', falling back to default")
+                log.warning(f"Could not parse inbound address '{dict(ib).get('settings', '{}')}', falling back to default")
                 next_ip = "10.8.0.2/32"
 
         # Генерация ключей
