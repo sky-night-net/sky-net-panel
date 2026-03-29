@@ -76,32 +76,11 @@ echo -e "${BLUE}Installing Python and system tools...${NC}"
 apt-get install -y python3 python3-pip python3-flask python3-flask-cors python3-psutil \
   sqlite3 curl git ufw fail2ban certbot
 
-# Install VPN Dependencies
-echo -e "${BLUE}Installing VPN protocols (AmneziaWG, OpenVPN, Docker)...${NC}"
-# Use non-interactive for PPA
-DEBIAN_FRONTEND=noninteractive add-apt-repository ppa:amnezia/ppa -y || true
-apt-get update
-# AmneziaWG-tools is usually needed for awg-quick
-apt-get install -y linux-headers-$(uname -r) amneziawg amneziawg-dkms amneziawg-tools wireguard-tools || echo "AmneziaWG installation from PPA failed"
-apt-get install -y openvpn easy-rsa
+# VPN Keys and Cert Tools (OpenVPN utilizes easy-rsa on the host)
+echo -e "${BLUE}Installing VPN Key Utilities...${NC}"
+apt-get install -y easy-rsa
 
-# Install AmneziaWG-Go as a bulletproof fallback for restricted cloud kernels / Secure Boot
-echo -e "${BLUE}Installing AmneziaWG-Go (Userspace Fallback)...${NC}"
-ARCH=$(uname -m)
-AWG_GO_URL=""
-if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
-    AWG_GO_URL="https://github.com/amnezia-vpn/amneziawg-go/releases/download/v0.3.4/amneziawg-go_0.3.4_linux_amd64.tar.gz"
-elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-    AWG_GO_URL="https://github.com/amnezia-vpn/amneziawg-go/releases/download/v0.3.4/amneziawg-go_0.3.4_linux_arm64.tar.gz"
-fi
-if [ -n "$AWG_GO_URL" ]; then
-    curl -sL "$AWG_GO_URL" -o /tmp/amneziawg-go.tar.gz
-    tar -xzf /tmp/amneziawg-go.tar.gz -C /usr/bin/ || true
-    chmod +x /usr/bin/amneziawg-go || true
-    rm -f /tmp/amneziawg-go.tar.gz
-fi
-
-# Install Docker (needed for OpenVPN XOR)
+# Install Docker (required for all VPN protocols: AmneziaWG, OpenVPN XOR)
 if ! [ -x "$(command -v docker)" ]; then
   echo -e "${BLUE}Docker not found. Installing Docker...${NC}"
   curl -fsSL https://get.docker.com -o get-docker.sh

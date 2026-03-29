@@ -33,29 +33,26 @@ DEFAULT_AWG_V1_OBFUSCATION = {
 
 class AmneziaWGv1Adapter(ProtocolAdapter):
     PROTOCOL_NAME = "amneziawg_v1"
-    REQUIRED_BINARIES = ["awg", "awg-quick"]
+    REQUIRED_BINARIES = ["docker"]
     INTERFACE_PREFIX = "awg"
     CONFIG_DIR = "/etc/amnezia/amneziawg"
 
     def __init__(self, db_conn=None):
         super().__init__(db_conn)
 
+    def install(self, server_ip: str):
+        log.info(f"[{self.PROTOCOL_NAME}] Checking AmneziaWG Docker image...")
+        self._run(["docker", "pull", "amneziavpn/amnezia-wg"])
+
     def generate_keypair(self) -> dict:
-        """Генерация PrivateKey + PublicKey через awg."""
-        # Try finding awg in common paths
-        awg_bin = "awg"
-        for p in ["/usr/bin/awg", "/usr/local/bin/awg"]:
-            if os.path.exists(p):
-                awg_bin = p
-                break
+        awg_cmd = ["docker", "run", "--rm", "--entrypoint", "awg", "amneziavpn/amnezia-wg"]
+        priv = self._run(awg_cmd + ["genkey"])
         
-        priv = self._run([awg_bin, "genkey"])
-        # Use subprocess directly to avoid shell injection and handle stdin properly
         import subprocess
-        # Some versions of awg pubkey require the newline
-        proc = subprocess.run([awg_bin, "pubkey"], input=priv + "\n", capture_output=True, text=True, check=True)
+        proc = subprocess.run(awg_cmd + ["pubkey"], input=priv + "\n", capture_output=True, text=True, check=True)
         pub = proc.stdout.strip()
-        psk = self._run([awg_bin, "genpsk"])
+        
+        psk = self._run(awg_cmd + ["genpsk"])
         return {"private_key": priv, "public_key": pub, "preshared_key": psk}
 
     def _iface_name(self, inbound: dict) -> str:
@@ -78,13 +75,6 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
         address = settings.get("address", "10.8.0.1/24")
         mtu = settings.get("mtu", 1420)
         port = inbound.get("port", 51820)
-
-        # Detect default interface
-        import subprocess
-        try:
-            iface_out = subprocess.check_output("ip route get 8.8.8.8 | grep dev | awk '{print $5}'", shell=True).decode().strip()
-            if not iface_out: iface_out = "ens18" # fallback
-        except: iface_out = "ens18"
 
         lines = [
             "[Interface]",
@@ -115,7 +105,7 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
                 lines.append(f"PresharedKey = {c['preshared_key']}")
             lines.append(f"AllowedIPs = {c.get('allowed_ips', '10.8.0.2/32')}")
 
-        return "\n".join(lines) + "\n"
+        return "\n".join(lines)
 
     def generate_client_config(self, client: dict, inbound: dict) -> str:
         """Генерация клиентского .conf файла."""
@@ -156,35 +146,34 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
             "AllowedIPs = 0.0.0.0/0, ::/0",
             "PersistentKeepalive = 25",
         ]
-        return "\n".join(lines) + "\n"
+        return "\n".join(lines)
 
     def add_client(self, client: dict, inbound: dict) -> bool:
         iface = self._iface_name(inbound)
-        self.check_binaries(["awg"])
+        container_name = f"skynet_{inbound['protocol']}_{inbound['id']}"
+        self.check_binaries(["docker"])
         
         allowed_ips = client.get("allowed_ips", "10.8.0.2/32")
-        # Full command to set everything at once
-        cmd = ["awg", "set", iface, "peer", client["public_key"], "allowed-ips", allowed_ips]
         
         if client.get("preshared_key"):
-            # Use a temporary file for the PSK to avoid shell complexities
-            import tempfile
-            with tempfile.NamedTemporaryFile(mode='w', delete=False) as tf:
-                tf.write(client['preshared_key'] + '\n')
-                tf_path = tf.name
+            psk_file = os.path.join(self.CONFIG_DIR, f"psk_{client['username']}.key")
+            with open(psk_file, 'w') as f:
+                f.write(client['preshared_key'] + '\n')
             try:
-                self._run(["awg", "set", iface, "peer", client["public_key"], 
+                self._run(["docker", "exec", container_name, "awg", "set", iface, "peer", client["public_key"], 
                           "allowed-ips", allowed_ips, 
-                          "preshared-key", tf_path])
+                          "preshared-key", f"/etc/amnezia/amneziawg/psk_{client['username']}.key"])
             finally:
-                if os.path.exists(tf_path): os.remove(tf_path)
+                if os.path.exists(psk_file): os.remove(psk_file)
         else:
-            self._run(cmd)
+            self._run(["docker", "exec", container_name, "awg", "set", iface, "peer", client["public_key"], "allowed-ips", allowed_ips])
+            
         return True
 
     def remove_client(self, client: dict, inbound: dict) -> bool:
+        container_name = f"skynet_{inbound['protocol']}_{inbound['id']}"
         iface = self._iface_name(inbound)
-        self._run(["awg", "set", iface, "peer", client["public_key"], "remove"])
+        self._run(["docker", "exec", container_name, "awg", "set", iface, "peer", client["public_key"], "remove"])
         return True
 
     def toggle_client(self, client: dict, inbound: dict, enable: bool) -> bool:
@@ -192,21 +181,22 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
 
     def get_traffic(self, inbound: dict) -> list:
         iface = self._iface_name(inbound)
+        container_name = f"skynet_{inbound['protocol']}_{inbound['id']}"
+        
         try:
-            # Using 'dump' to get rx, tx AND latest handshake
-            output = self._run(["awg", "show", iface, "dump"])
+            dump = self._run(["docker", "exec", container_name, "awg", "show", iface, "dump"])
+            lines = dump.split('\n')
             clients = []
-            for line in output.split("\n"):
-                if not line.strip(): continue
-                parts = line.split("\t")
-                # Dump format: public_key [preshared_key] endpoint allowed_ips latest_handshake rx tx persistent_keepalive
-                # But headers might be different. Let's check part count.
-                # WG dump for peer: public_key  psk  endpoint  allowed_ips  latest_handshake  rx  tx  keepalive
-                if len(parts) >= 8:
+            for line in lines[1:]: # Первая строка - инфо об интерфейсе
+                parts = line.strip().split('\t')
+                if len(parts) >= 6:
                     clients.append({
-                        "public_key": parts[0].strip(),
+                        "public_key": parts[0],
+                        "preshared_key": parts[1] if parts[1] != "(none)" else "",
+                        "endpoint": parts[2] if parts[2] != "(none)" else "",
+                        "allowed_ips": parts[3],
                         "rx": int(parts[5].strip()),
-                        "tx": int(parts[4].strip()), # Correcting tx/rx based on dump order
+                        "tx": int(parts[6].strip()),
                         "last_handshake": int(parts[4].strip())
                     })
             return clients
@@ -214,36 +204,45 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
 
     def start(self, inbound: dict) -> bool:
         iface = self._iface_name(inbound)
+        container_name = f"skynet_{inbound['protocol']}_{inbound['id']}"
         os.makedirs(self.CONFIG_DIR, exist_ok=True)
         conf = self._config_path(inbound)
         with open(conf, "w") as f: f.write(self.generate_server_config(inbound))
         
-        # Centralized Routing Setup
         settings = json.loads(inbound.get("settings", "{}"))
         subnet = settings.get("address", "10.8.0.0/24")
         if "/" not in subnet: subnet = "10.8.0.0/24" # safety
-        # Ensure it's a network address, not an IP
         try:
             net = ipaddress.ip_network(subnet, strict=False)
             subnet = str(net)
         except: pass
 
-        # Ensure interface is down before starting
-        try:
-            self._run(["awg-quick", "down", conf])
-        except: pass
+        self.stop(inbound)
 
-        self._run(["awg-quick", "up", conf])
+        log.info(f"[{self.PROTOCOL_NAME}] Starting Docker container {container_name}")
+        cmd = [
+            "docker", "run", "-d",
+            "--name", container_name,
+            "--restart", "unless-stopped",
+            "--network", "host",
+            "--cap-add", "NET_ADMIN",
+            "--device", "/dev/net/tun",
+            "-v", f"{self.CONFIG_DIR}:/etc/amnezia/amneziawg",
+            "--entrypoint", "sh",
+            "amneziavpn/amnezia-wg",
+            "-c", f"awg-quick up /etc/amnezia/amneziawg/{iface}.conf && sleep infinity"
+        ]
+        self._run(cmd)
         self._setup_nat(subnet)
-        
         return True
 
     def stop(self, inbound: dict) -> bool:
+        container_name = f"skynet_{inbound['protocol']}_{inbound['id']}"
         try:
             settings = json.loads(inbound.get("settings", "{}"))
             subnet = settings.get("address", "10.8.0.0/24")
-            self._run(["awg-quick", "down", self._config_path(inbound)])
             self._cleanup_nat(subnet)
+            self._run(["docker", "rm", "-f", container_name], check=False)
         except: pass
         return True
 
