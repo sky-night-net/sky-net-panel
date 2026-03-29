@@ -37,7 +37,7 @@ DEFAULT_AWG_V2_OBFUSCATION = {
 
 class AmneziaWGv2Adapter(AmneziaWGv1Adapter):
     PROTOCOL_NAME = "amneziawg_v2"
-    REQUIRED_BINARIES = ["awg", "awg-quick"]
+    REQUIRED_BINARIES = ["docker", "wg"]
 
     def generate_server_config(self, inbound: dict) -> str:
         """Генерация серверного конфига с v2-параметрами."""

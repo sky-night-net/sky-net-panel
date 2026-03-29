@@ -15,7 +15,10 @@ AmneziaWG v1 (Legacy) Adapter
 import json
 import os
 import ipaddress
+import logging
 from . import ProtocolAdapter, AdapterFactory
+
+log = logging.getLogger(__name__)
 
 # Дефолтные параметры обфускации AWG v1
 DEFAULT_AWG_V1_OBFUSCATION = {
