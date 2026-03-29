@@ -20,12 +20,10 @@ EXT_IP=$(curl -s ifconfig.me || echo "unknown")
 
 # --- Input Validation ---
 while true; do
-  echo -n -e "${BLUE}Enter HTTP Panel Port [default 4467]: ${NC}"
-  read PANEL_PORT < /dev/tty
+  read -p "${BLUE}Enter HTTP Panel Port [default 4467]: ${NC}" PANEL_PORT
   PANEL_PORT=${PANEL_PORT:-4467}
 
-  echo -n -e "${BLUE}Enter HTTPS Panel Port [default 4466]: ${NC}"
-  read PANEL_HTTPS_PORT < /dev/tty
+  read -p "${BLUE}Enter HTTPS Panel Port [default 4466]: ${NC}" PANEL_HTTPS_PORT
   PANEL_HTTPS_PORT=${PANEL_HTTPS_PORT:-4466}
 
   if [[ "$PANEL_PORT" == "$PANEL_HTTPS_PORT" ]]; then
@@ -43,15 +41,13 @@ while true; do
   break
 done
 
-echo -n -e "${BLUE}Confirm Local IP [$LOCAL_IP]: ${NC}"
-read USER_LOCAL_IP < /dev/tty
+read -p "${BLUE}Confirm Local IP [$LOCAL_IP]: ${NC}" USER_LOCAL_IP
 LOCAL_IP=${USER_LOCAL_IP:-$LOCAL_IP}
 # Sanitize Local IP
 LOCAL_IP=$(echo "$LOCAL_IP" | tr -cd '0-9.a-fA-F:')
 
 while true; do
-  echo -n -e "${BLUE}Confirm External IP [$EXT_IP]: ${NC}"
-  read USER_EXT_IP < /dev/tty
+  read -p "${BLUE}Confirm External IP [$EXT_IP]: ${NC}" USER_EXT_IP
   USER_EXT_IP=${USER_EXT_IP:-$EXT_IP}
   # Sanitize: Strip any non-ASCII characters (e.g. Cyrillic typos)
   EXT_IP=$(echo "$USER_EXT_IP" | tr -cd '0-9.a-fA-F:')
@@ -75,13 +71,19 @@ apt-get update && apt-get upgrade -y
 echo -e "${BLUE}Performing pre-installation cleanup...${NC}"
 # 1. Stop all VPN containers
 echo -e "${YELLOW}Stopping all Sky-Net containers...${NC}"
-docker ps -a --format '{{.Names}}' | grep -E '^skynet_|^openvpn_xor_' | xargs -r docker rm -f || true
+set +e
+docker ps -a --format '{{.Names}}' | grep -E '^skynet_|^openvpn_xor_' | xargs -r docker rm -f
+set -e
 
 # 2. Cleanup all network interfaces
 echo -e "${YELLOW}Removing leftover network interfaces...${NC}"
-ip link show | grep -E 'awg|tun_skynet' | awk -F': ' '{print $2}' | xargs -I {} ip link delete {} 2>/dev/null || true
-ip addr flush dev tun_skynet 2>/dev/null || true
-ip link delete dev tun_skynet 2>/dev/null || true
+set +e
+for iface in $(ip link show | grep -E 'awg|tun_skynet' | awk -F': ' '{print $2}' | sed 's/@.*//'); do
+    ip link delete "$iface" 2>/dev/null
+done
+ip addr flush dev tun_skynet 2>/dev/null
+ip link delete dev tun_skynet 2>/dev/null
+set -e
 echo "Done."
 
 # ─── Install Core Dependencies ──────────────────────────────────────────────
