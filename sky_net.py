@@ -5,7 +5,8 @@ Sky-Net v1.0 — Universal VPN Control Panel
 Поддерживаемые протоколы: AmneziaWG v1, AmneziaWG v2, OpenVPN+XOR
 """
 
-import json, os, time, threading, logging, sqlite3, hashlib, secrets, functools, subprocess
+import json, os, time, threading, logging, sqlite3, hashlib, secrets, functools, subprocess, re, socket, ipaddress
+import psutil
 from datetime import datetime
 from flask import (Flask, jsonify, request, Response, redirect,
                    render_template_string, session, send_file, abort)
@@ -1272,10 +1273,27 @@ def api_system_network():
     try:
         import psutil
         import socket
+        
+        # Get active inbound IDs to filter "ghost" interfaces
+        valid_ifaces = []
+        with get_db() as db:
+            inbounds = db.execute("SELECT id, protocol FROM inbounds").fetchall()
+            for ib in inbounds:
+                if "amneziawg" in ib['protocol']:
+                    valid_ifaces.append(f"awg{ib['id']}")
+                elif "openvpn_xor" in ib['protocol']:
+                    valid_ifaces.append("tun_skynet")
+
         addrs = psutil.net_if_addrs()
         stats = psutil.net_if_stats()
         interfaces = []
         for name, addr_list in addrs.items():
+            # FILTER: Hide ghost VPN interfaces (starting with awg or tun_skynet) 
+            # if they are not active in the database.
+            is_vpn_prefix = name.startswith("awg") or name.startswith("tun_skynet")
+            if is_vpn_prefix and name not in valid_ifaces:
+                continue
+                
             iface = {"name": name, "addresses": [], "mac": "--", "is_up": False, "speed": 0}
             if name in stats:
                 iface["is_up"] = stats[name].isup

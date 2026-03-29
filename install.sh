@@ -71,7 +71,23 @@ echo -e "${BLUE}Using HTTP Port: $PANEL_PORT, HTTPS Port: $PANEL_HTTPS_PORT, Loc
 echo -e "${BLUE}Updating system packages...${NC}"
 apt-get update && apt-get upgrade -y
 
-# Install Core Dependencies
+# ─── Pre-Installation Cleanup ────────────────────────────────────────────────
+echo -e "${BLUE}Performing pre-installation cleanup...${NC}"
+# Stop all skynet-related containers
+if [ -x "$(command -v docker)" ]; then
+    echo -n "Stopping legacy VPN containers... "
+    docker ps -a --format '{{.Names}}' | grep '^skynet_' | xargs -r docker rm -f >/dev/null 2>&1 || true
+    echo "Done."
+fi
+
+# Remove legacy network interfaces lingering on the host
+echo -n "Removing legacy network interfaces (awg, tun_skynet)... "
+for iface in $(ip link show | awk -F': ' '/awg|tun_skynet/ {print $2}' | sed 's/@.*//'); do
+    ip link delete "$iface" >/dev/null 2>&1 || true
+done
+echo "Done."
+
+# ─── Install Core Dependencies ──────────────────────────────────────────────
 echo -e "${BLUE}Installing Python and system tools...${NC}"
 apt-get install -y python3 python3-pip python3-flask python3-flask-cors python3-psutil \
   sqlite3 curl git ufw fail2ban certbot
@@ -86,6 +102,14 @@ if ! [ -x "$(command -v docker)" ]; then
   curl -fsSL https://get.docker.com -o get-docker.sh
   sh get-docker.sh
 fi
+
+# Pre-pull required images for OOTB speed
+echo -e "${BLUE}Pre-pulling Docker images (AmneziaWG, OpenVPN XOR)...${NC}"
+docker pull amneziavpn/amnezia-wg || true
+docker pull amneziavpn/amneziawg-go || true
+docker pull lawtancool/docker-openvpn-xor || true
+# Pull local verified image if it exists in cache (optional/fallback)
+docker pull amnezia-awg2 || true
 
 # Enable IP Forwarding persistently
 echo -e "${BLUE}Enabling IP Forwarding...${NC}"

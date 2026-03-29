@@ -16,6 +16,8 @@ import json
 import os
 import ipaddress
 import logging
+import subprocess
+import re
 from . import ProtocolAdapter, AdapterFactory
 
 log = logging.getLogger(__name__)
@@ -219,11 +221,42 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
         try:
             net = ipaddress.ip_network(subnet, strict=False)
             subnet = str(net)
-        except: pass
+            server_ip = str(list(net.hosts())[0]) # usually .1
+        except: server_ip = "10.8.0.1"
+
+        # PROACTIVE CLEANUP: Check for conflicting interfaces or IPs on host
+        log.info(f"[{self.PROTOCOL_NAME}] Checking for host conflicts (iface: {iface}, ip: {server_ip})")
+        try:
+            # Check if interface already exists
+            res = subprocess.run(["ip", "link", "show", iface], capture_output=True, text=True)
+            if res.returncode == 0:
+                log.warning(f"[{self.PROTOCOL_NAME}] Interface {iface} already exists on host. Deleting...")
+                subprocess.run(["ip", "link", "delete", iface], check=False)
+
+            # Check if IP is already assigned to ANY interface
+            res = subprocess.run(["ip", "addr", "show"], capture_output=True, text=True)
+            if server_ip in res.stdout:
+                log.warning(f"[{self.PROTOCOL_NAME}] IP {server_ip} already assigned on host. Finding and deleting interface...")
+                # Find which interface has this IP
+                match = re.search(r'inet\s+' + re.escape(server_ip) + r'.*?dev\s+([a-zA-Z0-9_\-]+)', res.stdout)
+                if match:
+                    conflicting_iface = match.group(1)
+                    log.warning(f"[{self.PROTOCOL_NAME}] Deleting conflicting interface {conflicting_iface}")
+                    subprocess.run(["ip", "link", "delete", conflicting_iface], check=False)
+        except Exception as e:
+            log.error(f"[{self.PROTOCOL_NAME}] Conflict resolution failed: {e}")
 
         self.stop(inbound)
 
         log.info(f"[{self.PROTOCOL_NAME}] Starting Docker container {container_name}")
+        # Prioritize 'amnezia-awg2' if available (verified on user VPS), fallback to official
+        img = "amnezia-awg2"
+        # Quick check if image exists, else fallback
+        try:
+            res = subprocess.run(["docker", "image", "inspect", img], capture_output=True)
+            if res.returncode != 0: img = "amneziavpn/amnezia-wg"
+        except: img = "amneziavpn/amnezia-wg"
+
         cmd = [
             "docker", "run", "-d",
             "--name", container_name,
@@ -233,7 +266,7 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
             "--device", "/dev/net/tun",
             "-v", f"{self.CONFIG_DIR}:/etc/amnezia/amneziawg",
             "--entrypoint", "sh",
-            "amnezia-awg2",
+            img,
             "-c", f"awg-quick up /etc/amnezia/amneziawg/{iface}.conf && tail -f /dev/null"
         ]
         self._run(cmd)
@@ -241,12 +274,15 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
         return True
 
     def stop(self, inbound: dict) -> bool:
+        iface = self._iface_name(inbound)
         container_name = f"skynet_{inbound['protocol']}_{inbound['id']}"
         try:
             settings = json.loads(inbound.get("settings", "{}"))
             subnet = settings.get("address", "10.8.0.0/24")
             self._cleanup_nat(subnet)
             self._run(["docker", "rm", "-f", container_name], check=False)
+            # Since we use --network host, the interface might persist on host. Cleanup if possible.
+            subprocess.run(["ip", "link", "delete", iface], check=False)
         except: pass
         return True
 
