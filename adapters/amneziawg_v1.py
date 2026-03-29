@@ -45,7 +45,7 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
         self._run(["docker", "pull", "amneziavpn/amnezia-wg"])
 
     def generate_keypair(self) -> dict:
-        awg_cmd = ["docker", "run", "--rm", "--entrypoint", "awg", "amneziavpn/amnezia-wg"]
+        awg_cmd = ["docker", "run", "--rm", "-i", "--entrypoint", "awg", "amneziavpn/amnezia-wg"]
         priv = self._run(awg_cmd + ["genkey"])
         
         import subprocess
@@ -230,7 +230,7 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
             "-v", f"{self.CONFIG_DIR}:/etc/amnezia/amneziawg",
             "--entrypoint", "sh",
             "amneziavpn/amnezia-wg",
-            "-c", f"awg-quick up /etc/amnezia/amneziawg/{iface}.conf && sleep infinity"
+            "-c", f"awg-quick up /etc/amnezia/amneziawg/{iface}.conf && tail -f /dev/null"
         ]
         self._run(cmd)
         self._setup_nat(subnet)
