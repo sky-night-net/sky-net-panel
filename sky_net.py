@@ -715,13 +715,28 @@ def api_client_add():
             "SELECT allowed_ips FROM client_traffics WHERE inbound_id=? ORDER BY id DESC LIMIT 1",
             (inbound_id,)
         ).fetchone()
+
         if existing:
             last_ip = existing["allowed_ips"].split("/")[0]
             parts = last_ip.split(".")
             parts[3] = str(int(parts[3]) + 1)
             next_ip = ".".join(parts) + "/32"
         else:
-            next_ip = "10.8.0.2/32"
+            # Start from the second address in the inbound's subnet (usually .2 since .1 is server)
+            try:
+                settings = json.loads(ib.get("settings", "{}"))
+                address = settings.get("address", "10.8.0.0/24")
+                import ipaddress
+                net = ipaddress.ip_network(address, strict=False)
+                # Using list comprehension to avoid any ambiguity with list constructor
+                all_hosts = [str(h) for h in net.hosts()]
+                if len(all_hosts) >= 2:
+                    next_ip = f"{all_hosts[1]}/32"
+                else:
+                    next_ip = "10.8.0.2/32"
+            except Exception:
+                log.warning(f"Could not parse inbound address '{ib.get('settings')}', falling back to default")
+                next_ip = "10.8.0.2/32"
 
         # Генерация ключей
         adapter = AdapterFactory.get(ib["protocol"])
