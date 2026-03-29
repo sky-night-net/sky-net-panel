@@ -42,7 +42,7 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
 
     def install(self, server_ip: str):
         log.info(f"[{self.PROTOCOL_NAME}] Checking AmneziaWG Docker image...")
-        self._run(["docker", "pull", "amneziavpn/amnezia-wg"])
+        self._run(["docker", "pull", "amneziavpn/amneziawg-go"])
 
     def generate_keypair(self) -> dict:
         # Use native wg tool (installed via wireguard-tools on host) for instant/safe keygen
@@ -230,7 +230,7 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
             "--device", "/dev/net/tun",
             "-v", f"{self.CONFIG_DIR}:/etc/amnezia/amneziawg",
             "--entrypoint", "sh",
-            "amneziavpn/amnezia-wg",
+            "amneziavpn/amneziawg-go",
             "-c", f"awg-quick up /etc/amnezia/amneziawg/{iface}.conf && tail -f /dev/null"
         ]
         self._run(cmd)
