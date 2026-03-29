@@ -2014,7 +2014,11 @@ function updateObfsFields(){const p=document.getElementById('ib-protocol').value
       <label style="margin:0">${_T('obfs_bypass')}</label>
     </div>`}
   else{
-    if(addr) addr.value = '10.8.0.1/24';
+    if(addr) {
+      if(p === 'amneziawg_v1') addr.value = '10.8.0.1/24';
+      else if(p === 'openvpn_xor') addr.value = '10.9.0.1/24';
+      else if(p === 'amneziawg_v2') addr.value = '10.10.0.1/24';
+    }
     const v2=p==='amneziawg_v2';
     let html = `
       <div class="modal-section">

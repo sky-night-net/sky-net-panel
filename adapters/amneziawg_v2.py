@@ -49,7 +49,7 @@ class AmneziaWGv2Adapter(AmneziaWGv1Adapter):
             obfs.setdefault(k, v)
 
         private_key = settings.get("private_key", "")
-        address = settings.get("address", "10.8.0.1/24")
+        address = settings.get("address", "10.10.0.1/24")
         mtu = settings.get("mtu", 1420)
         port = inbound.get("port", 51820)
 
