@@ -73,18 +73,15 @@ apt-get update && apt-get upgrade -y
 
 # ─── Pre-Installation Cleanup ────────────────────────────────────────────────
 echo -e "${BLUE}Performing pre-installation cleanup...${NC}"
-# Stop all skynet-related containers
-if [ -x "$(command -v docker)" ]; then
-    echo -n "Stopping legacy VPN containers... "
-    docker ps -a --format '{{.Names}}' | grep '^skynet_' | xargs -r docker rm -f >/dev/null 2>&1 || true
-    echo "Done."
-fi
+# 1. Stop all VPN containers
+echo -e "${YELLOW}Stopping all Sky-Net containers...${NC}"
+docker ps -a --format '{{.Names}}' | grep -E '^skynet_|^openvpn_xor_' | xargs -r docker rm -f
 
-# Remove legacy network interfaces lingering on the host
-echo -n "Removing legacy network interfaces (awg, tun_skynet)... "
-for iface in $(ip link show | awk -F': ' '/awg|tun_skynet/ {print $2}' | sed 's/@.*//'); do
-    ip link delete "$iface" >/dev/null 2>&1 || true
-done
+# 2. Cleanup all network interfaces
+echo -e "${YELLOW}Removing leftover network interfaces...${NC}"
+ip link show | grep -E 'awg|tun_skynet' | awk -F': ' '{print $2}' | xargs -I {} ip link delete {} 2>/dev/null
+ip addr flush dev tun_skynet 2>/dev/null
+ip link delete dev tun_skynet 2>/dev/null
 echo "Done."
 
 # ─── Install Core Dependencies ──────────────────────────────────────────────

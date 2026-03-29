@@ -240,9 +240,11 @@ mssfix 1350
         with open(conf_path, "w") as f: f.write(self.generate_server_config(inbound))
         
         iface = "tun_skynet"
-        container_name = f"openvpn_xor_{inbound['id']}"
+        container_name = f"skynet_openvpn_xor_{inbound['id']}"
         
-        # Proactive Cleanup
+        # Stop existing if any
+        self.stop(inbound)
+        
         settings = json.loads(inbound.get("settings", "{}"))
         address_full = settings.get("address", "10.9.0.0/24")
         try:
@@ -300,7 +302,7 @@ mssfix 1350
 
     def stop(self, inbound: dict) -> bool:
         iface = "tun_skynet"
-        container_name = f"openvpn_xor_{inbound['id']}"
+        container_name = f"skynet_openvpn_xor_{inbound['id']}"
         try:
             settings = json.loads(inbound.get("settings", "{}"))
             address_full = settings.get("address", "10.9.0.0/24")
@@ -325,7 +327,7 @@ mssfix 1350
         return True
 
     def is_running(self, inbound: dict) -> bool:
-        container_name = f"openvpn_xor_{inbound['id']}"
+        container_name = f"skynet_openvpn_xor_{inbound['id']}"
         try:
             res = self._run(["docker", "inspect", "-f", "{{.State.Running}}", container_name], check=False)
             return res.strip() == "true"
