@@ -45,14 +45,15 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
         self._run(["docker", "pull", "amneziavpn/amnezia-wg"])
 
     def generate_keypair(self) -> dict:
-        awg_cmd = ["docker", "run", "--rm", "-i", "--entrypoint", "awg", "amneziavpn/amnezia-wg"]
-        priv = self._run(awg_cmd + ["genkey"])
+        # Use native wg tool (installed via wireguard-tools on host) for instant/safe keygen
+        # AmneziaWG curve25519 keys are 100% mathematically identical to WireGuard keys
+        priv = self._run(["wg", "genkey"])
         
         import subprocess
-        proc = subprocess.run(awg_cmd + ["pubkey"], input=priv + "\n", capture_output=True, text=True, check=True)
+        proc = subprocess.run(["wg", "pubkey"], input=priv + "\n", capture_output=True, text=True, check=True)
         pub = proc.stdout.strip()
         
-        psk = self._run(awg_cmd + ["genpsk"])
+        psk = self._run(["wg", "genpsk"])
         return {"private_key": priv, "public_key": pub, "preshared_key": psk}
 
     def _iface_name(self, inbound: dict) -> str:

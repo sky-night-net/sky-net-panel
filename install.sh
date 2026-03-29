@@ -78,7 +78,7 @@ apt-get install -y python3 python3-pip python3-flask python3-flask-cors python3-
 
 # VPN Keys and Cert Tools (OpenVPN utilizes easy-rsa on the host)
 echo -e "${BLUE}Installing VPN Key Utilities...${NC}"
-apt-get install -y easy-rsa
+apt-get install -y easy-rsa wireguard-tools
 
 # Install Docker (required for all VPN protocols: AmneziaWG, OpenVPN XOR)
 if ! [ -x "$(command -v docker)" ]; then
