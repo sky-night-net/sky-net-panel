@@ -2004,9 +2004,14 @@ function openAddClient(id){
 async function toggleInbound(id){await POST(`/panel/api/inbounds/toggle/${id}`,{});loadInbounds()}
 async function deleteInbound(id){if(!confirm(_T('del_ib_confirm')))return;await POST(`/panel/api/inbounds/del/${id}`,{});loadInbounds()}
 function updateObfsFields(){const p=document.getElementById('ib-protocol').value;const c=document.getElementById('obfs-fields');
-  const addr = document.getElementById('ib-address');
+  const subnets = {
+    'amneziawg_v1': '10.8.0.1/24',
+    'openvpn_xor': '10.9.0.1/24',
+    'amneziawg_v2': '10.10.0.1/24'
+  };
+  if(addr && subnets[p]) addr.value = subnets[p];
+
   if(p==='openvpn_xor'){
-    if(addr) addr.value = '10.9.0.1/24';
     c.innerHTML=`
     <div class="fg"><label>${_T('obfs_pw')}</label><input id="obfs-scramble" value=""></div>
     <div class="fg" style="flex-direction:row;align-items:center;gap:10px;margin-top:10px">
@@ -2014,11 +2019,6 @@ function updateObfsFields(){const p=document.getElementById('ib-protocol').value
       <label style="margin:0">${_T('obfs_bypass')}</label>
     </div>`}
   else{
-    if(addr) {
-      if(p === 'amneziawg_v1') addr.value = '10.8.0.1/24';
-      else if(p === 'openvpn_xor') addr.value = '10.9.0.1/24';
-      else if(p === 'amneziawg_v2') addr.value = '10.10.0.1/24';
-    }
     const v2=p==='amneziawg_v2';
     let html = `
       <div class="modal-section">

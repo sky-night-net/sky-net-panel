@@ -1705,6 +1705,7 @@ def api_system_update_apply():
     """Применение обновления и перезапуск сервиса."""
     import subprocess
     try:
+        subprocess.run(["git", "fetch", "origin"], check=True)
         subprocess.run(["git", "reset", "--hard", "origin/main"], check=True)
         # Перезагружаем сервис. Subprocess.Popen не блокирует выполнение ответа.
         subprocess.Popen(["systemctl", "restart", "skynet"])
