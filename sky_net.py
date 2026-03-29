@@ -30,6 +30,31 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_DB = os.path.join(SCRIPT_DIR, "sky_net.db")
 DB_FILE = os.getenv("SKYNET_DB", DEFAULT_DB)
 
+# ─── Utility ─────────────────────────────────────────────────────────────────
+def get_public_ip():
+    with get_db() as db:
+        res = db.execute("SELECT value FROM settings WHERE key='public_ip_override'").fetchone()
+        if res and res["value"]:
+            return res["value"].strip()
+            
+    env_ip = os.getenv("SKYNET_EXT_IP")
+    if env_ip: return env_ip
+    try:
+        url = 'https://api.ipify.org'
+        req = urllib.request.Request(url, headers={'User-Agent': 'curl/7.64.1'})
+        return urllib.request.urlopen(req, timeout=5).read().decode('utf-8').strip()
+    except:
+        return ""
+
+BANNER = """
+    ███████╗██╗  ██╗██╗   ██╗      ███╗   ██╗███████╗████████╗
+    ██╔════╝██║ ██╔╝╚██╗ ██╔╝      ████╗  ██║██╔════╝╚══██╔══╝
+    ███████╗█████╔╝  ╚████╔╝ █████╗██╔██╗ ██║█████╗     ██║   
+    ╚════██║██╔═██╗   ╚██╔╝  ╚════╝██║╚██╗██║██╔══╝     ██║   
+    ███████║██║  ██╗   ██║         ██║ ╚████║███████╗   ██║   
+    ╚══════╝╚═╝  ╚═╝   ╚═╝         ╚═╝  ╚═══╝╚══════╝   ╚═╝   
+"""
+
 # ─── Database ────────────────────────────────────────────────────────────────
 import contextlib
 
