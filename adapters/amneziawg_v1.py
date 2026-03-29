@@ -42,7 +42,7 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
 
     def install(self, server_ip: str):
         log.info(f"[{self.PROTOCOL_NAME}] Checking AmneziaWG Docker image...")
-        self._run(["docker", "pull", "amneziavpn/amneziawg-go"])
+        self._run(["docker", "pull", "amneziavpn/amnezia-wg"])
 
     def generate_keypair(self) -> dict:
         # Use native wg tool (installed via wireguard-tools on host) for instant/safe keygen
@@ -230,7 +230,7 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
             "--device", "/dev/net/tun",
             "-v", f"{self.CONFIG_DIR}:/etc/amnezia/amneziawg",
             "--entrypoint", "sh",
-            "amneziavpn/amneziawg-go",
+            "amneziavpn/amnezia-wg",
             "-c", f"awg-quick up /etc/amnezia/amneziawg/{iface}.conf && tail -f /dev/null"
         ]
         self._run(cmd)
@@ -248,26 +248,11 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
         return True
 
     def is_running(self, inbound: dict) -> bool:
+        container_name = f"skynet_{inbound['protocol']}_{inbound['id']}"
         try:
-            self._run(["awg", "show", self._iface_name(inbound)])
-            return True
-        except: return False
-
-    def install(self, server_ip: str):
-        # Попытка установки через PPA
-        self._run(["bash", "-c", "DEBIAN_FRONTEND=noninteractive add-apt-repository ppa:amnezia/ppa -y || true"])
-        self._run(["apt-get", "update"])
-        try:
-            self._run(["apt-get", "install", "-y", "amneziawg", "amneziawg-tools"])
+            res = self._run(["docker", "inspect", "-f", "{{.State.Running}}", container_name], check=False)
+            return res.strip() == "true"
         except:
-            # Fallback to manual build if PPA fails
-            log.info(f"[{self.PROTOCOL_NAME}] PPA install failed, building from source...")
-            self._run(["apt-get", "install", "-y", "git", "golang", "make"])
-            if not os.path.exists("/usr/bin/awg"):
-                self._run(["git", "clone", "https://github.com/amnezia-vpn/amneziawg-tools.git", "/tmp/awg-tools"])
-                self._run(["make", "-C", "/tmp/awg-tools/src"])
-                self._run(["cp", "/tmp/awg-tools/src/wg", "/usr/bin/awg"])
-                self._run(["cp", "/tmp/awg-tools/src/wg-quick/linux.bash", "/usr/bin/awg-quick"])
-                self._run(["chmod", "+x", "/usr/bin/awg", "/usr/bin/awg-quick"])
+            return False
 
 AdapterFactory.register("amneziawg_v1", AmneziaWGv1Adapter)
