@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Sky-Net Panel Auto-Installer
-# Optimized for Ubuntu 24.04 LTS (Update 2026-03-28 11:15)
+# Optimized for Ubuntu 24.04 LTS (Update 2026-03-29 17:45)
 
 set -e
 
@@ -9,9 +9,14 @@ set -e
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# ─── Configuration ──────────────────────────────────────────────────────────
+# --- Non-Interactive Detection ---
+IS_INTERACTIVE=0
+if [ -t 0 ] && [ -t 1 ]; then
+    IS_INTERACTIVE=1
+fi
 
 # Detect Local IP
 LOCAL_IP=$(hostname -I | awk '{print $1}')
@@ -19,72 +24,76 @@ LOCAL_IP=$(hostname -I | awk '{print $1}')
 EXT_IP=$(curl -s ifconfig.me || echo "unknown")
 
 # --- Input Validation ---
-# Function to read input safely even when piped
-safe_read() {
-  if [ -t 0 ]; then
-    read -r "$@"
-  elif [ -e /dev/tty ]; then
-    read -r "$@" < /dev/tty
-  fi
+
+# Function to safely read with timeout and default
+safe_prompt() {
+    local prompt_msg=$1
+    local var_name=$2
+    local default_val=$3
+    local input_val=""
+
+    if [ "$IS_INTERACTIVE" -eq 1 ]; then
+        read -p "$(echo -e "${BLUE}${prompt_msg}${NC}")" input_val
+        eval "$var_name=\"${input_val:-$default_val}\""
+    elif [ -c /dev/tty ]; then
+        # Try to read from TTY even if stdin is a pipe
+        if read -p "$(echo -e "${BLUE}${prompt_msg}${NC}")" input_val < /dev/tty; then
+            eval "$var_name=\"${input_val:-$default_val}\""
+        else
+            eval "$var_name=\"$default_val\""
+        fi
+    else
+        eval "$var_name=\"$default_val\""
+    fi
 }
 
-# 1. Ports
 while true; do
-  if [ -t 0 ] || [ -e /dev/tty ]; then
-    read -p "${BLUE}Enter HTTP Panel Port [default 4467]: ${NC}" PANEL_PORT < /dev/tty || PANEL_PORT=""
-    PANEL_PORT=${PANEL_PORT:-4467}
-    read -p "${BLUE}Enter HTTPS Panel Port [default 4466]: ${NC}" PANEL_HTTPS_PORT < /dev/tty || PANEL_HTTPS_PORT=""
-    PANEL_HTTPS_PORT=${PANEL_HTTPS_PORT:-4466}
-  else
-    PANEL_PORT=4467
-    PANEL_HTTPS_PORT=4466
-  fi
+    safe_prompt "Enter HTTP Panel Port [default 4467]: " PANEL_PORT 4467
+    safe_prompt "Enter HTTPS Panel Port [default 4466]: " PANEL_HTTPS_PORT 4466
 
-  if [[ "$PANEL_PORT" == "$PANEL_HTTPS_PORT" ]]; then
-    echo -e "${RED}Error: HTTP and HTTPS ports cannot be the same ($PANEL_PORT).${NC}"
-    [ -t 0 ] || exit 1
-    continue
-  fi
-  if ! [[ "$PANEL_PORT" =~ ^[0-9]+$ ]] || [ "$PANEL_PORT" -lt 1024 ] || [ "$PANEL_PORT" -gt 65535 ]; then
-    echo -e "${RED}Error: HTTP port must be between 1024 and 65535.${NC}"
-    [ -t 0 ] || exit 1
-    continue
-  fi
-  if ! [[ "$PANEL_HTTPS_PORT" =~ ^[0-9]+$ ]] || [ "$PANEL_HTTPS_PORT" -lt 1024 ] || [ "$PANEL_HTTPS_PORT" -gt 65535 ]; then
-    echo -e "${RED}Error: HTTPS port must be between 1024 and 65535.${NC}"
-    [ -t 0 ] || exit 1
-    continue
-  fi
-  break
+    # Validation
+    VALID=1
+    if [[ "$PANEL_PORT" == "$PANEL_HTTPS_PORT" ]]; then
+        echo -e "${RED}Error: HTTP and HTTPS ports cannot be the same ($PANEL_PORT).${NC}"
+        VALID=0
+    fi
+    if ! [[ "$PANEL_PORT" =~ ^[0-9]+$ ]] || [ "$PANEL_PORT" -lt 1024 ] || [ "$PANEL_PORT" -gt 65535 ]; then
+        echo -e "${RED}Error: HTTP port must be between 1024 and 65535.${NC}"
+        VALID=0
+    fi
+    if ! [[ "$PANEL_HTTPS_PORT" =~ ^[0-9]+$ ]] || [ "$PANEL_HTTPS_PORT" -lt 1024 ] || [ "$PANEL_HTTPS_PORT" -gt 65535 ]; then
+        echo -e "${RED}Error: HTTPS port must be between 1024 and 65535.${NC}"
+        VALID=0
+    fi
+
+    if [ "$VALID" -eq 1 ]; then
+        break
+    else
+        if [ "$IS_INTERACTIVE" -eq 0 ] && ! [ -c /dev/tty ]; then
+            echo -e "${RED}Critical: Validation failed in non-interactive mode. Aborting.${NC}"
+            exit 1
+        fi
+        # If interactive, loop back for retry
+    fi
 done
 
-# 2. IPs
-if [ -t 0 ] || [ -e /dev/tty ]; then
-  read -p "${BLUE}Confirm Local IP [$LOCAL_IP]: ${NC}" USER_LOCAL_IP < /dev/tty || USER_LOCAL_IP=""
-  LOCAL_IP=${USER_LOCAL_IP:-$LOCAL_IP}
-fi
-LOCAL_IP=$(echo "$LOCAL_IP" | tr -cd '0-9.a-fA-F:')
+# IPs
+safe_prompt "Confirm Local IP [$LOCAL_IP]: " USER_LOCAL_IP "$LOCAL_IP"
+LOCAL_IP=$(echo "${USER_LOCAL_IP:-$LOCAL_IP}" | tr -cd '0-9.a-fA-F:')
 
 while true; do
-  if [ -t 0 ] || [ -e /dev/tty ]; then
-    read -p "${BLUE}Confirm External IP [$EXT_IP]: ${NC}" USER_EXT_IP < /dev/tty || USER_EXT_IP=""
-    USER_EXT_IP=${USER_EXT_IP:-$EXT_IP}
-  else
-    USER_EXT_IP=$EXT_IP
-  fi
-  EXT_IP=$(echo "$USER_EXT_IP" | tr -cd '0-9.a-fA-F:')
-  
-  if [ -z "$EXT_IP" ]; then
-    echo -e "${RED}Error: Invalid External IP address.${NC}"
-    [ -t 0 ] || exit 1
-    continue
-  fi
-  break
+    safe_prompt "Confirm External IP [$EXT_IP]: " USER_EXT_IP "$EXT_IP"
+    EXT_IP=$(echo "$USER_EXT_IP" | tr -cd '0-9.a-fA-F:')
+    
+    if [ -z "$EXT_IP" ] || [ "$EXT_IP" == "unknown" ]; then
+        echo -e "${RED}Error: Invalid External IP address.${NC}"
+        if [ "$IS_INTERACTIVE" -eq 0 ] && ! [ -c /dev/tty ]; then exit 1; fi
+        continue
+    fi
+    break
 done
 
 echo -e "${BLUE}Using HTTP Port: $PANEL_PORT, HTTPS Port: $PANEL_HTTPS_PORT, Local IP: $LOCAL_IP, External IP: $EXT_IP${NC}"
-
-# ─── Installation ──────────────────────────────────────────────────────────
 
 # Update system
 echo -e "${BLUE}Updating system packages...${NC}"
@@ -130,7 +139,6 @@ echo -e "${BLUE}Pre-pulling Docker images (AmneziaWG, OpenVPN XOR)...${NC}"
 docker pull amneziavpn/amnezia-wg || true
 docker pull amneziavpn/amneziawg-go || true
 docker pull lawtancool/docker-openvpn-xor || true
-# Pull local verified image if it exists in cache (optional/fallback)
 docker pull amnezia-awg2 || true
 
 # Enable IP Forwarding persistently
@@ -141,53 +149,64 @@ grep -q "net.ipv4.ip_forward=1" /etc/sysctl.conf || echo "net.ipv4.ip_forward=1"
 sed -i 's/#net\/ipv4\/ip_forward=1/net\/ipv4\/ip_forward=1/' /etc/ufw/sysctl.conf || true
 grep -q "net/ipv4/ip_forward=1" /etc/ufw/sysctl.conf || echo "net/ipv4/ip_forward=1" >> /etc/ufw/sysctl.conf
 
-# Setup Sky-Net Directory and Source Code
-INSTALL_DIR="/opt/sky-net"
-echo -e "${BLUE}Downloading Sky-Net source code...${NC}"
-rm -rf $INSTALL_DIR
-git clone https://github.com/sky-night-net/sky-net-panel.git $INSTALL_DIR
-cd $INSTALL_DIR
+# ─── Setup Sky-Net Directory and Source Code ───────────────────────────────
+echo -e "${BLUE}Setting up Sky-Net at /opt/sky-net...${NC}"
+rm -rf /opt/sky-net
+git clone https://github.com/sky-night-net/sky-net-panel.git /opt/sky-net
+cd /opt/sky-net
 
-# Setup Firewall
-echo -e "${BLUE}Configuring UFW...${NC}"
-ufw allow 22/tcp
-ufw allow $PANEL_PORT/tcp
-ufw allow $PANEL_HTTPS_PORT/tcp
+# Initialize database if not exists
+if [ ! -f sky_net.db ]; then
+    echo -e "${BLUE}Initializing database...${NC}"
+    sqlite3 sky_net.db < schema.sql
+fi
+
+# Update settings with ports and IPs
+sqlite3 sky_net.db "UPDATE settings SET value='$PANEL_PORT' WHERE key='panel_port';"
+sqlite3 sky_net.db "UPDATE settings SET value='$PANEL_HTTPS_PORT' WHERE key='panel_https_port';"
+sqlite3 sky_net.db "UPDATE settings SET value='$LOCAL_IP' WHERE key='local_ip';"
+sqlite3 sky_net.db "UPDATE settings SET value='$EXT_IP' WHERE key='external_ip';"
+
+# ─── Setup Firewall ─────────────────────────────────────────────────────────
+echo -e "${BLUE}Configuring UFW firewall...${NC}"
+ufw allow 22/tcp || true
+ufw allow "$PANEL_PORT"/tcp || true
+ufw allow "$PANEL_HTTPS_PORT"/tcp || true
+# OpenVPN and AmneziaWG ports (defaults)
+ufw allow 1194/udp || true
+ufw allow 51820/udp || true
+ufw allow 51821/udp || true
+ufw allow 51822/udp || true
+
 # CRITICAL: Allow forwarded/routed traffic for VPN
-ufw default allow routed
-sed -i 's/DEFAULT_FORWARD_POLICY="DROP"/DEFAULT_FORWARD_POLICY="ACCEPT"/' /etc/default/ufw
-ufw --force enable
+ufw default allow routed || true
+ufw --force enable || true
 
-# Create Systemd Service
-echo -e "${BLUE}Creating systemd service...${NC}"
+# ─── Create Systemd Service ────────────────────────────────────────────────
+echo -e "${BLUE}Creating skynet systemd service...${NC}"
 cat > /etc/systemd/system/skynet.service <<EOF
 [Unit]
-Description=Sky-Net Universal VPN Panel
-After=network.target
+Description=Sky-Net VPN Panel
+After=network.target docker.service
 
 [Service]
 Type=simple
 User=root
-WorkingDirectory=$INSTALL_DIR
-ExecStart=/usr/bin/python3 $INSTALL_DIR/sky_net.py
+WorkingDirectory=/opt/sky-net
+ExecStart=/usr/bin/python3 sky_net.py
 Restart=always
-RestartSec=5
-Environment=PYTHONUNBUFFERED=1
-Environment=SKYNET_PORT=$PANEL_PORT
-Environment=SKYNET_HTTPS_PORT=$PANEL_HTTPS_PORT
-Environment=SKYNET_EXT_IP=$EXT_IP
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
 systemctl daemon-reload
-systemctl enable skynet.service
-systemctl start skynet.service
+systemctl enable skynet
+systemctl restart skynet
 
 echo -e "${GREEN}=== Installation Complete! ===${NC}"
 echo -e "${GREEN}Sky-Net is now running and ready to use.${NC}"
-echo -e "HTTPS Address: https://$EXT_IP:$PANEL_HTTPS_PORT"
-echo -e "HTTP Address:  http://$EXT_IP:$PANEL_PORT"
-echo -e "Local Address: http://$LOCAL_IP:$PANEL_PORT"
-echo -e "Default login: ${BLUE}admin / admin${NC}"
+echo -e "HTTPS Address: ${BLUE}https://$EXT_IP:$PANEL_HTTPS_PORT${NC}"
+echo -e "HTTP Address:  ${BLUE}http://$EXT_IP:$PANEL_PORT${NC}"
+echo -e "Local Address: ${BLUE}http://$LOCAL_IP:$PANEL_PORT${NC}"
+echo -e "Default login: ${YELLOW}admin / admin${NC}"
