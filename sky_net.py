@@ -351,20 +351,6 @@ def api_system_get_settings():
         res = db.execute("SELECT key, value FROM settings").fetchall()
         return jsonify({r["key"]: r["value"] for r in res})
 
-def get_public_ip():
-    with get_db() as db:
-        res = db.execute("SELECT value FROM settings WHERE key='public_ip_override'").fetchone()
-        if res and res["value"]:
-            return res["value"].strip()
-            
-    env_ip = os.getenv("SKYNET_EXT_IP")
-    if env_ip: return env_ip
-    try:
-        url = 'https://api.ipify.org'
-        req = urllib.request.Request(url, headers={'User-Agent': 'curl/7.64.1'})
-        return urllib.request.urlopen(req, timeout=5).read().decode('utf-8').strip()
-    except:
-        return ""
 
 def init_db():
     with get_db() as db:
