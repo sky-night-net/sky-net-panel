@@ -19,41 +19,64 @@ LOCAL_IP=$(hostname -I | awk '{print $1}')
 EXT_IP=$(curl -s ifconfig.me || echo "unknown")
 
 # --- Input Validation ---
-while true; do
-  read -p "${BLUE}Enter HTTP Panel Port [default 4467]: ${NC}" PANEL_PORT
-  PANEL_PORT=${PANEL_PORT:-4467}
+# Function to read input safely even when piped
+safe_read() {
+  if [ -t 0 ]; then
+    read -r "$@"
+  elif [ -e /dev/tty ]; then
+    read -r "$@" < /dev/tty
+  fi
+}
 
-  read -p "${BLUE}Enter HTTPS Panel Port [default 4466]: ${NC}" PANEL_HTTPS_PORT
-  PANEL_HTTPS_PORT=${PANEL_HTTPS_PORT:-4466}
+# 1. Ports
+while true; do
+  if [ -t 0 ] || [ -e /dev/tty ]; then
+    read -p "${BLUE}Enter HTTP Panel Port [default 4467]: ${NC}" PANEL_PORT < /dev/tty || PANEL_PORT=""
+    PANEL_PORT=${PANEL_PORT:-4467}
+    read -p "${BLUE}Enter HTTPS Panel Port [default 4466]: ${NC}" PANEL_HTTPS_PORT < /dev/tty || PANEL_HTTPS_PORT=""
+    PANEL_HTTPS_PORT=${PANEL_HTTPS_PORT:-4466}
+  else
+    PANEL_PORT=4467
+    PANEL_HTTPS_PORT=4466
+  fi
 
   if [[ "$PANEL_PORT" == "$PANEL_HTTPS_PORT" ]]; then
     echo -e "${RED}Error: HTTP and HTTPS ports cannot be the same ($PANEL_PORT).${NC}"
+    [ -t 0 ] || exit 1
     continue
   fi
   if ! [[ "$PANEL_PORT" =~ ^[0-9]+$ ]] || [ "$PANEL_PORT" -lt 1024 ] || [ "$PANEL_PORT" -gt 65535 ]; then
     echo -e "${RED}Error: HTTP port must be between 1024 and 65535.${NC}"
+    [ -t 0 ] || exit 1
     continue
   fi
   if ! [[ "$PANEL_HTTPS_PORT" =~ ^[0-9]+$ ]] || [ "$PANEL_HTTPS_PORT" -lt 1024 ] || [ "$PANEL_HTTPS_PORT" -gt 65535 ]; then
     echo -e "${RED}Error: HTTPS port must be between 1024 and 65535.${NC}"
+    [ -t 0 ] || exit 1
     continue
   fi
   break
 done
 
-read -p "${BLUE}Confirm Local IP [$LOCAL_IP]: ${NC}" USER_LOCAL_IP
-LOCAL_IP=${USER_LOCAL_IP:-$LOCAL_IP}
-# Sanitize Local IP
+# 2. IPs
+if [ -t 0 ] || [ -e /dev/tty ]; then
+  read -p "${BLUE}Confirm Local IP [$LOCAL_IP]: ${NC}" USER_LOCAL_IP < /dev/tty || USER_LOCAL_IP=""
+  LOCAL_IP=${USER_LOCAL_IP:-$LOCAL_IP}
+fi
 LOCAL_IP=$(echo "$LOCAL_IP" | tr -cd '0-9.a-fA-F:')
 
 while true; do
-  read -p "${BLUE}Confirm External IP [$EXT_IP]: ${NC}" USER_EXT_IP
-  USER_EXT_IP=${USER_EXT_IP:-$EXT_IP}
-  # Sanitize: Strip any non-ASCII characters (e.g. Cyrillic typos)
+  if [ -t 0 ] || [ -e /dev/tty ]; then
+    read -p "${BLUE}Confirm External IP [$EXT_IP]: ${NC}" USER_EXT_IP < /dev/tty || USER_EXT_IP=""
+    USER_EXT_IP=${USER_EXT_IP:-$EXT_IP}
+  else
+    USER_EXT_IP=$EXT_IP
+  fi
   EXT_IP=$(echo "$USER_EXT_IP" | tr -cd '0-9.a-fA-F:')
   
   if [ -z "$EXT_IP" ]; then
     echo -e "${RED}Error: Invalid External IP address.${NC}"
+    [ -t 0 ] || exit 1
     continue
   fi
   break
