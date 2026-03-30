@@ -200,6 +200,29 @@ class ProtocolAdapter:
         except Exception as e:
             log.error(f"[{self.PROTOCOL_NAME}] NAT setup error: {e}")
 
+    def _allow_port(self, port: int, proto: str = "udp"):
+        """Open inbound port in UFW and Iptables."""
+        log.info(f"[{self.PROTOCOL_NAME}] Opening port {port}/{proto} in firewall")
+        try:
+            # Iptables rule (runtime)
+            self._run(["iptables", "-I", "INPUT", "1", "-p", proto, "--dport", str(port), "-j", "ACCEPT"], check=False)
+            # UFW rule (persistent)
+            if subprocess.run(["which", "ufw"], capture_output=True).returncode == 0:
+                self._run(["ufw", "allow", f"{port}/{proto}"], check=False)
+        except Exception as e:
+            log.warning(f"[{self.PROTOCOL_NAME}] Failed to allow port {port}: {e}")
+
+    def _deny_port(self, port: int, proto: str = "udp"):
+        """Remove inbound port from UFW and Iptables."""
+        log.info(f"[{self.PROTOCOL_NAME}] Closing port {port}/{proto} in firewall")
+        try:
+            subprocess.run(["iptables", "-D", "INPUT", "-p", proto, "--dport", str(port), "-j", "ACCEPT"],
+                           capture_output=True, check=False)
+            if subprocess.run(["which", "ufw"], capture_output=True).returncode == 0:
+                self._run(["ufw", "delete", "allow", f"{port}/{proto}"], check=False)
+        except Exception:
+            pass
+
     def _persist_nat_rule(self, subnet: str, iface: str):
         """Add a NAT MASQUERADE rule to /etc/ufw/before.rules for persistence across reboots.
         Uses tagged blocks for idempotent updates. Only writes to the *nat table section.

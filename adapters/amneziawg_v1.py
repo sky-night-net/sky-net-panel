@@ -254,6 +254,7 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
     def start(self, inbound: dict) -> bool:
         iface = self._iface_name(inbound)
         container_name = f"skynet_{inbound['protocol']}_{inbound['id']}"
+        port = inbound.get("port", 51820)
         os.makedirs(self.CONFIG_DIR, exist_ok=True)
 
         # Write server config
@@ -296,6 +297,7 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
         ]
         self._run(cmd)
         self._setup_nat(subnet)
+        self._allow_port(port, "udp")
 
         # Wait for container to be ready
         log.info(f"[{self.PROTOCOL_NAME}] Waiting for interface {iface} to come up...")
@@ -322,6 +324,10 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
             # Interface cleanup (docker --network host leaves interfaces on host)
             subprocess.run(["ip", "link", "delete", iface],
                            capture_output=True, check=False)
+            
+            # Firewall cleanup
+            port = inbound.get("port", 51820)
+            self._deny_port(port, "udp")
         except Exception:
             pass
         return True

@@ -14,7 +14,7 @@ RUN cd src && make
 
 # Create final minimal image
 FROM alpine:latest
-RUN apk add --no-cache bash iptables iproute2 openresolv
+RUN apk add --no-cache bash iptables iproute2 openresolv libmnl
 
 # We copy awg-go and toolset
 COPY --from=builder /build-go/amneziawg-go /usr/bin/awg-go

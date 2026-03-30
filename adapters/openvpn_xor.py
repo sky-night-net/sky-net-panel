@@ -289,6 +289,11 @@ mssfix 1350
         ]
         self._run(cmd)
         self._setup_nat(subnet)
+        
+        # Firewall automation
+        port = inbound.get("port", 1194)
+        proto = settings.get("proto", "udp")
+        self._allow_port(port, proto)
 
         # Wait for container to be ready
         log.info(f"[{self.PROTOCOL_NAME}] Waiting for interface {iface} to come up...")
@@ -315,6 +320,11 @@ mssfix 1350
             self._cleanup_nat(subnet)
             subprocess.run(["ip", "link", "delete", iface],
                            capture_output=True, check=False)
+            
+            # Firewall cleanup
+            port = inbound.get("port", 1194)
+            proto = settings.get("proto", "udp")
+            self._deny_port(port, proto)
         except Exception:
             pass
         return True

@@ -155,8 +155,8 @@ if [ $(free -m | awk '/^Mem:/{print $2}') -lt 1500 ] && [ $(free -m | awk '/^Swa
 fi
 
 # Build images locally from vendored Dockerfiles
-docker build -t skynet-local/amneziawg:latest /opt/sky-net/docker/amneziawg || echo -e "  ${RED}Failed to build AWG${NC}"
-docker build -t skynet-local/openvpn-xor:latest /opt/sky-net/docker/openvpn-xor || echo -e "  ${RED}Failed to build OpenVPN-XOR${NC}"
+docker build --no-cache -t skynet-local/amneziawg:latest /opt/sky-net/docker/amneziawg || echo -e "  ${RED}Failed to build AWG${NC}"
+docker build --no-cache -t skynet-local/openvpn-xor:latest /opt/sky-net/docker/openvpn-xor || echo -e "  ${RED}Failed to build OpenVPN-XOR${NC}"
 
 # Remove temporary swap
 if [ -f /tmp/skynet_swap ]; then
