@@ -108,22 +108,29 @@ echo -e "  ${GREEN}Done.${NC}"
 echo -e "${BLUE}[5/7] Installing dependencies...${NC}"
 export DEBIAN_FRONTEND=noninteractive
 
-# Robustness: Fix existing broken state
+# Robustness: Fix existing broken state and sync repositories
 dpkg --configure -a 2>/dev/null || true
-apt-get install -f -y 2>/dev/null || true
+apt-get clean
+apt-get update -y
+apt-get autoremove -y
+# Optional: upgrade core packages to resolve dependency trees
+apt-get upgrade -y
 
 # Prepare repositories
-apt-get update -y >/dev/null
-apt-get install -y software-properties-common >/dev/null 2>&1 || true
-add-apt-repository universe -y >/dev/null 2>&1 || true
-apt-get update -y >/dev/null
+apt-get install -y software-properties-common
+add-apt-repository universe -y
+apt-get update -y
 
 # Set non-interactive for iptables-persistent
 echo iptables-persistent iptables-persistent/autosave_v4 boolean true | debconf-set-selections
 echo iptables-persistent iptables-persistent/autosave_v6 boolean true | debconf-set-selections
 
-# Install all critical packages without discarding output for error visibility
-apt-get install -y git python3 python3-pip python3-venv docker.io curl sqlite3 ufw easy-rsa iptables-persistent
+# Install core dependencies (Isolating docker.io to avoid conflicts with get.docker.com)
+echo -e "  Installing system tools..."
+apt-get install -y git curl sqlite3 ufw easy-rsa iptables-persistent
+
+echo -e "  Installing Python environment..."
+apt-get install -y python3 python3-pip python3-venv
 
 # ─── Docker ───────────────────────────────────────────────────────────────────
 echo -e "${BLUE}[3/7] Installing Docker...${NC}"
