@@ -1,15 +1,12 @@
 # Original credit: https://github.com/jpetazzo/dockvpn
 
 # Smallest base image
-FROM ubuntu:18.04
+FROM ubuntu:22.04
 
 LABEL maintainer="lawtancool"
 
-# Testing: pamtester
-#RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing/" >> /etc/apk/repositories && \
-#    apk add --update openvpn iptables bash easy-rsa openvpn-auth-pam google-authenticator pamtester && \
-#    ln -s /usr/share/easy-rsa/easyrsa /usr/local/bin && \
-#    rm -rf /tmp/* /var/tmp/* /var/cache/apk/* /var/cache/distfiles/*
+# Non-interactive for apt
+ENV DEBIAN_FRONTEND=noninteractive
 
 COPY src/ /tmp/src_deps/
 RUN apt-get update && apt-get install -y tar unzip build-essential libssl-dev iproute2 liblz4-dev liblzo2-dev libpam0g-dev libpkcs11-helper1-dev libsystemd-dev easy-rsa iptables pkg-config && \
