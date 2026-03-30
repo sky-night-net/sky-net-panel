@@ -123,7 +123,7 @@ apt-get update -y
 
 # Install core dependencies (Isolating docker.io to avoid conflicts with get.docker.com)
 echo -e "  Installing system tools..."
-apt-get install -y git curl sqlite3 ufw easy-rsa
+apt-get install -y git curl sqlite3 ufw easy-rsa wireguard-tools
 
 echo -e "  Installing Python environment..."
 apt-get install -y python3 python3-pip python3-venv

@@ -41,7 +41,7 @@ AWG_DOCKER_IMAGE = "skynet-local/amneziawg:latest"
 
 class AmneziaWGv1Adapter(ProtocolAdapter):
     PROTOCOL_NAME = "amneziawg_v1"
-    REQUIRED_BINARIES = ["docker", "wg"]
+    REQUIRED_BINARIES = ["docker"]
     INTERFACE_PREFIX = "awg"
     CONFIG_DIR = "/etc/amnezia/amneziawg"
 
@@ -57,13 +57,30 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
             self._run(["docker", "build", "-t", AWG_DOCKER_IMAGE, "/opt/sky-net/docker/amneziawg"], check=False)
 
     def generate_keypair(self) -> dict:
-        # Use host wg tool for key generation (curve25519 keys are compatible with AWG)
-        priv = self._run(["wg", "genkey"])
-        proc = subprocess.run(["wg", "pubkey"], input=priv + "\n",
-                               capture_output=True, text=True, check=True)
-        pub = proc.stdout.strip()
-        psk = self._run(["wg", "genpsk"])
-        return {"private_key": priv, "public_key": pub, "preshared_key": psk}
+        """Generate keys using the AWG binary inside a temporary Docker container."""
+        try:
+            # 1. Private Key
+            priv = self._run(["docker", "run", "--rm", AWG_DOCKER_IMAGE, "awg", "genkey"])
+            # 2. Public Key (pipe private key into pubkey)
+            pub_proc = subprocess.run(
+                ["docker", "run", "--rm", "-i", AWG_DOCKER_IMAGE, "awg", "pubkey"],
+                input=priv + "\n", capture_output=True, text=True, check=True
+            )
+            pub = pub_proc.stdout.strip()
+            # 3. Preshared Key
+            psk = self._run(["docker", "run", "--rm", AWG_DOCKER_IMAGE, "awg", "genpsk"])
+            
+            return {"private_key": priv, "public_key": pub, "preshared_key": psk}
+        except Exception as e:
+            log.error(f"[{self.PROTOCOL_NAME}] Docker-based keygen failed: {e}")
+            # Fallback to host 'wg' if available
+            try:
+                priv = self._run(["wg", "genkey"])
+                pub = subprocess.run(["wg", "pubkey"], input=priv+"\n", capture_output=True, text=True).stdout.strip()
+                psk = self._run(["wg", "genpsk"])
+                return {"private_key": priv, "public_key": pub, "preshared_key": psk}
+            except Exception:
+                raise Exception(f"Key generation failed (Docker and Host): {e}")
 
     def _iface_name(self, inbound: dict) -> str:
         return f"{self.INTERFACE_PREFIX}{inbound['id']}"
