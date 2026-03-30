@@ -207,6 +207,10 @@ else
     cd /opt/sky-net
 fi
 
+# Install Python dependencies
+echo -e "  Installing Python dependencies (Flask, etc.)..."
+pip3 install flask flask-cors psutil --break-system-packages 2>/dev/null || pip3 install flask flask-cors psutil 2>/dev/null || true
+
 # Initialize database
 if [ ! -f /opt/sky-net/sky_net.db ]; then
     echo -e "  Initializing database..."
@@ -255,6 +259,12 @@ EOF
 
 systemctl daemon-reload
 systemctl enable skynet
+
+# Save firewall rules to persist after reboot
+echo -e "  Saving firewall rules..."
+if command -v netfilter-persistent &>/dev/null; then
+    netfilter-persistent save >/dev/null 2>&1 || true
+fi
 
 # Stop existing if running
 systemctl stop skynet 2>/dev/null || true
