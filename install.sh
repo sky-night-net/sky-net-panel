@@ -47,14 +47,8 @@ if [ -t 0 ] && [ -t 1 ]; then IS_INTERACTIVE=1; fi
 safe_prompt() {
     local prompt_msg=$1 var_name=$2 default_val=$3 input_val=""
     if [ "$IS_INTERACTIVE" -eq 1 ]; then
-        read -rp "$(echo -e "${BLUE}${prompt_msg}${NC}")" input_val
+        read -rp "$(echo -e "${BLUE}${prompt_msg}${NC}")" input_val </dev/stdin
         eval "$var_name=\"${input_val:-$default_val}\""
-    elif [ -c /dev/tty ]; then
-        if read -rp "$(echo -e "${BLUE}${prompt_msg}${NC}")" input_val </dev/tty; then
-            eval "$var_name=\"${input_val:-$default_val}\""
-        else
-            eval "$var_name=\"$default_val\""
-        fi
     else
         eval "$var_name=\"$default_val\""
     fi
