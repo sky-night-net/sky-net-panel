@@ -250,7 +250,7 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
         self.stop(inbound)
 
         log.info(f"[{self.PROTOCOL_NAME}] Starting Docker container {container_name}")
-        # Use official AmneziaWG images. AWG-GO is more compatible with newer kernels.
+        # amneziavpn/amneziawg-go has awg-quick; amneziavpn/amnezia-wg only has wg-quick (standard WG)
         img = "amneziavpn/amneziawg-go:latest"
 
         cmd = [
@@ -259,11 +259,15 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
             "--restart", "unless-stopped",
             "--network", "host",
             "--cap-add", "NET_ADMIN",
+            "--sysctl", "net.ipv4.ip_forward=1",
             "--device", "/dev/net/tun",
             "-v", f"{self.CONFIG_DIR}:/etc/amnezia/amneziawg",
-            "--entrypoint", "sh",
+            "--entrypoint", "/bin/bash",
             img,
-            "-c", f"awg-quick up /etc/amnezia/amneziawg/{iface}.conf && tail -f /dev/null"
+            "-c",
+            f"export PATH=$PATH:/usr/local/sbin:/usr/sbin && "
+            f"awg-quick up /etc/amnezia/amneziawg/{iface}.conf && "
+            f"tail -f /dev/null"
         ]
         self._run(cmd)
         self._setup_nat(subnet)
