@@ -259,7 +259,6 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
             "--restart", "unless-stopped",
             "--network", "host",
             "--cap-add", "NET_ADMIN",
-            "--sysctl", "net.ipv4.ip_forward=1",
             "--device", "/dev/net/tun",
             "-v", f"{self.CONFIG_DIR}:/etc/amnezia/amneziawg",
             "--entrypoint", "/bin/bash",
