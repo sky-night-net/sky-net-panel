@@ -166,12 +166,12 @@ def restore_active_inbounds():
     log.info("Restoring active VPN inbounds...")
     try:
         with get_db() as db:
-            active = db.execute("SELECT * FROM inbounds WHERE enabled=1").fetchall()
+            active = db.execute("SELECT * FROM inbounds WHERE enable=1").fetchall()
             
         for row in active:
             inbound = dict(row)
             try:
-                adapter = AdapterFactory.get_adapter(inbound["protocol"])
+                adapter = AdapterFactory.get(inbound["protocol"])
                 if adapter:
                     log.info(f"Restoring {inbound['protocol']} server (ID: {inbound['id']})")
                     adapter.start(inbound)
