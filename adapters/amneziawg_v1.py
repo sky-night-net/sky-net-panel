@@ -13,6 +13,7 @@ AmneziaWG v1 (Legacy) Adapter
 
 import json
 import os
+import time
 import ipaddress
 import logging
 import subprocess
@@ -278,7 +279,18 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
         ]
         self._run(cmd)
         self._setup_nat(subnet)
-        return True
+
+        # Wait for container to be ready
+        log.info(f"[{self.PROTOCOL_NAME}] Waiting for interface {iface} to come up...")
+        for _ in range(10):
+            res = subprocess.run(["docker", "exec", container_name, "awg", "show", iface], capture_output=True)
+            if res.returncode == 0:
+                log.info(f"[{self.PROTOCOL_NAME}] Interface {iface} is UP")
+                return True
+            time.sleep(1)
+        
+        log.error(f"[{self.PROTOCOL_NAME}] Interface {iface} failed to come up within 10s")
+        return True # Still return True to avoid stopping the server setup, but log error
 
     def stop(self, inbound: dict) -> bool:
         iface = self._iface_name(inbound)

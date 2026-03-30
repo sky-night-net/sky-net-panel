@@ -279,6 +279,7 @@ mssfix 1350
             "--restart", "unless-stopped",
             "--network", "host",
             "--cap-add", "NET_ADMIN",
+            "--cap-add", "SYS_PTRACE",
             "--device", "/dev/net/tun",
             "-v", f"{self.CONFIG_DIR}:/etc/openvpn",
             "-v", "/var/log/openvpn:/var/log/openvpn",
@@ -287,7 +288,18 @@ mssfix 1350
             "--dev", iface
         ]
         self._run(cmd)
-        self._setup_nat(subnet)  # _setup_nat normalizes subnet internally
+        self._setup_nat(subnet)
+
+        # Wait for container to be ready
+        log.info(f"[{self.PROTOCOL_NAME}] Waiting for interface {iface} to come up...")
+        for _ in range(10):
+            res = subprocess.run(["ip", "link", "show", iface], capture_output=True)
+            if res.returncode == 0:
+                log.info(f"[{self.PROTOCOL_NAME}] Interface {iface} is UP")
+                return True
+            time.sleep(1)
+        
+        log.error(f"[{self.PROTOCOL_NAME}] Interface {iface} failed to come up within 10s")
         return True
 
     def stop(self, inbound: dict) -> bool:

@@ -104,21 +104,16 @@ ip link delete tun_skynet 2>/dev/null || true
 set -e
 echo -e "  ${GREEN}Done.${NC}"
 
-# ─── System Packages ──────────────────────────────────────────────────────────
-echo -e "${BLUE}[2/7] Installing system packages...${NC}"
+# ─── Install Dependencies ─────────────────────────────────────────────────────
+echo -e "${BLUE}[5/7] Installing dependencies...${NC}"
 export DEBIAN_FRONTEND=noninteractive
-
-# Update and install essentials first
 apt-get update -y >/dev/null
+echo iptables-persistent iptables-persistent/autosave_v4 boolean true | debconf-set-selections
+echo iptables-persistent iptables-persistent/autosave_v6 boolean true | debconf-set-selections
+apt-get install -y git python3 python3-pip python3-venv docker.io curl sqlite3 ufw easy-rsa iptables-persistent >/dev/null
 apt-get install -y software-properties-common >/dev/null 2>&1 || true
 add-apt-repository universe -y >/dev/null 2>&1 || true
 apt-get update -y >/dev/null
-
-# Install dependencies (Removed iptables-persistent to avoid ufw conflicts and interactive prompts)
-apt-get install -y \
-    python3 python3-pip python3-flask python3-flask-cors python3-psutil \
-    sqlite3 curl git ufw fail2ban \
-    easy-rsa wireguard-tools openvpn
 
 # ─── Docker ───────────────────────────────────────────────────────────────────
 echo -e "${BLUE}[3/7] Installing Docker...${NC}"
@@ -163,8 +158,11 @@ echo -e "  ${GREEN}Done.${NC}"
 echo -e "${BLUE}[6/7] Configuring IP forwarding and firewall...${NC}"
 
 # Enable immediately
+modprobe tun 2>/dev/null || true
+modprobe amneziawg 2>/dev/null || true
 sysctl -w net.ipv4.ip_forward=1 >/dev/null
 sysctl -w net.ipv6.conf.all.forwarding=1 >/dev/null 2>&1 || true
+sysctl -p /etc/sysctl.conf >/dev/null 2>&1 || true
 
 # Persist in sysctl.conf
 sed -i '/^#*net.ipv4.ip_forward/d' /etc/sysctl.conf
