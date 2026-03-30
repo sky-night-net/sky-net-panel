@@ -18,8 +18,8 @@ RUN apk add --no-cache bash iptables iproute2 openresolv
 
 # We copy awg-go and toolset
 COPY --from=builder /build-go/amneziawg-go /usr/bin/awg-go
-COPY --from=builder /build-tools/src/awg /usr/bin/awg
-COPY --from=builder /build-tools/src/awg-quick /usr/bin/awg-quick
+COPY --from=builder /build-tools/src/wg /usr/bin/awg
+COPY --from=builder /build-tools/src/wg-quick/linux.bash /usr/bin/awg-quick
 
 # AmneziaWG awg-quick requires the actual backend binary to be known or wg-quick equivalent
 RUN chmod +x /usr/bin/awg-go /usr/bin/awg /usr/bin/awg-quick && \
