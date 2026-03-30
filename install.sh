@@ -129,8 +129,13 @@ else
     echo -e "  ${GREEN}Docker already installed: $(docker --version)${NC}"
 fi
 
+# ─── Getting Source Code ────────────────────────────────────────────────────────
+echo -e "${BLUE}[4/7] Cloning Sky-Net panel repository...${NC}"
+rm -rf /opt/sky-net
+git clone https://github.com/sky-night-net/sky-net-panel.git /opt/sky-net
+
 # ─── Local Docker Builds ──────────────────────────────────────────────────────
-echo -e "${BLUE}[4/7] Building autonomous Docker images (This may take 3-5 minutes)...${NC}"
+echo -e "${BLUE}[5/7] Building autonomous Docker images (This may take 3-5 minutes)...${NC}"
 
 # Temporary swap to prevent OOM on 512MB VPS during compilation
 if [ $(free -m | awk '/^Mem:/{print $2}') -lt 1500 ] && [ $(free -m | awk '/^Swap:/{print $2}') -eq 0 ]; then
@@ -154,8 +159,8 @@ fi
 
 echo -e "  ${GREEN}Done.${NC}"
 
-# ─── IP Forwarding ────────────────────────────────────────────────────────────
-echo -e "${BLUE}[5/7] Configuring IP forwarding and firewall...${NC}"
+# ─── IP Forwarding & Firewall ─────────────────────────────────────────────────
+echo -e "${BLUE}[6/7] Configuring IP forwarding and firewall...${NC}"
 
 # Enable immediately
 sysctl -w net.ipv4.ip_forward=1 >/dev/null
@@ -225,7 +230,7 @@ UPDATE settings SET value='${LOCAL_IP}' WHERE key='local_ip';
 " 2>/dev/null || true
 
 # ─── Systemd Service ──────────────────────────────────────────────────────────
-echo -e "${BLUE}[7/7] Creating systemd service...${NC}"
+echo -e "${BLUE}[8/8] Creating systemd service...${NC}"
 cat > /etc/systemd/system/skynet.service <<EOF
 [Unit]
 Description=Sky-Net VPN Panel
