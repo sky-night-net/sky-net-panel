@@ -121,9 +121,9 @@ apt-get install -y software-properties-common
 add-apt-repository universe -y
 apt-get update -y
 
-# Install core dependencies (Isolating docker.io to avoid conflicts with get.docker.com)
+# Install core dependencies
 echo -e "  Installing system tools..."
-apt-get install -y git curl sqlite3 ufw easy-rsa wireguard-tools
+apt-get install -y git curl sqlite3 ufw easy-rsa wireguard-tools gunicorn fail2ban
 
 echo -e "  Installing Python environment..."
 apt-get install -y python3 python3-pip python3-venv
@@ -217,7 +217,7 @@ ufw --force enable
 echo -e "  ${GREEN}Firewall configured.${NC}"
 
 # ─── Sky-Net Source Code ──────────────────────────────────────────────────────
-echo -e "${BLUE}[6/7] Setting up Sky-Net panel...${NC}"
+echo -e "${BLUE}[7/7] Setting up Sky-Net panel...${NC}"
 if [ -d /opt/sky-net/.git ]; then
     echo -e "  Updating existing installation..."
     cd /opt/sky-net
@@ -233,7 +233,7 @@ fi
 echo -e "  Setting up Python Virtual Environment..."
 python3 -m venv /opt/sky-net/venv
 /opt/sky-net/venv/bin/pip install --upgrade pip
-/opt/sky-net/venv/bin/pip install flask flask-cors psutil
+/opt/sky-net/venv/bin/pip install flask flask-cors psutil gunicorn
 
 # Initialize database
 if [ ! -f /opt/sky-net/sky_net.db ]; then
@@ -260,22 +260,18 @@ echo -e "${BLUE}[8/8] Creating systemd service...${NC}"
 cat > /etc/systemd/system/skynet.service <<EOF
 [Unit]
 Description=Sky-Net VPN Panel
-After=network-online.target docker.service
-Wants=network-online.target
-Requires=docker.service
+After=network.target docker.service
 
 [Service]
 Type=simple
 User=root
 WorkingDirectory=/opt/sky-net
-ExecStart=/opt/sky-net/venv/bin/python3 sky_net.py
-Restart=on-failure
-RestartSec=5
-StandardOutput=journal
-StandardError=journal
-Environment=SKYNET_EXT_IP=${EXT_IP}
+Environment=PYTHONPATH=/opt/sky-net
 Environment=SKYNET_PORT=${PANEL_PORT}
-Environment=SKYNET_DB=/opt/sky-net/sky_net.db
+Environment=SKYNET_HTTPS_PORT=${PANEL_HTTPS_PORT}
+ExecStart=/opt/sky-net/venv/bin/gunicorn --bind 0.0.0.0:${PANEL_PORT} --workers 1 --worker-class sync --timeout 120 --graceful-timeout 30 sky_net:app
+Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

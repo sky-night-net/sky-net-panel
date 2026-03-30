@@ -907,7 +907,6 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <div class="card-header"><h3 data-i18n="sys_ssl">SSL / HTTPS</h3></div>
     <div style="padding:25px;">
       <div class="fr" style="margin-bottom:15px;">
-      <div class="fr" style="margin-bottom:15px;">
         <div class="fg"><label data-i18n="ext_ip_lbl">Домен (например: sky-night.net)</label><input id="ssl-domain" placeholder="sky-night.net" data-i18n-ph="ext_ip_lbl"></div>
         <div class="fg"><label data-i18n="protocol">Режим SSL</label>
           <select id="ssl-mode">
@@ -1146,6 +1145,33 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
 <div id="debug-error-bar" style="display:none; position:fixed; bottom:20px; right:20px; z-index:999999; background:rgba(244, 63, 94, 0.9); backdrop-filter:blur(10px); color:white; padding:15px 25px; border-radius:12px; font-weight:600; font-size:14px; box-shadow:0 10px 25px rgba(244,63,94,0.3); border:1px solid rgba(255,255,255,0.1); max-width:400px; word-wrap:break-word;"></div>
 <script>
+function toggleSidebarCol(){
+  if(window.innerWidth <= 768) {
+    const s = document.getElementById('sidebar');
+    const o = document.querySelector('.sidebar-overlay');
+    if(s) s.classList.add('show');
+    if(o) o.classList.add('show');
+  } else {
+    const s = document.getElementById('sidebar');
+    if(s) s.classList.toggle('collapsed');
+  }
+}
+function toggleSidebarColModal(){
+  const s = document.getElementById('sidebar');
+  const o = document.querySelector('.sidebar-overlay');
+  if(s) s.classList.remove('show');
+  if(o) o.classList.remove('show');
+}
+function toggleSysMenu(){
+  const m = document.getElementById('sys-menu');
+  if(m) m.classList.toggle('show');
+}
+async function setupService(){
+  if(!confirm('Это действие пересоздаст системный сервис и перезапустит панель. Продолжить?')) return;
+  const r = await fetch('/panel/api/system/setup-service', {method:'POST'}).then(res => res.json());
+  alert(r.msg);
+  if(r.success) setTimeout(()=>window.location.reload(), 2000);
+}
 window.onerror = function(msg, url, lineNo, columnNo, error) {
   const bar = document.getElementById('debug-error-bar');
   if(bar) {
@@ -1975,21 +2001,6 @@ async function loadAllClients(){
     tb.querySelectorAll('tr').forEach(tr=>{tr.style.display=tr.textContent.toLowerCase().includes(q)?'':'none'})}
 }
 
-function toggleSidebarCol(){
-  if(window.innerWidth <= 768) {
-    document.getElementById('sidebar').classList.add('show');
-    document.querySelector('.sidebar-overlay').classList.add('show');
-  } else {
-    document.getElementById('sidebar').classList.toggle('collapsed');
-  }
-}
-function toggleSidebarColModal(){
-  document.getElementById('sidebar').classList.remove('show');
-  document.querySelector('.sidebar-overlay').classList.remove('show');
-}
-function toggleSysMenu(){
-  document.getElementById('sys-menu').classList.toggle('show');
-}
 document.addEventListener('click', function(e) {
   const menu = document.getElementById('sys-menu');
   if(!e.target.closest('.header-right') && menu && menu.classList.contains('show')) {

@@ -14,11 +14,11 @@ from flask_cors import CORS
 from collections import deque
 import urllib.request
 
-# Импорт адаптеров
 from adapters import AdapterFactory
 from adapters.amneziawg_v1 import AmneziaWGv1Adapter
 from adapters.amneziawg_v2 import AmneziaWGv2Adapter
 from adapters.openvpn_xor import OpenVPNXORAdapter
+from templates_html import LOGIN_HTML, MAIN_HTML
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("sky-net")
@@ -213,7 +213,7 @@ After=network.target
 Type=simple
 User={user}
 WorkingDirectory={work_dir}
-ExecStart=/usr/bin/python3 {script_path}
+ExecStart=/usr/bin/gunicorn --bind 0.0.0.0:{PORT} --workers 1 --timeout 120 sky_net:app
 Restart=always
 RestartSec=5
 Environment=SKYNET_PORT={PORT}
@@ -1589,6 +1589,51 @@ def api_change_port():
         "new_port_https": new_port_https
     })
 
+@app.route("/panel/api/system/setup-service", methods=["POST"])
+@login_required
+def api_setup_service():
+    service_path = "/etc/systemd/system/skynet.service"
+    app_dir = os.path.dirname(os.path.abspath(__file__))
+    venv_python = os.path.join(app_dir, "venv", "bin", "python3")
+    gunicorn_bin = os.path.join(app_dir, "venv", "bin", "gunicorn")
+    
+    # Try to find system gunicorn if venv one is missing
+    if not os.path.exists(gunicorn_bin):
+        gunicorn_bin = "gunicorn"
+
+    service_content = f"""[Unit]
+Description=Sky-Net VPN Panel
+After=network.target docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory={app_dir}
+Environment=PYTHONPATH={app_dir}
+Environment=SKYNET_PORT={PORT}
+Environment=SKYNET_HTTPS_PORT={HTTPS_PORT}
+ExecStart={gunicorn_bin} --bind 0.0.0.0:{PORT} --workers 1 --worker-class sync --timeout 120 --graceful-timeout 30 sky_net:app
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+"""
+    try:
+        with open(service_path, "w") as f:
+            f.write(service_content)
+        subprocess.run(["systemctl", "daemon-reload"], capture_output=True)
+        subprocess.run(["systemctl", "enable", "skynet"], capture_output=True)
+        
+        def delayed_restart():
+            import time; time.sleep(1)
+            subprocess.Popen(["systemctl", "restart", "skynet"])
+            
+        threading.Thread(target=delayed_restart, daemon=True).start()
+        return jsonify({"success": True, "msg": "Системный сервис (Gunicorn) обновлен. Панель перезагрузится через 1 сек."})
+    except Exception as e:
+        return jsonify({"success": False, "msg": f"Ошибка прав доступа или системы: {e}"})
+
 # ─── API: Fail2Ban Installation ───────────────────────────────────────────────
 
 @app.route("/panel/api/system/install-fail2ban", methods=["POST"])
@@ -1637,9 +1682,15 @@ ignoreregex =
 @app.route("/panel/api/system/fail2ban-status")
 @login_required
 def api_fail2ban_status():
-    r = subprocess.run(["fail2ban-client", "status"], capture_output=True, text=True)
-    installed = r.returncode == 0
-    return jsonify({"success": True, "installed": installed, "output": r.stdout[:500] if installed else ""})
+    try:
+        r = subprocess.run(["fail2ban-client", "status"], capture_output=True, text=True)
+        if r.returncode == 0:
+            return jsonify({"success":True, "status":"Active", "output":r.stdout})
+        return jsonify({"success":True, "status":"Not running", "output":r.stderr})
+    except FileNotFoundError:
+        return jsonify({"success":True, "status":"Not installed", "output":""})
+    except Exception as e:
+        return jsonify({"success":False, "msg":str(e)})
 
 # ─── API: SSL / HTTPS Configuration ─────────────────────────────────────────
 
@@ -1896,34 +1947,31 @@ def start_telegram_bot():
     else:
         log.error(f"Telegram bot script not found at {script_path}")
 
+
+# ─── Module Level Initialization ─────────────────────────────────────────────
+# apt-get install -y python3 python3-pip python3-venv docker.io docker-buildx curl ufw git gunicorn fail2ban &>/dev/null
+# performs its necessary setup routines.
+
+init_db()
+# Restore active VPNs on module load
+restore_active_inbounds()
+# Start the bot
+start_telegram_bot()
+
+# Global Routing & System Optimization
+try:
+    # Enable IP Forwarding
+    subprocess.run(["sysctl", "-w", "net.ipv4.ip_forward=1"], check=False)
+    log.info("Global IP forwarding enabled")
+except Exception as e:
+    log.error(f"Global routing error: {e}")
+
+# Traffic polling thread
+t_poll = threading.Thread(target=poll_traffic, daemon=True)
+t_poll.start()
+
 if __name__ == "__main__":
-    init_db()
-    # Start the bot
-    start_telegram_bot()
-
-    
-    # Global Routing & System Optimization
-    try:
-        # Enable IP Forwarding
-        subprocess.run(["sysctl", "-w", "net.ipv4.ip_forward=1"], check=False)
-        
-        # We don't need to add hardcoded MASQUERADE here because each dynamic 
-        # inbound setup (via Adapter) will now call _setup_nat() which 
-        # handles interface detection and NAT for its specific subnet.
-        
-        log.info("Global IP forwarding enabled")
-    except Exception as e:
-        log.error(f"Global routing error: {e}")
-
-    # This will trigger start() on all enabled inbounds, 
-    # which now includes centralized routing setup.
-    # Restore active VPNs on startup
-    restore_active_inbounds()
-
-    t = threading.Thread(target=poll_traffic, daemon=True)
-    t.start()
-
-    # Load SSL Settings
+    # Load SSL Settings for development/manual run
     ssl_ctx = None
     with get_db() as db:
         s_mode = db.execute("SELECT value FROM settings WHERE key='ssl_mode'").fetchone()
@@ -1934,20 +1982,8 @@ if __name__ == "__main__":
                 ssl_ctx = (s_cert[0], s_key[0])
                 log.info(f"SSL enabled: {s_mode[0]} mode")
 
-    log.info(f"Sky-Net HTTP server binding on port {PORT}")
+    log.info(f"Sky-Net server binding on port {PORT} (Manual run)")
     if ssl_ctx:
-        from werkzeug.serving import make_server
-        def run_http():
-            try:
-                srv = make_server("0.0.0.0", PORT, app, threaded=True)
-                srv.serve_forever()
-            except Exception as e:
-                log.error(f"Failed to start secondary HTTP server: {e}")
-                
-        t_http = threading.Thread(target=run_http, daemon=True)
-        t_http.start()
-        
-        log.info(f"Sky-Net HTTPS server binding on port {HTTPS_PORT}")
         app.run(host="0.0.0.0", port=HTTPS_PORT, debug=False, threaded=True, ssl_context=ssl_ctx)
     else:
         app.run(host="0.0.0.0", port=PORT, debug=False, threaded=True)
