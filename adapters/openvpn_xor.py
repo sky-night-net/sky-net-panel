@@ -287,7 +287,7 @@ mssfix 1350
             "--device", "/dev/net/tun",
             "-v", f"{self.CONFIG_DIR}:/etc/openvpn",
             "-v", "/var/log/openvpn:/var/log/openvpn",
-            "lawtancool/docker-openvpn-xor",
+            "lawtancool/docker-openvpn-xor:latest",
             "openvpn", "--config", f"/etc/openvpn/server_{inbound['id']}.conf",
             "--dev", iface 
         ]

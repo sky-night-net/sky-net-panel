@@ -139,9 +139,13 @@ class ProtocolAdapter:
             res_ufw = subprocess.run(["which", "ufw"], capture_output=True)
             if res_ufw.returncode == 0:
                 self._run(["ufw", "route", "allow", "from", subnet, "to", "any"], check=False)
+                # Ensure global default forward policy is ALLOW for VPN to work
+                # On Ubuntu 24.04, UFW might default 'routed' to 'drop'
+                self._run(["ufw", "default", "allow", "routed"], check=False)
 
-            # TCP MSS Clamping to avoid MTU issues
+            # TCP MSS Clamping to avoid MTU issues (Crucial for mobile networks)
             self._run(["iptables", "-t", "mangle", "-I", "FORWARD", "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--clamp-mss-to-pmtu"], check=False)
+            self._run(["iptables", "-t", "mangle", "-I", "FORWARD", "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-s", subnet, "-j", "TCPMSS", "--set-mss", "1350"], check=False)
 
             # ─── Persistent NAT: write to /etc/ufw/before.rules ─────
             self._persist_nat_rule(subnet, iface)
@@ -152,29 +156,40 @@ class ProtocolAdapter:
         """Add a NAT MASQUERADE rule and FORWARD allows to /etc/ufw/before.rules for persistence."""
         before_rules = "/etc/ufw/before.rules"
         tag = f"# SKYNET-NAT-{subnet}"
-        nat_block = (
-            f"\n{tag}\n"
-            f"*nat\n"
-            f":POSTROUTING ACCEPT [0:0]\n"
-            f"-A POSTROUTING -s {subnet} -o {iface} -j MASQUERADE\n"
-            f"COMMIT\n"
-            f"*filter\n"
-            f"-A ufw-before-forward -s {subnet} -j ACCEPT\n"
-            f"-A ufw-before-forward -d {subnet} -j ACCEPT\n"
-            f"COMMIT\n"
+        nat_block = [
+            f"{tag}",
+            f"*nat",
+            f":POSTROUTING ACCEPT [0:0]",
+            f"-A POSTROUTING -s {subnet} -o {iface} -j MASQUERADE",
+            f"COMMIT",
+            f"*filter",
+            f":ufw-before-forward - [0:0]",
+            f"-A ufw-before-forward -s {subnet} -j ACCEPT",
+            f"-A ufw-before-forward -d {subnet} -j ACCEPT",
+            f"COMMIT",
             f"{tag}-END\n"
-        )
+        ]
         try:
             if not os.path.exists(before_rules):
                 return
             with open(before_rules, "r") as f:
                 content = f.read()
-            # Don't duplicate
+            
             if tag in content:
                 return
-            # Append before the last COMMIT or at end
-            with open(before_rules, "a") as f:
-                f.write(nat_block)
+            
+            # Smart insertion: find the first line that is NOT a comment and insert BEFORE it
+            lines = content.split('\n')
+            insert_idx = 0
+            for i, line in enumerate(lines):
+                if line.strip() and not line.strip().startswith('#'):
+                    insert_idx = i
+                    break
+            
+            # Insert at the top of the file (after comments) for maximum reliability
+            new_content = lines[:insert_idx] + nat_block + lines[insert_idx:]
+            with open(before_rules, "w") as f:
+                f.write('\n'.join(new_content))
             log.info(f"[{self.PROTOCOL_NAME}] Persistent NAT written to {before_rules} for {subnet}")
         except Exception as e:
             log.warning(f"[{self.PROTOCOL_NAME}] Failed to persist NAT rule: {e}")

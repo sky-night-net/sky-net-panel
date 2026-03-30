@@ -136,10 +136,9 @@ fi
 
 # Pre-pull required images for OOTB speed
 echo -e "${BLUE}Pre-pulling Docker images (AmneziaWG, OpenVPN XOR)...${NC}"
-docker pull amneziavpn/amnezia-wg || true
-docker pull amneziavpn/amneziawg-go || true
-docker pull lawtancool/docker-openvpn-xor || true
-docker pull amnezia-awg2 || true
+docker pull amneziavpn/amnezia-wg:latest || true
+docker pull amneziavpn/amneziawg-go:latest || true
+docker pull lawtancool/docker-openvpn-xor:latest || true
 
 # Enable IP Forwarding persistently
 echo -e "${BLUE}Enabling IP Forwarding...${NC}"

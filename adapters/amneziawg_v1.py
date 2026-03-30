@@ -46,8 +46,9 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
         super().__init__(db_conn)
 
     def install(self, server_ip: str):
-        log.info(f"[{self.PROTOCOL_NAME}] Checking AmneziaWG Docker image...")
-        self._run(["docker", "pull", "amnezia-awg2"])
+        log.info(f"[{self.PROTOCOL_NAME}] Checking AmneziaWG Docker images...")
+        self._run(["docker", "pull", "amneziavpn/amnezia-wg:latest"])
+        self._run(["docker", "pull", "amneziavpn/amneziawg-go:latest"])
 
     def generate_keypair(self) -> dict:
         # Use native wg tool (installed via wireguard-tools on host) for instant/safe keygen
@@ -249,13 +250,8 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
         self.stop(inbound)
 
         log.info(f"[{self.PROTOCOL_NAME}] Starting Docker container {container_name}")
-        # Prioritize 'amnezia-awg2' if available (verified on user VPS), fallback to official
-        img = "amnezia-awg2"
-        # Quick check if image exists, else fallback
-        try:
-            res = subprocess.run(["docker", "image", "inspect", img], capture_output=True)
-            if res.returncode != 0: img = "amneziavpn/amnezia-wg"
-        except: img = "amneziavpn/amnezia-wg"
+        # Use official AmneziaWG images. AWG-GO is more compatible with newer kernels.
+        img = "amneziavpn/amneziawg-go:latest"
 
         cmd = [
             "docker", "run", "-d",
