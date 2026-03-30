@@ -23,6 +23,8 @@ COPY --from=builder /build-tools/src/wg-quick/linux.bash /usr/bin/awg-quick
 
 # AmneziaWG awg-quick requires the actual backend binary to be known or wg-quick equivalent
 RUN chmod +x /usr/bin/awg-go /usr/bin/awg /usr/bin/awg-quick && \
+    ln -s /usr/bin/awg-go /usr/bin/wg-go && \
+    ln -s /usr/bin/awg-go /usr/bin/amneziawg-go && \
     ln -s /usr/bin/awg /usr/bin/wg && \
     ln -s /usr/bin/awg-quick /usr/bin/wg-quick
 
