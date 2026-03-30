@@ -237,47 +237,35 @@ mssfix 1350
 
     def start(self, inbound: dict) -> bool:
         conf_path = f"{self.CONFIG_DIR}/server_{inbound['id']}.conf"
-        with open(conf_path, "w") as f: f.write(self.generate_server_config(inbound))
-        
-        iface = "tun_skynet"
+        with open(conf_path, "w") as f:
+            f.write(self.generate_server_config(inbound))
+
+        # Use unique tun interface per inbound to allow multiple OpenVPN servers
+        iface = f"tun_skynet{inbound['id']}"
         container_name = f"skynet_openvpn_xor_{inbound['id']}"
-        
-        # Stop existing if any
-        self.stop(inbound)
-        
+
         settings = json.loads(inbound.get("settings", "{}"))
         address_full = settings.get("address", "10.9.0.0/24")
+        subnet = self._normalize_subnet(address_full)
+
         try:
             net = ipaddress.ip_network(address_full, strict=False)
             server_ip = str(list(net.hosts())[0])
-        except: server_ip = "10.9.0.1"
+        except Exception:
+            server_ip = "10.9.0.1"
 
-        log.info(f"[{self.PROTOCOL_NAME}] Checking for host conflicts (iface: {iface}, ip: {server_ip})")
-        try:
-            # Check if interface already exists
-            res = subprocess.run(["ip", "link", "show", iface], capture_output=True, text=True)
-            if res.returncode == 0:
-                log.warning(f"[{self.PROTOCOL_NAME}] Interface {iface} already exists on host. Deleting...")
-                subprocess.run(["ip", "link", "delete", iface], check=False)
-
-            # Check if IP is already assigned
-            res = subprocess.run(["ip", "addr", "show"], capture_output=True, text=True)
-            if server_ip in res.stdout:
-                log.warning(f"[{self.PROTOCOL_NAME}] IP {server_ip} already assigned on host. Finding and deleting interface...")
-                match = re.search(r'inet\s+' + re.escape(server_ip) + r'.*?dev\s+([a-zA-Z0-9_\-]+)', res.stdout)
-                if match:
-                    conflicting_iface = match.group(1)
-                    subprocess.run(["ip", "link", "delete", conflicting_iface], check=False)
-        except Exception as e:
-            log.error(f"[{self.PROTOCOL_NAME}] Conflict resolution failed: {e}")
-
-        # Stop existing if any
+        # PROACTIVE CLEANUP: Stop any existing stale instance first
         self.stop(inbound)
-        
-        # We need to map the config directory and make sure logging exists
+
+        # Check if interface still exists after stop
+        res = subprocess.run(["ip", "link", "show", iface], capture_output=True, text=True)
+        if res.returncode == 0:
+            log.warning(f"[{self.PROTOCOL_NAME}] Interface {iface} still exists, forcing delete")
+            subprocess.run(["ip", "link", "delete", iface], capture_output=True, check=False)
+
         os.makedirs("/var/log/openvpn", exist_ok=True)
-        
-        # Start Docker container with XOR patched binary in HOST network mode 
+
+        log.info(f"[{self.PROTOCOL_NAME}] Starting container {container_name}")
         cmd = [
             "docker", "run", "-d",
             "--name", container_name,
@@ -289,49 +277,40 @@ mssfix 1350
             "-v", "/var/log/openvpn:/var/log/openvpn",
             "lawtancool/docker-openvpn-xor:latest",
             "openvpn", "--config", f"/etc/openvpn/server_{inbound['id']}.conf",
-            "--dev", iface 
+            "--dev", iface
         ]
-        
         self._run(cmd)
-        self._setup_nat(address_full)
-        
-        # Apply MSS clamping on the host too for good measure
-        self._run(["iptables", "-t", "mangle", "-I", "FORWARD", "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-s", address_full, "-j", "TCPMSS", "--set-mss", "1350"], check=False)
-        
+        self._setup_nat(subnet)  # _setup_nat normalizes subnet internally
         return True
 
     def stop(self, inbound: dict) -> bool:
-        iface = "tun_skynet"
+        iface = f"tun_skynet{inbound['id']}"
         container_name = f"skynet_openvpn_xor_{inbound['id']}"
         try:
             settings = json.loads(inbound.get("settings", "{}"))
             address_full = settings.get("address", "10.9.0.0/24")
-            
-            self._run(["docker", "rm", "-f", container_name], check=False)
-            self._cleanup_nat(address_full)
+            subnet = self._normalize_subnet(address_full)
 
-            # Cleanup host interface if it persists
-            subprocess.run(["ip", "link", "delete", iface], check=False)
-
-            # Remove UFW/iptables rules added during start
-            try:
-                res_ufw = subprocess.run(["which", "ufw"], capture_output=True)
-                if res_ufw.returncode == 0:
-                    subnet = address_full
-                    self._run(["ufw", "route", "delete", "allow", "from", subnet, "to", "any"], check=False)
-                    self._run(["iptables", "-D", "INPUT", "-s", subnet, "-j", "ACCEPT"], check=False)
-                    self._run(["iptables", "-t", "mangle", "-D", "FORWARD", "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-s", subnet, "-j", "TCPMSS", "--set-mss", "1350"], check=False)
-            except: pass
-
-        except: pass
+            subprocess.run(["docker", "rm", "-f", container_name],
+                           capture_output=True, check=False)
+            self._cleanup_nat(subnet)
+            subprocess.run(["ip", "link", "delete", iface],
+                           capture_output=True, check=False)
+        except Exception:
+            pass
         return True
 
     def is_running(self, inbound: dict) -> bool:
         container_name = f"skynet_openvpn_xor_{inbound['id']}"
         try:
-            res = self._run(["docker", "inspect", "-f", "{{.State.Running}}", container_name], check=False)
-            return res.strip() == "true"
-        except: return False
+            res = subprocess.run(
+                ["docker", "inspect", "-f", "{{.State.Running}}", container_name],
+                capture_output=True, text=True
+            )
+            return res.stdout.strip() == "true"
+        except Exception:
+            return False
+
 
 # Регистрация
 AdapterFactory.register("openvpn_xor", OpenVPNXORAdapter)
