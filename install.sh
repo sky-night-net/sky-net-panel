@@ -107,13 +107,23 @@ echo -e "  ${GREEN}Done.${NC}"
 # ─── Install Dependencies ─────────────────────────────────────────────────────
 echo -e "${BLUE}[5/7] Installing dependencies...${NC}"
 export DEBIAN_FRONTEND=noninteractive
+
+# Robustness: Fix existing broken state
+dpkg --configure -a 2>/dev/null || true
+apt-get install -f -y 2>/dev/null || true
+
+# Prepare repositories
 apt-get update -y >/dev/null
-echo iptables-persistent iptables-persistent/autosave_v4 boolean true | debconf-set-selections
-echo iptables-persistent iptables-persistent/autosave_v6 boolean true | debconf-set-selections
-apt-get install -y git python3 python3-pip python3-venv docker.io curl sqlite3 ufw easy-rsa iptables-persistent >/dev/null
 apt-get install -y software-properties-common >/dev/null 2>&1 || true
 add-apt-repository universe -y >/dev/null 2>&1 || true
 apt-get update -y >/dev/null
+
+# Set non-interactive for iptables-persistent
+echo iptables-persistent iptables-persistent/autosave_v4 boolean true | debconf-set-selections
+echo iptables-persistent iptables-persistent/autosave_v6 boolean true | debconf-set-selections
+
+# Install all critical packages without discarding output for error visibility
+apt-get install -y git python3 python3-pip python3-venv docker.io curl sqlite3 ufw easy-rsa iptables-persistent
 
 # ─── Docker ───────────────────────────────────────────────────────────────────
 echo -e "${BLUE}[3/7] Installing Docker...${NC}"
