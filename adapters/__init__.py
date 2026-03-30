@@ -6,6 +6,7 @@ Sky-Net Protocol Adapters
 """
 
 import subprocess
+import ipaddress
 import json
 import os
 import logging
@@ -35,7 +36,6 @@ class ProtocolAdapter:
         except Exception as e:
             log.info(f"[{self.PROTOCOL_NAME}] Binaries missing, attempting install: {e}")
             self.install(server_ip)
-            # Second check after install
             self.check_binaries(self.REQUIRED_BINARIES)
 
     def install(self, server_ip: str):
@@ -89,7 +89,7 @@ class ProtocolAdapter:
 
     def _run(self, cmd: list, check: bool = True) -> str:
         """Выполнить shell-команду и вернуть stdout."""
-        log.info(f"[{self.PROTOCOL_NAME}] exec: {' '.join(cmd)}")
+        log.info(f"[{self.PROTOCOL_NAME}] exec: {' '.join(str(c) for c in cmd)}")
         try:
             res = subprocess.run(cmd, capture_output=True, text=True, check=check)
             return res.stdout.strip()
@@ -100,113 +100,195 @@ class ProtocolAdapter:
     def _get_external_iface(self) -> str:
         """Определить внешний сетевой интерфейс (с маршрутом по умолчанию)."""
         try:
-            res = self._run(["ip", "route", "get", "8.8.8.8"], check=False)
-            if not res:
-                res = self._run(["ip", "-4", "route", "show", "default"], check=False)
-            if not res: return "eth0"
-            
-            # Typical output: "8.8.8.8 via 192.168.1.1 dev ens18 src 192.168.1.2 uid 1000"
-            parts = res.split()
-            if "dev" in parts:
-                idx = parts.index("dev")
-                if idx + 1 < len(parts):
-                    return parts[idx + 1]
-            return "eth0"
-        except:
-            return "eth0"
+            res = subprocess.run(
+                ["ip", "route", "get", "8.8.8.8"],
+                capture_output=True, text=True
+            )
+            if res.returncode == 0 and res.stdout:
+                parts = res.stdout.split()
+                if "dev" in parts:
+                    idx = parts.index("dev")
+                    if idx + 1 < len(parts):
+                        iface = parts[idx + 1]
+                        # Exclude loopback and virtual interfaces
+                        if iface not in ("lo", "docker0"):
+                            return iface
+
+            # Fallback: parse default route
+            res2 = subprocess.run(
+                ["ip", "-4", "route", "show", "default"],
+                capture_output=True, text=True
+            )
+            if res2.returncode == 0 and res2.stdout:
+                parts = res2.stdout.split()
+                if "dev" in parts:
+                    idx = parts.index("dev")
+                    if idx + 1 < len(parts):
+                        return parts[idx + 1]
+        except Exception:
+            pass
+        return "eth0"
+
+    @staticmethod
+    def _normalize_subnet(subnet: str) -> str:
+        """Convert any IP/prefix (e.g. 10.8.0.1/24) to network address (10.8.0.0/24)."""
+        try:
+            return str(ipaddress.ip_network(subnet, strict=False))
+        except Exception:
+            return subnet
 
     def _setup_nat(self, subnet: str):
         """Настроить NAT (MASQUERADE) и пересылку (FORWARD) для указанной подсети.
         Rules are applied both at runtime (iptables) AND persistently (ufw before.rules).
+        Duplicate rules are NOT added.
         """
+        # Always use network address, not host address
+        subnet = self._normalize_subnet(subnet)
         iface = self._get_external_iface()
         log.info(f"[{self.PROTOCOL_NAME}] Setting up NAT for {subnet} via {iface}")
         try:
             # Enable IP Forwarding
-            self._run(["sysctl", "-w", "net.ipv4.ip_forward=1"], check=False)
+            subprocess.run(["sysctl", "-w", "net.ipv4.ip_forward=1"], check=False,
+                           capture_output=True)
 
-            # FORWARD rules (Insert at top to bypass UFW if needed)
-            self._run(["iptables", "-I", "FORWARD", "-s", subnet, "-j", "ACCEPT"], check=False)
-            self._run(["iptables", "-I", "FORWARD", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"], check=False)
+            # FORWARD rule for this subnet — check before adding (no duplicates)
+            fwd_check = subprocess.run(
+                ["iptables", "-C", "FORWARD", "-s", subnet, "-j", "ACCEPT"],
+                capture_output=True
+            )
+            if fwd_check.returncode != 0:
+                self._run(["iptables", "-I", "FORWARD", "1", "-s", subnet, "-j", "ACCEPT"], check=False)
 
-            # NAT rule (append if not exists)
-            check_cmd = ["iptables", "-t", "nat", "-C", "POSTROUTING", "-s", subnet, "-o", iface, "-j", "MASQUERADE"]
-            res = subprocess.run(check_cmd, capture_output=True)
-            if res.returncode != 0:
-                self._run(["iptables", "-t", "nat", "-A", "POSTROUTING", "-s", subnet, "-o", iface, "-j", "MASQUERADE"], check=False)
+            # RELATED,ESTABLISHED — always ensure it's there (idempotent via check)
+            fwd_est_check = subprocess.run(
+                ["iptables", "-C", "FORWARD", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"],
+                capture_output=True
+            )
+            if fwd_est_check.returncode != 0:
+                self._run(["iptables", "-I", "FORWARD", "1", "-m", "state",
+                           "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"], check=False)
 
-            # UFW Route Allowance (if UFW exists)
-            res_ufw = subprocess.run(["which", "ufw"], capture_output=True)
-            if res_ufw.returncode == 0:
+            # NAT rule — check before adding (no duplicates)
+            nat_check = subprocess.run(
+                ["iptables", "-t", "nat", "-C", "POSTROUTING", "-s", subnet, "-o", iface, "-j", "MASQUERADE"],
+                capture_output=True
+            )
+            if nat_check.returncode != 0:
+                self._run(["iptables", "-t", "nat", "-A", "POSTROUTING",
+                           "-s", subnet, "-o", iface, "-j", "MASQUERADE"], check=False)
+
+            # UFW Route Allowance
+            if subprocess.run(["which", "ufw"], capture_output=True).returncode == 0:
                 self._run(["ufw", "route", "allow", "from", subnet, "to", "any"], check=False)
-                # Ensure global default forward policy is ALLOW for VPN to work
-                # On Ubuntu 24.04, UFW might default 'routed' to 'drop'
                 self._run(["ufw", "default", "allow", "routed"], check=False)
 
-            # TCP MSS Clamping to avoid MTU issues (Crucial for mobile networks)
-            self._run(["iptables", "-t", "mangle", "-I", "FORWARD", "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--clamp-mss-to-pmtu"], check=False)
-            self._run(["iptables", "-t", "mangle", "-I", "FORWARD", "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-s", subnet, "-j", "TCPMSS", "--set-mss", "1350"], check=False)
+            # TCP MSS Clamping — subnet-specific (no duplicates via check)
+            mss_check = subprocess.run(
+                ["iptables", "-t", "mangle", "-C", "FORWARD", "-p", "tcp",
+                 "--tcp-flags", "SYN,RST", "SYN", "-s", subnet,
+                 "-j", "TCPMSS", "--set-mss", "1350"],
+                capture_output=True
+            )
+            if mss_check.returncode != 0:
+                self._run(["iptables", "-t", "mangle", "-I", "FORWARD", "1",
+                           "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN",
+                           "-s", subnet, "-j", "TCPMSS", "--set-mss", "1350"], check=False)
 
-            # ─── Persistent NAT: write to /etc/ufw/before.rules ─────
+            # Persistent NAT
             self._persist_nat_rule(subnet, iface)
+
         except Exception as e:
             log.error(f"[{self.PROTOCOL_NAME}] NAT setup error: {e}")
 
     def _persist_nat_rule(self, subnet: str, iface: str):
-        """Add a NAT MASQUERADE rule and FORWARD allows to /etc/ufw/before.rules for persistence."""
+        """Add a NAT MASQUERADE rule to /etc/ufw/before.rules for persistence across reboots.
+        Uses tagged blocks for idempotent updates. Only writes to the *nat table section.
+        """
         before_rules = "/etc/ufw/before.rules"
-        tag = f"# SKYNET-NAT-{subnet}"
-        nat_block = [
-            f"{tag}",
-            f"*nat",
-            f":POSTROUTING ACCEPT [0:0]",
-            f"-A POSTROUTING -s {subnet} -o {iface} -j MASQUERADE",
-            f"COMMIT",
-            f"*filter",
-            f":ufw-before-forward - [0:0]",
-            f"-A ufw-before-forward -s {subnet} -j ACCEPT",
-            f"-A ufw-before-forward -d {subnet} -j ACCEPT",
-            f"COMMIT",
-            f"{tag}-END\n"
-        ]
+        subnet = self._normalize_subnet(subnet)
+        tag_start = f"# SKYNET-NAT-{subnet}"
+        tag_end = f"# SKYNET-NAT-{subnet}-END"
+
+        # The NAT-only block (no *filter here — UFW manages that via 'ufw route allow')
+        nat_block = (
+            f"\n{tag_start}\n"
+            f"*nat\n"
+            f":POSTROUTING ACCEPT [0:0]\n"
+            f"-A POSTROUTING -s {subnet} -o {iface} -j MASQUERADE\n"
+            f"COMMIT\n"
+            f"{tag_end}\n"
+        )
+
         try:
             if not os.path.exists(before_rules):
+                log.warning(f"[{self.PROTOCOL_NAME}] {before_rules} not found, skipping persistence.")
                 return
+
             with open(before_rules, "r") as f:
                 content = f.read()
-            
-            if tag in content:
+
+            # Don't duplicate
+            if tag_start in content:
+                log.info(f"[{self.PROTOCOL_NAME}] NAT rule for {subnet} already in {before_rules}")
                 return
-            
-            # Smart insertion: find the first line that is NOT a comment and insert BEFORE it
-            lines = content.split('\n')
-            insert_idx = 0
-            for i, line in enumerate(lines):
-                if line.strip() and not line.strip().startswith('#'):
-                    insert_idx = i
-                    break
-            
-            # Insert at the top of the file (after comments) for maximum reliability
-            new_content = lines[:insert_idx] + nat_block + lines[insert_idx:]
+
+            # Insert the *nat block BEFORE the first *filter line (UFW's structure)
+            # This ensures the nat table is processed correctly by iptables-restore
+            if "*filter" in content:
+                insert_pos = content.find("*filter")
+                new_content = content[:insert_pos] + nat_block + "\n" + content[insert_pos:]
+            else:
+                # Append at end as fallback
+                new_content = content + nat_block
+
             with open(before_rules, "w") as f:
-                f.write('\n'.join(new_content))
+                f.write(new_content)
             log.info(f"[{self.PROTOCOL_NAME}] Persistent NAT written to {before_rules} for {subnet}")
         except Exception as e:
             log.warning(f"[{self.PROTOCOL_NAME}] Failed to persist NAT rule: {e}")
 
     def _cleanup_nat(self, subnet: str):
         """Удалить правила NAT и FORWARD для указанной подсети."""
+        subnet = self._normalize_subnet(subnet)
         iface = self._get_external_iface()
         log.info(f"[{self.PROTOCOL_NAME}] Cleaning up NAT for {subnet}")
         try:
-            self._run(["iptables", "-D", "FORWARD", "-s", subnet, "-j", "ACCEPT"], check=False)
-            self._run(["iptables", "-t", "nat", "-D", "POSTROUTING", "-s", subnet, "-o", iface, "-j", "MASQUERADE"], check=False)
-            self._run(["iptables", "-D", "INPUT", "-s", subnet, "-j", "ACCEPT"], check=False)
+            # Remove FORWARD rules (loop to catch duplicates)
+            for _ in range(5):
+                r = subprocess.run(
+                    ["iptables", "-D", "FORWARD", "-s", subnet, "-j", "ACCEPT"],
+                    capture_output=True
+                )
+                if r.returncode != 0:
+                    break
+
+            # Remove NAT rules (loop to catch duplicates)
+            for _ in range(5):
+                r = subprocess.run(
+                    ["iptables", "-t", "nat", "-D", "POSTROUTING",
+                     "-s", subnet, "-o", iface, "-j", "MASQUERADE"],
+                    capture_output=True
+                )
+                if r.returncode != 0:
+                    break
+
+            # Remove MSS clamping
+            for _ in range(5):
+                r = subprocess.run(
+                    ["iptables", "-t", "mangle", "-D", "FORWARD", "-p", "tcp",
+                     "--tcp-flags", "SYN,RST", "SYN", "-s", subnet,
+                     "-j", "TCPMSS", "--set-mss", "1350"],
+                    capture_output=True
+                )
+                if r.returncode != 0:
+                    break
 
             # UFW Cleanup
-            res_ufw = subprocess.run(["which", "ufw"], capture_output=True)
-            if res_ufw.returncode == 0:
-                self._run(["ufw", "route", "delete", "allow", "from", subnet, "to", "any"], check=False)
+            if subprocess.run(["which", "ufw"], capture_output=True).returncode == 0:
+                subprocess.run(
+                    ["ufw", "route", "delete", "allow", "from", subnet, "to", "any"],
+                    capture_output=True
+                )
 
             # Remove persistent NAT rule from before.rules
             self._remove_persist_nat_rule(subnet)
@@ -216,17 +298,21 @@ class ProtocolAdapter:
     def _remove_persist_nat_rule(self, subnet: str):
         """Remove the tagged NAT block from /etc/ufw/before.rules."""
         before_rules = "/etc/ufw/before.rules"
+        subnet = self._normalize_subnet(subnet)
         tag_start = f"# SKYNET-NAT-{subnet}"
-        tag_end = f"{tag_start}-END"
+        tag_end = f"# SKYNET-NAT-{subnet}-END"
         try:
             if not os.path.exists(before_rules):
                 return
             with open(before_rules, "r") as f:
-                lines = f.readlines()
-            # Filter out the tagged block
+                content = f.read()
+
+            if tag_start not in content:
+                return
+
             new_lines = []
             skip = False
-            for line in lines:
+            for line in content.splitlines(keepends=True):
                 if tag_start in line and tag_end not in line:
                     skip = True
                     continue
@@ -235,6 +321,7 @@ class ProtocolAdapter:
                     continue
                 if not skip:
                     new_lines.append(line)
+
             with open(before_rules, "w") as f:
                 f.writelines(new_lines)
             log.info(f"[{self.PROTOCOL_NAME}] Removed persistent NAT for {subnet}")

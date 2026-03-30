@@ -6,10 +6,9 @@ AmneziaWG v1 (Legacy) Adapter
   S1, S2          — паддинг хендшейка (сервер + клиент)
   H1, H2, H3, H4 — фиксированные заголовки пакетов (сервер + клиент)
 
-Используемые утилиты на сервере:
-  - awg (amneziawg-tools) — управление интерфейсом
-  - awg-quick             — быстрый запуск/остановка
-  - awg genkey / pubkey   — генерация ключей
+Используемые образы:
+  - amneziavpn/amneziawg-go:latest — содержит awg + awg-quick (AmneziaWG бинарники)
+  - amneziavpn/amnezia-wg:latest   — только wg-quick (стандартный WireGuard, НЕ AWG)
 """
 
 import json
@@ -35,10 +34,13 @@ DEFAULT_AWG_V1_OBFUSCATION = {
     "H4": 878082202,
 }
 
+# Образ с AmneziaWG бинарниками (awg-quick is in /usr/bin/)
+AWG_DOCKER_IMAGE = "amneziavpn/amneziawg-go:latest"
+
 
 class AmneziaWGv1Adapter(ProtocolAdapter):
     PROTOCOL_NAME = "amneziawg_v1"
-    REQUIRED_BINARIES = ["docker"]
+    REQUIRED_BINARIES = ["docker", "wg"]
     INTERFACE_PREFIX = "awg"
     CONFIG_DIR = "/etc/amnezia/amneziawg"
 
@@ -46,19 +48,17 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
         super().__init__(db_conn)
 
     def install(self, server_ip: str):
-        log.info(f"[{self.PROTOCOL_NAME}] Checking AmneziaWG Docker images...")
-        self._run(["docker", "pull", "amneziavpn/amnezia-wg:latest"])
-        self._run(["docker", "pull", "amneziavpn/amneziawg-go:latest"])
+        log.info(f"[{self.PROTOCOL_NAME}] Pulling AmneziaWG Docker image...")
+        # amneziawg-go contains awg-quick; amnezia-wg only contains standard wg-quick
+        subprocess.run(["docker", "pull", AWG_DOCKER_IMAGE],
+                       capture_output=False, check=False)
 
     def generate_keypair(self) -> dict:
-        # Use native wg tool (installed via wireguard-tools on host) for instant/safe keygen
-        # AmneziaWG curve25519 keys are 100% mathematically identical to WireGuard keys
+        # Use host wg tool for key generation (curve25519 keys are compatible with AWG)
         priv = self._run(["wg", "genkey"])
-        
-        import subprocess
-        proc = subprocess.run(["wg", "pubkey"], input=priv + "\n", capture_output=True, text=True, check=True)
+        proc = subprocess.run(["wg", "pubkey"], input=priv + "\n",
+                               capture_output=True, text=True, check=True)
         pub = proc.stdout.strip()
-        
         psk = self._run(["wg", "genpsk"])
         return {"private_key": priv, "public_key": pub, "preshared_key": psk}
 
@@ -74,7 +74,6 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
         settings = json.loads(inbound.get("settings", "{}"))
         obfs = json.loads(inbound.get("obfuscation", "{}"))
 
-        # Merge defaults
         for k, v in DEFAULT_AWG_V1_OBFUSCATION.items():
             obfs.setdefault(k, v)
 
@@ -89,7 +88,6 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
             f"Address = {address}",
             f"ListenPort = {port}",
             f"MTU = {mtu}",
-            "# NAT and Forwarding are managed by the panel's central routing engine",
             "",
             "# AmneziaWG v1 Obfuscation Parameters",
             f"S1 = {obfs['S1']}",
@@ -100,10 +98,10 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
             f"H4 = {obfs['H4']}",
         ]
 
-        # Добавить Peer-секции клиентов
         clients = settings.get("clients", [])
         for c in clients:
-            if not c.get("enable", True): continue
+            if not c.get("enable", True):
+                continue
             lines.append("")
             lines.append(f"# Client: {c.get('username', 'unknown')}")
             lines.append("[Peer]")
@@ -112,7 +110,7 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
                 lines.append(f"PresharedKey = {c['preshared_key']}")
             lines.append(f"AllowedIPs = {c.get('allowed_ips', '10.8.0.2/32')}")
 
-        return "\n".join(lines)
+        return "\n".join(lines) + "\n"
 
     def generate_client_config(self, client: dict, inbound: dict) -> str:
         """Генерация клиентского .conf файла."""
@@ -128,10 +126,21 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
         dns = settings.get("dns", "1.1.1.1, 8.8.8.8")
         mtu = settings.get("mtu", 1420)
 
+        # Client address: use the /32 address but present as /24 in interface
+        client_addr = client.get('allowed_ips', '10.8.0.2/32')
+        # Convert 10.8.0.2/32 -> 10.8.0.2/24 for client interface
+        try:
+            client_net = ipaddress.ip_interface(client_addr)
+            # Get the full network
+            full_net = ipaddress.ip_network(client_addr.replace("/32", "/24"), strict=False)
+            client_interface_addr = f"{client_net.ip}/{full_net.prefixlen}"
+        except Exception:
+            client_interface_addr = client_addr
+
         lines = [
             "[Interface]",
             f"PrivateKey = {client.get('private_key', '')}",
-            f"Address = {client.get('allowed_ips', '10.8.0.2/32')}",
+            f"Address = {client_interface_addr}",
             f"DNS = {dns}",
             f"MTU = {mtu}",
             "",
@@ -153,34 +162,43 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
             "AllowedIPs = 0.0.0.0/0, ::/0",
             "PersistentKeepalive = 25",
         ]
-        return "\n".join(lines)
+        return "\n".join(lines) + "\n"
 
     def add_client(self, client: dict, inbound: dict) -> bool:
         iface = self._iface_name(inbound)
         container_name = f"skynet_{inbound['protocol']}_{inbound['id']}"
         self.check_binaries(["docker"])
-        
+
         allowed_ips = client.get("allowed_ips", "10.8.0.2/32")
-        
+
         if client.get("preshared_key"):
             psk_file = os.path.join(self.CONFIG_DIR, f"psk_{client['username']}.key")
             with open(psk_file, 'w') as f:
                 f.write(client['preshared_key'] + '\n')
             try:
-                self._run(["docker", "exec", container_name, "awg", "set", iface, "peer", client["public_key"], 
-                          "allowed-ips", allowed_ips, 
-                          "preshared-key", f"/etc/amnezia/amneziawg/psk_{client['username']}.key"])
+                self._run(["docker", "exec", container_name, "awg", "set", iface,
+                           "peer", client["public_key"],
+                           "allowed-ips", allowed_ips,
+                           "preshared-key", f"/etc/amnezia/amneziawg/psk_{client['username']}.key"])
             finally:
-                if os.path.exists(psk_file): os.remove(psk_file)
+                if os.path.exists(psk_file):
+                    os.remove(psk_file)
         else:
-            self._run(["docker", "exec", container_name, "awg", "set", iface, "peer", client["public_key"], "allowed-ips", allowed_ips])
-            
+            self._run(["docker", "exec", container_name, "awg", "set", iface,
+                       "peer", client["public_key"], "allowed-ips", allowed_ips])
+
+        # Also update the persistent config
+        conf_path = self._config_path(inbound)
+        if os.path.exists(conf_path):
+            self._run(["docker", "exec", container_name, "awg", "saveconfig", iface], check=False)
+
         return True
 
     def remove_client(self, client: dict, inbound: dict) -> bool:
         container_name = f"skynet_{inbound['protocol']}_{inbound['id']}"
         iface = self._iface_name(inbound)
-        self._run(["docker", "exec", container_name, "awg", "set", iface, "peer", client["public_key"], "remove"])
+        self._run(["docker", "exec", container_name, "awg", "set", iface,
+                   "peer", client["public_key"], "remove"])
         return True
 
     def toggle_client(self, client: dict, inbound: dict, enable: bool) -> bool:
@@ -189,70 +207,60 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
     def get_traffic(self, inbound: dict) -> list:
         iface = self._iface_name(inbound)
         container_name = f"skynet_{inbound['protocol']}_{inbound['id']}"
-        
+
         try:
             dump = self._run(["docker", "exec", container_name, "awg", "show", iface, "dump"])
             lines = dump.split('\n')
             clients = []
-            for line in lines[1:]: # Первая строка - инфо об интерфейсе
+            for line in lines[1:]:  # First line is interface info
                 parts = line.strip().split('\t')
-                if len(parts) >= 6:
-                    clients.append({
-                        "public_key": parts[0],
-                        "preshared_key": parts[1] if parts[1] != "(none)" else "",
-                        "endpoint": parts[2] if parts[2] != "(none)" else "",
-                        "allowed_ips": parts[3],
-                        "rx": int(parts[5].strip()),
-                        "tx": int(parts[6].strip()),
-                        "last_handshake": int(parts[4].strip())
-                    })
+                if len(parts) >= 7:
+                    try:
+                        clients.append({
+                            "public_key": parts[0],
+                            "preshared_key": parts[1] if parts[1] != "(none)" else "",
+                            "endpoint": parts[2] if parts[2] != "(none)" else "",
+                            "allowed_ips": parts[3],
+                            "last_handshake": int(parts[4]),
+                            "rx": int(parts[5]),
+                            "tx": int(parts[6]),
+                        })
+                    except (ValueError, IndexError):
+                        continue
             return clients
-        except: return []
+        except Exception:
+            return []
 
     def start(self, inbound: dict) -> bool:
         iface = self._iface_name(inbound)
         container_name = f"skynet_{inbound['protocol']}_{inbound['id']}"
         os.makedirs(self.CONFIG_DIR, exist_ok=True)
+
+        # Write server config
         conf = self._config_path(inbound)
-        with open(conf, "w") as f: f.write(self.generate_server_config(inbound))
-        
+        with open(conf, "w") as f:
+            f.write(self.generate_server_config(inbound))
+
+        # Get subnet (always use network address, not host address)
         settings = json.loads(inbound.get("settings", "{}"))
-        subnet = settings.get("address", "10.8.0.0/24")
-        if "/" not in subnet: subnet = "10.8.0.0/24" # safety
+        address = settings.get("address", "10.8.0.0/24")
         try:
-            net = ipaddress.ip_network(subnet, strict=False)
+            net = ipaddress.ip_network(address, strict=False)
             subnet = str(net)
-            server_ip = str(list(net.hosts())[0]) # usually .1
-        except: server_ip = "10.8.0.1"
+        except Exception:
+            subnet = "10.8.0.0/24"
 
-        # PROACTIVE CLEANUP: Check for conflicting interfaces or IPs on host
-        log.info(f"[{self.PROTOCOL_NAME}] Checking for host conflicts (iface: {iface}, ip: {server_ip})")
-        try:
-            # Check if interface already exists
-            res = subprocess.run(["ip", "link", "show", iface], capture_output=True, text=True)
-            if res.returncode == 0:
-                log.warning(f"[{self.PROTOCOL_NAME}] Interface {iface} already exists on host. Deleting...")
-                subprocess.run(["ip", "link", "delete", iface], check=False)
-
-            # Check if IP is already assigned to ANY interface
-            res = subprocess.run(["ip", "addr", "show"], capture_output=True, text=True)
-            if server_ip in res.stdout:
-                log.warning(f"[{self.PROTOCOL_NAME}] IP {server_ip} already assigned on host. Finding and deleting interface...")
-                # Find which interface has this IP
-                match = re.search(r'inet\s+' + re.escape(server_ip) + r'.*?dev\s+([a-zA-Z0-9_\-]+)', res.stdout)
-                if match:
-                    conflicting_iface = match.group(1)
-                    log.warning(f"[{self.PROTOCOL_NAME}] Deleting conflicting interface {conflicting_iface}")
-                    subprocess.run(["ip", "link", "delete", conflicting_iface], check=False)
-        except Exception as e:
-            log.error(f"[{self.PROTOCOL_NAME}] Conflict resolution failed: {e}")
-
+        # PROACTIVE CLEANUP: Remove stale containers and interfaces
+        log.info(f"[{self.PROTOCOL_NAME}] Stopping any stale instance of {container_name}")
         self.stop(inbound)
 
-        log.info(f"[{self.PROTOCOL_NAME}] Starting Docker container {container_name}")
-        # amneziavpn/amneziawg-go has awg-quick; amneziavpn/amnezia-wg only has wg-quick (standard WG)
-        img = "amneziavpn/amneziawg-go:latest"
+        # Also check if interface somehow persists after stop
+        res = subprocess.run(["ip", "link", "show", iface], capture_output=True, text=True)
+        if res.returncode == 0:
+            log.warning(f"[{self.PROTOCOL_NAME}] Interface {iface} still exists after stop, forcing delete...")
+            subprocess.run(["ip", "link", "delete", iface], capture_output=True, check=False)
 
+        log.info(f"[{self.PROTOCOL_NAME}] Starting container {container_name} with image {AWG_DOCKER_IMAGE}")
         cmd = [
             "docker", "run", "-d",
             "--name", container_name,
@@ -262,11 +270,9 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
             "--device", "/dev/net/tun",
             "-v", f"{self.CONFIG_DIR}:/etc/amnezia/amneziawg",
             "--entrypoint", "/bin/bash",
-            img,
+            AWG_DOCKER_IMAGE,
             "-c",
-            f"export PATH=$PATH:/usr/local/sbin:/usr/sbin && "
-            f"awg-quick up /etc/amnezia/amneziawg/{iface}.conf && "
-            f"tail -f /dev/null"
+            f"awg-quick up /etc/amnezia/amneziawg/{iface}.conf && tail -f /dev/null"
         ]
         self._run(cmd)
         self._setup_nat(subnet)
@@ -277,20 +283,28 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
         container_name = f"skynet_{inbound['protocol']}_{inbound['id']}"
         try:
             settings = json.loads(inbound.get("settings", "{}"))
-            subnet = settings.get("address", "10.8.0.0/24")
+            address = settings.get("address", "10.8.0.0/24")
+            subnet = self._normalize_subnet(address)
             self._cleanup_nat(subnet)
-            self._run(["docker", "rm", "-f", container_name], check=False)
-            # Since we use --network host, the interface might persist on host. Cleanup if possible.
-            subprocess.run(["ip", "link", "delete", iface], check=False)
-        except: pass
+            subprocess.run(["docker", "rm", "-f", container_name],
+                           capture_output=True, check=False)
+            # Interface cleanup (docker --network host leaves interfaces on host)
+            subprocess.run(["ip", "link", "delete", iface],
+                           capture_output=True, check=False)
+        except Exception:
+            pass
         return True
 
     def is_running(self, inbound: dict) -> bool:
         container_name = f"skynet_{inbound['protocol']}_{inbound['id']}"
         try:
-            res = self._run(["docker", "inspect", "-f", "{{.State.Running}}", container_name], check=False)
-            return res.strip() == "true"
-        except:
+            res = subprocess.run(
+                ["docker", "inspect", "-f", "{{.State.Running}}", container_name],
+                capture_output=True, text=True
+            )
+            return res.stdout.strip() == "true"
+        except Exception:
             return False
+
 
 AdapterFactory.register("amneziawg_v1", AmneziaWGv1Adapter)

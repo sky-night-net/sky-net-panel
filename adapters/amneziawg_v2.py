@@ -15,6 +15,7 @@ AmneziaWG v2 Adapter
 """
 
 import json
+import ipaddress
 from .amneziawg_v1 import AmneziaWGv1Adapter, DEFAULT_AWG_V1_OBFUSCATION
 from . import AdapterFactory
 
@@ -23,7 +24,7 @@ DEFAULT_AWG_V2_OBFUSCATION = {
     **DEFAULT_AWG_V1_OBFUSCATION,
     "S3": 69,
     "S4": 69,
-    "H1": "10000000-20000000",   # Safe range examples
+    "H1": "10000000-20000000",
     "H2": "20000001-30000000",
     "H3": "30000001-40000000",
     "H4": "40000001-50000000",
@@ -44,7 +45,6 @@ class AmneziaWGv2Adapter(AmneziaWGv1Adapter):
         settings = json.loads(inbound.get("settings", "{}"))
         obfs = json.loads(inbound.get("obfuscation", "{}"))
 
-        # Merge v2 defaults
         for k, v in DEFAULT_AWG_V2_OBFUSCATION.items():
             obfs.setdefault(k, v)
 
@@ -59,7 +59,6 @@ class AmneziaWGv2Adapter(AmneziaWGv1Adapter):
             f"Address = {address}",
             f"ListenPort = {port}",
             f"MTU = {mtu}",
-            "# NAT and Forwarding are managed by the panel's central routing engine",
             "",
             "# AmneziaWG v2 Obfuscation Parameters",
             f"S1 = {obfs['S1']}",
@@ -72,16 +71,14 @@ class AmneziaWGv2Adapter(AmneziaWGv1Adapter):
             f"H4 = {obfs['H4']}",
         ]
 
-        # Добавить CPS-пакеты (I1-I5) если заданы
         for i_key in ["I1", "I2", "I3", "I4", "I5"]:
             val = obfs.get(i_key, "")
             if val:
                 lines.append(f"{i_key} = {val}")
 
-        # Peer-секции
         clients = settings.get("clients", [])
         for c in clients:
-            if not c.get("enabled", True):
+            if not c.get("enable", True):
                 continue
             lines.append("")
             lines.append(f"# Client: {c.get('username', 'unknown')}")
@@ -89,7 +86,7 @@ class AmneziaWGv2Adapter(AmneziaWGv1Adapter):
             lines.append(f"PublicKey = {c['public_key']}")
             if c.get("preshared_key"):
                 lines.append(f"PresharedKey = {c['preshared_key']}")
-            lines.append(f"AllowedIPs = {c.get('allowed_ips', '10.8.0.2/32')}")
+            lines.append(f"AllowedIPs = {c.get('allowed_ips', '10.10.0.2/32')}")
 
         return "\n".join(lines) + "\n"
 
@@ -107,10 +104,19 @@ class AmneziaWGv2Adapter(AmneziaWGv1Adapter):
         dns = settings.get("dns", "1.1.1.1, 8.8.8.8")
         mtu = settings.get("mtu", 1420)
 
+        # Client address: convert /32 to /24 for the Interface section
+        client_addr = client.get('allowed_ips', '10.10.0.2/32')
+        try:
+            client_net = ipaddress.ip_interface(client_addr)
+            full_net = ipaddress.ip_network(client_addr.replace("/32", "/24"), strict=False)
+            client_interface_addr = f"{client_net.ip}/{full_net.prefixlen}"
+        except Exception:
+            client_interface_addr = client_addr
+
         lines = [
             "[Interface]",
             f"PrivateKey = {client.get('private_key', '')}",
-            f"Address = {client.get('allowed_ips', '10.8.0.2/32')}",
+            f"Address = {client_interface_addr}",
             f"DNS = {dns}",
             f"MTU = {mtu}",
             "",
@@ -128,7 +134,6 @@ class AmneziaWGv2Adapter(AmneziaWGv1Adapter):
             f"H4 = {obfs['H4']}",
         ]
 
-        # CPS packets
         for i_key in ["I1", "I2", "I3", "I4", "I5"]:
             val = obfs.get(i_key, "")
             if val:
@@ -146,5 +151,4 @@ class AmneziaWGv2Adapter(AmneziaWGv1Adapter):
         return "\n".join(lines) + "\n"
 
 
-# Регистрация
 AdapterFactory.register("amneziawg_v2", AmneziaWGv2Adapter)
