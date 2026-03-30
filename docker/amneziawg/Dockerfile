@@ -4,12 +4,13 @@ RUN apk add --no-cache git make build-base libmnl-dev linux-headers
 
 # Build awg-go
 WORKDIR /build-go
-RUN git clone https://github.com/amnezia-vpn/amneziawg-go.git . && make
+COPY src/awg-go /build-go
+RUN make
 
 # Build awg tools
 WORKDIR /build-tools
-RUN git clone https://github.com/amnezia-vpn/amneziawg-tools.git . && \
-    cd src && make
+COPY src/awg-tools /build-tools
+RUN cd src && make
 
 # Create final minimal image
 FROM alpine:latest
