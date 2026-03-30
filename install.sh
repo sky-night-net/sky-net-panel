@@ -106,12 +106,19 @@ echo -e "  ${GREEN}Done.${NC}"
 
 # ─── System Packages ──────────────────────────────────────────────────────────
 echo -e "${BLUE}[2/7] Installing system packages...${NC}"
-apt-get update -qq
-apt-get install -y -qq \
+export DEBIAN_FRONTEND=noninteractive
+
+# Update and install essentials first
+apt-get update -y >/dev/null
+apt-get install -y software-properties-common >/dev/null 2>&1 || true
+add-apt-repository universe -y >/dev/null 2>&1 || true
+apt-get update -y >/dev/null
+
+# Install dependencies (Removed iptables-persistent to avoid ufw conflicts and interactive prompts)
+apt-get install -y \
     python3 python3-pip python3-flask python3-flask-cors python3-psutil \
     sqlite3 curl git ufw fail2ban \
-    easy-rsa wireguard-tools openvpn \
-    iptables-persistent netfilter-persistent
+    easy-rsa wireguard-tools openvpn
 
 # ─── Docker ───────────────────────────────────────────────────────────────────
 echo -e "${BLUE}[3/7] Installing Docker...${NC}"
