@@ -122,12 +122,29 @@ else
     echo -e "  ${GREEN}Docker already installed: $(docker --version)${NC}"
 fi
 
-# ─── Docker Images ────────────────────────────────────────────────────────────
-echo -e "${BLUE}[4/7] Pulling Docker images...${NC}"
-# amneziawg-go: contains awg + awg-quick (AmneziaWG binaries) — required for AWG v1/v2
-docker pull amneziavpn/amneziawg-go:latest || echo -e "  ${YELLOW}WARNING: amneziawg-go pull failed${NC}"
-# docker-openvpn-xor: OpenVPN with XOR scramble patch
-docker pull lawtancool/docker-openvpn-xor:latest || echo -e "  ${YELLOW}WARNING: openvpn-xor pull failed${NC}"
+# ─── Local Docker Builds ──────────────────────────────────────────────────────
+echo -e "${BLUE}[4/7] Building autonomous Docker images (This may take 3-5 minutes)...${NC}"
+
+# Temporary swap to prevent OOM on 512MB VPS during compilation
+if [ $(free -m | awk '/^Mem:/{print $2}') -lt 1500 ] && [ $(free -m | awk '/^Swap:/{print $2}') -eq 0 ]; then
+    echo -e "  ${YELLOW}Low RAM detected. Creating temporary 1GB SWAP...${NC}"
+    fallocate -l 1G /tmp/skynet_swap || dd if=/dev/zero of=/tmp/skynet_swap bs=1M count=1024 >/dev/null 2>&1
+    chmod 600 /tmp/skynet_swap
+    mkswap /tmp/skynet_swap >/dev/null 2>&1
+    swapon /tmp/skynet_swap >/dev/null 2>&1
+fi
+
+# Build images locally from vendored Dockerfiles
+docker build -t skynet-local/amneziawg:latest /opt/sky-net/docker/amneziawg || echo -e "  ${RED}Failed to build AWG${NC}"
+docker build -t skynet-local/openvpn-xor:latest /opt/sky-net/docker/openvpn-xor || echo -e "  ${RED}Failed to build OpenVPN-XOR${NC}"
+
+# Remove temporary swap
+if [ -f /tmp/skynet_swap ]; then
+    echo -e "  ${YELLOW}Removing temporary SWAP...${NC}"
+    swapoff /tmp/skynet_swap 2>/dev/null || true
+    rm -f /tmp/skynet_swap
+fi
+
 echo -e "  ${GREEN}Done.${NC}"
 
 # ─── IP Forwarding ────────────────────────────────────────────────────────────

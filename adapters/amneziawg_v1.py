@@ -35,7 +35,7 @@ DEFAULT_AWG_V1_OBFUSCATION = {
 }
 
 # Образ с AmneziaWG бинарниками (awg-quick is in /usr/bin/)
-AWG_DOCKER_IMAGE = "amneziavpn/amneziawg-go:latest"
+AWG_DOCKER_IMAGE = "skynet-local/amneziawg:latest"
 
 
 class AmneziaWGv1Adapter(ProtocolAdapter):
@@ -48,10 +48,12 @@ class AmneziaWGv1Adapter(ProtocolAdapter):
         super().__init__(db_conn)
 
     def install(self, server_ip: str):
-        log.info(f"[{self.PROTOCOL_NAME}] Pulling AmneziaWG Docker image...")
-        # amneziawg-go contains awg-quick; amnezia-wg only contains standard wg-quick
-        subprocess.run(["docker", "pull", AWG_DOCKER_IMAGE],
-                       capture_output=False, check=False)
+        log.info(f"[{self.PROTOCOL_NAME}] Checking autonomous AmneziaWG Docker image...")
+        # Image is built during install.sh, but just in case:
+        res = subprocess.run(["docker", "images", "-q", AWG_DOCKER_IMAGE], capture_output=True, text=True)
+        if not res.stdout.strip():
+            log.warning(f"[{self.PROTOCOL_NAME}] Image {AWG_DOCKER_IMAGE} not found. Attempting local build...")
+            self._run(["docker", "build", "-t", AWG_DOCKER_IMAGE, "/opt/sky-net/docker/amneziawg"], check=False)
 
     def generate_keypair(self) -> dict:
         # Use host wg tool for key generation (curve25519 keys are compatible with AWG)

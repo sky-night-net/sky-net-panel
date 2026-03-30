@@ -72,8 +72,15 @@ route 95.85.112.0 255.255.255.0 net_gateway
 
     def install(self, server_ip: str):
         """Установить OpenVPN с XOR-патчем."""
-        self._run(["apt-get", "update"])
-        self._run(["apt-get", "install", "-y", "openvpn", "easy-rsa"])
+        self._run(["apt-get", "update"], check=False)
+        self._run(["apt-get", "install", "-y", "openvpn", "easy-rsa"], check=False)
+
+        img = "skynet-local/openvpn-xor:latest"
+        log.info(f"[{self.PROTOCOL_NAME}] Checking autonomous OpenVPN Docker image...")
+        res = subprocess.run(["docker", "images", "-q", img], capture_output=True, text=True)
+        if not res.stdout.strip():
+            log.warning(f"[{self.PROTOCOL_NAME}] Image {img} not found. Attempting local build...")
+            self._run(["docker", "build", "-t", img, "/opt/sky-net/docker/openvpn-xor"], check=False)
 
     def generate_keypair(self) -> dict:
         """Инициализировать PKI (если нужно) и вернуть пути к CA."""
@@ -275,7 +282,7 @@ mssfix 1350
             "--device", "/dev/net/tun",
             "-v", f"{self.CONFIG_DIR}:/etc/openvpn",
             "-v", "/var/log/openvpn:/var/log/openvpn",
-            "lawtancool/docker-openvpn-xor:latest",
+            "skynet-local/openvpn-xor:latest",
             "openvpn", "--config", f"/etc/openvpn/server_{inbound['id']}.conf",
             "--dev", iface
         ]
