@@ -1,7 +1,6 @@
-# Build AmneziaWG tools and Go implementation
 FROM golang:1.22-alpine AS builder
 
-RUN apk add --no-cache git make build-base
+RUN apk add --no-cache git make build-base libmnl-dev linux-headers
 
 # Build awg-go
 WORKDIR /build-go
@@ -22,8 +21,8 @@ COPY --from=builder /build-tools/src/awg /usr/bin/awg
 COPY --from=builder /build-tools/src/awg-quick /usr/bin/awg-quick
 
 # AmneziaWG awg-quick requires the actual backend binary to be known or wg-quick equivalent
-# Some users/scripts might expect 'wg' to exist
-RUN ln -s /usr/bin/awg /usr/bin/wg && \
+RUN chmod +x /usr/bin/awg-go /usr/bin/awg /usr/bin/awg-quick && \
+    ln -s /usr/bin/awg /usr/bin/wg && \
     ln -s /usr/bin/awg-quick /usr/bin/wg-quick
 
 ENTRYPOINT ["/bin/bash"]
