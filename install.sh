@@ -220,9 +220,11 @@ else
     cd /opt/sky-net
 fi
 
-# Install Python dependencies
-echo -e "  Installing Python dependencies (Flask, etc.)..."
-pip3 install flask flask-cors psutil --break-system-packages 2>/dev/null || pip3 install flask flask-cors psutil 2>/dev/null || true
+# Install Python dependencies into a Virtual Environment (Crucial for Ubuntu 24.04)
+echo -e "  Setting up Python Virtual Environment..."
+python3 -m venv /opt/sky-net/venv
+/opt/sky-net/venv/bin/pip install --upgrade pip
+/opt/sky-net/venv/bin/pip install flask flask-cors psutil
 
 # Initialize database
 if [ ! -f /opt/sky-net/sky_net.db ]; then
@@ -257,7 +259,7 @@ Requires=docker.service
 Type=simple
 User=root
 WorkingDirectory=/opt/sky-net
-ExecStart=/usr/bin/python3 sky_net.py
+ExecStart=/opt/sky-net/venv/bin/python3 sky_net.py
 Restart=on-failure
 RestartSec=5
 StandardOutput=journal

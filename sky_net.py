@@ -1917,9 +1917,12 @@ if __name__ == "__main__":
 
     # This will trigger start() on all enabled inbounds, 
     # which now includes centralized routing setup.
-    start_all_inbounds()
+    # Restore active VPNs on startup
+    restore_active_inbounds()
+
     t = threading.Thread(target=poll_traffic, daemon=True)
     t.start()
+
     # Load SSL Settings
     ssl_ctx = None
     with get_db() as db:
@@ -1932,23 +1935,6 @@ if __name__ == "__main__":
                 log.info(f"SSL enabled: {s_mode[0]} mode")
 
     log.info(f"Sky-Net HTTP server binding on port {PORT}")
-    if ssl_ctx:
-        from werkzeug.serving import make_server
-        def run_http():
-            try:
-                srv = make_server("0.0.0.0", PORT, app, threaded=True)
-                srv.serve_forever()
-            except Exception as e:
-                log.error(f"Failed to start secondary HTTP server: {e}")
-                
-        t_http = threading.Thread(target=run_http, daemon=True)
-        t_http.start()
-        
-        log.info(f"Sky-Net HTTPS server binding on port {HTTPS_PORT}")
-        app.run(host="0.0.0.0", port=HTTPS_PORT, debug=False, threaded=True, ssl_context=ssl_ctx)
-    # Restore active VPNs on startup
-    restore_active_inbounds()
-
     if ssl_ctx:
         from werkzeug.serving import make_server
         def run_http():
