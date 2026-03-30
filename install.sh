@@ -121,13 +121,9 @@ apt-get install -y software-properties-common
 add-apt-repository universe -y
 apt-get update -y
 
-# Set non-interactive for iptables-persistent
-echo iptables-persistent iptables-persistent/autosave_v4 boolean true | debconf-set-selections
-echo iptables-persistent iptables-persistent/autosave_v6 boolean true | debconf-set-selections
-
 # Install core dependencies (Isolating docker.io to avoid conflicts with get.docker.com)
 echo -e "  Installing system tools..."
-apt-get install -y git curl sqlite3 ufw easy-rsa iptables-persistent
+apt-get install -y git curl sqlite3 ufw easy-rsa
 
 echo -e "  Installing Python environment..."
 apt-get install -y python3 python3-pip python3-venv
@@ -276,12 +272,6 @@ EOF
 
 systemctl daemon-reload
 systemctl enable skynet
-
-# Save firewall rules to persist after reboot
-echo -e "  Saving firewall rules..."
-if command -v netfilter-persistent &>/dev/null; then
-    netfilter-persistent save >/dev/null 2>&1 || true
-fi
 
 # Stop existing if running
 systemctl stop skynet 2>/dev/null || true

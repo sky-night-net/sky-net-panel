@@ -159,6 +159,27 @@ with get_db() as db:
             if env_ip:
                 db.execute("INSERT INTO settings (key, value) VALUES ('server_ip', ?)", (env_ip,))
     db.commit()
+# ─── State Restoration ───────────────────────────────────────────────────────
+
+def restore_active_inbounds():
+    """Перезапуск всех активных входящих соединений при старте панели."""
+    log.info("Restoring active VPN inbounds...")
+    try:
+        with get_db() as db:
+            active = db.execute("SELECT * FROM inbounds WHERE enabled=1").fetchall()
+            
+        for row in active:
+            inbound = dict(row)
+            try:
+                adapter = AdapterFactory.get_adapter(inbound["protocol"])
+                if adapter:
+                    log.info(f"Restoring {inbound['protocol']} server (ID: {inbound['id']})")
+                    adapter.start(inbound)
+            except Exception as e:
+                log.error(f"Failed to restore inbound {inbound['id']}: {e}")
+    except Exception as e:
+        log.error(f"State restoration failed: {e}")
+
 POLL_SEC = int(os.getenv("POLL_INTERVAL", "15"))
 
 # ─── Auth Decorator ──────────────────────────────────────────────────────────
@@ -1911,6 +1932,23 @@ if __name__ == "__main__":
                 log.info(f"SSL enabled: {s_mode[0]} mode")
 
     log.info(f"Sky-Net HTTP server binding on port {PORT}")
+    if ssl_ctx:
+        from werkzeug.serving import make_server
+        def run_http():
+            try:
+                srv = make_server("0.0.0.0", PORT, app, threaded=True)
+                srv.serve_forever()
+            except Exception as e:
+                log.error(f"Failed to start secondary HTTP server: {e}")
+                
+        t_http = threading.Thread(target=run_http, daemon=True)
+        t_http.start()
+        
+        log.info(f"Sky-Net HTTPS server binding on port {HTTPS_PORT}")
+        app.run(host="0.0.0.0", port=HTTPS_PORT, debug=False, threaded=True, ssl_context=ssl_ctx)
+    # Restore active VPNs on startup
+    restore_active_inbounds()
+
     if ssl_ctx:
         from werkzeug.serving import make_server
         def run_http():
