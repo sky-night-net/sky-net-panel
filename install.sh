@@ -138,9 +138,10 @@ else
 fi
 
 # Fix Docker DNS resolution (Common issue on Ubuntu 24.04)
-if [ ! -f /etc/docker/daemon.json ]; then
-    echo -e "  ${YELLOW}Configuring Docker DNS (8.8.8.8)...${NC}"
-    mkdir -p /etc/docker
+echo -e "  ${BLUE}Checking Docker DNS configuration...${NC}"
+mkdir -p /etc/docker
+if [ ! -f /etc/docker/daemon.json ] || ! grep -q "dns" /etc/docker/daemon.json; then
+    echo -e "  ${YELLOW}Force-configuring Docker DNS (8.8.8.8)...${NC}"
     echo '{"dns": ["8.8.8.8", "1.1.1.1"]}' > /etc/docker/daemon.json
     systemctl restart docker
 fi
@@ -162,9 +163,9 @@ if [ $(free -m | awk '/^Mem:/{print $2}') -lt 1500 ] && [ $(free -m | awk '/^Swa
     swapon /tmp/skynet_swap >/dev/null 2>&1
 fi
 
-# Ensure we FAIL if build fails, don't just continue
-docker build --no-cache -t skynet-local/amneziawg:latest /opt/sky-net/docker/amneziawg || { echo -e "  ${RED}Failed to build AWG. Aborting.${NC}"; exit 1; }
-docker build --no-cache -t skynet-local/openvpn-xor:latest /opt/sky-net/docker/openvpn-xor || { echo -e "  ${RED}Failed to build OpenVPN-XOR. Aborting.${NC}"; exit 1; }
+# Ensure we FAIL if build fails, don't just continue. Added --dns as ultimate failsafe.
+docker build --dns 8.8.8.8 --dns 1.1.1.1 --no-cache -t skynet-local/amneziawg:latest /opt/sky-net/docker/amneziawg || { echo -e "  ${RED}Failed to build AWG. Aborting.${NC}"; exit 1; }
+docker build --dns 8.8.8.8 --dns 1.1.1.1 --no-cache -t skynet-local/openvpn-xor:latest /opt/sky-net/docker/openvpn-xor || { echo -e "  ${RED}Failed to build OpenVPN-XOR. Aborting.${NC}"; exit 1; }
 
 # Remove temporary swap
 if [ -f /tmp/skynet_swap ]; then
